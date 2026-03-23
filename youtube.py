@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
+from loguru import logger
 import yt_dlp
 
 load_dotenv()
@@ -46,16 +47,16 @@ def download_live_from_start(url):
 
 def poll_and_download(streamer_name, interval_minutes=15):
     import time
-    print(f"Polling every {interval_minutes} minutes for '{streamer_name}'...")
+    logger.info(f"Polling every {interval_minutes} minutes for '{streamer_name}'...")
     while True:
         video_id = get_live_video_id(streamer_name)
         if video_id:
             url = get_video_url(video_id)
-            print(f"Streamer is LIVE! Downloading from: {url}")
+            logger.info(f"Streamer is LIVE! Downloading from: {url}")
             download_live_from_start(url)
-            print("Download finished. Resuming poll...")
+            logger.info("Download finished. Resuming poll...")
         else:
-            print("Streamer is offline. Checking again in 15 minutes...")
+            logger.info(f"Streamer is offline. Checking again in {interval_minutes} minutes...")
         time.sleep(interval_minutes * 60)
 
 
