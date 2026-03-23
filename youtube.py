@@ -43,21 +43,28 @@ def download_live_from_start(url, download_folder="."):
         ydl.download([url])
 
 
-def poll_and_download(streamer_name, interval_minutes=30, download_folder="."):
-    logger.info(f"Polling every {interval_minutes} minutes for '{streamer_name}'...")
+def poll_and_download(streamer_name, download_folder="."):
+    FIBONACCI_INTERVALS = [5, 8, 13, 21, 30]
+    logger.info(
+        f"Polling for '{streamer_name}' with Fibonacci backoff {FIBONACCI_INTERVALS} minutes..."
+    )
+    fib_index = 0
     while True:
         try:
             video_id = get_live_video_id(streamer_name)
             if video_id:
+                fib_index = 0
                 url = get_video_url(video_id)
                 logger.info(f"Streamer is LIVE! Downloading from: {url}")
                 download_live_from_start(url, download_folder)
                 logger.info("Download finished. Resuming poll...")
             else:
+                interval = FIBONACCI_INTERVALS[fib_index]
                 logger.info(
-                    f"Streamer is offline. Checking again in {interval_minutes} minutes..."
+                    f"Streamer is offline. Checking again in {interval} minutes..."
                 )
-            time.sleep(interval_minutes * 60)
+                time.sleep(interval * 60)
+                fib_index = min(fib_index + 1, len(FIBONACCI_INTERVALS) - 1)
         except Exception as e:
             logger.error(f"Error: {e}. Retrying in 1 minute...")
             time.sleep(60)
