@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
+import yt_dlp
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
