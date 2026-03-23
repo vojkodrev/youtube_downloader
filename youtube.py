@@ -19,8 +19,8 @@ def get_live_video_id(streamer_name):
 
     if response.get("items"):
         channel_title = response["items"][0]["snippet"]["channelTitle"]
-        # if channel_title.lower() == streamer_name.lower():
-        return response["items"][0]["id"]["videoId"]
+        if channel_title.lower() == streamer_name.lower():
+            return response["items"][0]["id"]["videoId"]
 
     return None
 
@@ -31,24 +31,33 @@ def get_video_url(video_id):
 
 def download_live_from_start(url):
     ydl_opts = {
-        'format': 'bestvideo+bestaudio/best',
+        "format": "bestvideo+bestaudio/best",
         # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
-        'live_from_start': True,
-        'merge_output_format': 'mp4',
-        'outtmpl': '%(title)s.%(ext)s',
+        "live_from_start": True,
+        "merge_output_format": "mp4",
+        "outtmpl": "%(title)s.%(ext)s",
         # Optional: retry if the stream connection drops
-        'ignoreerrors': True,
+        "ignoreerrors": True,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
 
+def poll_and_download(streamer_name, interval_minutes=15):
+    import time
+    print(f"Polling every {interval_minutes} minutes for '{streamer_name}'...")
+    while True:
+        video_id = get_live_video_id(streamer_name)
+        if video_id:
+            url = get_video_url(video_id)
+            print(f"Streamer is LIVE! Downloading from: {url}")
+            download_live_from_start(url)
+            print("Download finished. Resuming poll...")
+        else:
+            print("Streamer is offline. Checking again in 15 minutes...")
+        time.sleep(interval_minutes * 60)
+
+
 if __name__ == "__main__":
-    video_id = get_live_video_id(STREAMER_NAME)
-    if video_id:
-        url = get_video_url(video_id)
-        print(f"Streamer is LIVE! Watch here: {url}")
-        download_live_from_start(url)
-    else:
-        print("Streamer is offline.")
+    poll_and_download(STREAMER_NAME)
