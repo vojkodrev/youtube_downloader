@@ -1,2 +1,5 @@
 .env
 *.mp4
+*.part
+*.ytdl
+.vscode/
