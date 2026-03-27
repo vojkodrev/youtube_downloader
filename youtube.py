@@ -52,6 +52,7 @@ def download_live_from_start(url, download_folder="."):
         "live_from_start": True,
         "merge_output_format": "mp4",
         "outtmpl": os.path.join(download_folder, "%(title)s.%(ext)s"),
+        # "http_headers": {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"},
         # Optional: retry if the stream connection drops
         # "ignoreerrors": True,
         # "concurrent_fragment_downloads": 10,  # Download 10 chunks at once
@@ -64,7 +65,7 @@ def download_live_from_start(url, download_folder="."):
 def poll_and_download(channel_title=None, channel_id=None, download_folder="."):
     FIBONACCI_INTERVALS = [5, 8, 13, 21, 30]
     identifier = channel_id or channel_title
-    
+
     logger.info(
         f"Polling for '{identifier}' with Fibonacci backoff {FIBONACCI_INTERVALS} minutes..."
     )
@@ -93,7 +94,7 @@ def poll_and_download(channel_title=None, channel_id=None, download_folder="."):
             time.sleep(60)
 
 
-if __name__ == "__main__":
+def main():
     load_dotenv()
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -121,3 +122,7 @@ if __name__ == "__main__":
         exit(1)
 
     poll_and_download(args.channel_title, args.channel_id, args.output)
+
+
+if __name__ == "__main__":
+    main()
