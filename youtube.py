@@ -41,6 +41,14 @@ def get_live_video_id(channel_title=None, channel_id=None):
     return None
 
 
+def get_channel_title(channel_id):
+    youtube = build("youtube", "v3", developerKey=os.getenv("API_KEY"))
+    response = youtube.channels().list(part="snippet", id=channel_id).execute()
+    if response.get("items"):
+        return response["items"][0]["snippet"]["title"]
+    return None
+
+
 def get_video_url(video_id):
     return f"https://www.youtube.com/watch?v={video_id}"
 
@@ -64,7 +72,13 @@ def download_live_from_start(url, download_folder="."):
 
 def poll_and_download(channel_title=None, channel_id=None, download_folder="."):
     FIBONACCI_INTERVALS = [5, 8, 13, 21, 30]
-    identifier = channel_id or channel_title
+
+    if channel_id and not channel_title:
+        channel_title = get_channel_title(channel_id)
+        if channel_title:
+            logger.info(f"Resolved channel ID '{channel_id}' to '{channel_title}'")
+
+    identifier = channel_title or channel_id
 
     logger.info(
         f"Polling for '{identifier}' with Fibonacci backoff {FIBONACCI_INTERVALS} minutes..."
