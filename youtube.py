@@ -44,9 +44,9 @@ def get_live_video_id(channel_title=None, channel_id=None):
 def get_channel_title(channel_id):
     youtube = build("youtube", "v3", developerKey=os.getenv("API_KEY"))
     response = youtube.channels().list(part="snippet", id=channel_id).execute()
-    if response.get("items"):
-        return response["items"][0]["snippet"]["title"]
-    return None
+    if not response.get("items"):
+        raise ValueError(f"Could not find channel with ID '{channel_id}'")
+    return response["items"][0]["snippet"]["title"]
 
 
 def get_video_url(video_id):
@@ -75,8 +75,7 @@ def poll_and_download(channel_title=None, channel_id=None, download_folder="."):
 
     if channel_id and not channel_title:
         channel_title = get_channel_title(channel_id)
-        if channel_title:
-            logger.info(f"Resolved channel ID '{channel_id}' to '{channel_title}'")
+        logger.info(f"Resolved channel ID '{channel_id}' to '{channel_title}'")
 
     identifier = channel_title or channel_id
 
