@@ -130,7 +130,7 @@ async def poll_and_download(channel_title=None, channel_id=None, download_folder
 def main():
     load_dotenv()
 
-    with open("config.toml", "rb") as f:
+    with open(os.path.join(os.path.dirname(__file__), "config.toml"), "rb") as f:
         config = tomllib.load(f)
 
     channel_ids = config["channel_ids"]
