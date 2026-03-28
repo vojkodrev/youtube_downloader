@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "YouTube Downloader",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/downloader/youtube.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}
