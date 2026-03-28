@@ -1,4 +1,5 @@
 output_folder = "d:/streams"
+log_format = "{time} | {level} | {name}:{function}:{line} | {extra[streamer]} | {message}"
 
 channel_ids = [
     "UCUyeluBRhGPCW4rPe_UvBZQ",

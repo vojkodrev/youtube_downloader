@@ -1,5 +1,6 @@
 import asyncio
 import os
+import sys
 import tomllib
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
@@ -90,13 +91,12 @@ async def poll_and_download(channel_title=None, channel_id=None, download_folder
 
     if channel_id and not channel_title:
         channel_title = await get_channel_title(channel_id)
-        logger.info(f"Resolved channel ID '{channel_id}' to '{channel_title}'")
 
     identifier = channel_title or channel_id
+    log = logger.bind(streamer=identifier)
 
-    logger.info(
-        f"Polling for '{identifier}' with Fibonacci backoff {FIBONACCI_INTERVALS} minutes..."
-    )
+    log.info(f"Resolved channel ID '{channel_id}' to '{channel_title}'")
+    log.info("Polling started")
 
     fib_index = 0
 
@@ -107,18 +107,16 @@ async def poll_and_download(channel_title=None, channel_id=None, download_folder
             if video_id:
                 fib_index = 0
                 url = get_video_url(video_id)
-                logger.info(f"Streamer is LIVE! Downloading from: {url}")
+                log.info(f"Streamer is LIVE! Downloading from: {url}")
                 await download_live_from_start(url, download_folder)
-                logger.info("Download finished. Resuming poll...")
+                log.info("Download finished. Resuming poll...")
             else:
                 interval = FIBONACCI_INTERVALS[fib_index]
-                logger.info(
-                    f"Streamer is offline. Checking again in {interval} minutes..."
-                )
+                log.info(f"Streamer is offline. Checking again in {interval} minutes...")
                 await asyncio.sleep(interval * 60)
                 fib_index = min(fib_index + 1, len(FIBONACCI_INTERVALS) - 1)
         except Exception as e:
-            logger.error(f"Error: {e}. Retrying in 1 minute...")
+            log.error(f"Error: {e}. Retrying in 1 minute...")
             await asyncio.sleep(60)
 
 
@@ -130,9 +128,13 @@ def main():
 
     channel_ids = config["channel_ids"]
     output_folder = config["output_folder"]
+    log_format = config["log_format"]
+
+    logger.remove()
+    logger.add(sys.stderr, format=log_format)
 
     if not os.path.isdir(output_folder):
-        logger.error(f"Output folder does not exist: {output_folder}")
+        logger.bind(streamer="-").error(f"Output folder does not exist: {output_folder}")
         exit(1)
 
     asyncio.run(asyncio.gather(*[
