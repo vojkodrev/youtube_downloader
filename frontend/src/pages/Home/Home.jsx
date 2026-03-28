@@ -1,4 +1,4 @@
-import { Tv } from 'lucide-react'
+import { Tv, Search } from 'lucide-react'
 
 export default function Home() {
     return (
@@ -8,6 +8,16 @@ export default function Home() {
             <div className="bg-gray-900 px-6 py-4 flex items-center gap-3">
                 <Tv size={24} className="text-white" />
                 <span className="text-white text-xl font-bold tracking-wide">Watch</span>
+                <div className="flex-1 flex justify-center">
+                    <div className="flex items-center w-full max-w-md bg-gray-600 rounded-full px-4 py-1.5 gap-2 focus-within:ring-2 focus-within:ring-gray-400">
+                        <Search size={16} className="text-gray-300" />
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            className="bg-transparent text-white placeholder-gray-300 text-sm outline-none w-full"
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* Middle */}
