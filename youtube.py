@@ -1,7 +1,6 @@
 import argparse
 import asyncio
 import os
-import time
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from loguru import logger
@@ -86,11 +85,11 @@ def _download_live_from_start_sync(url, download_folder="."):
         ydl.download([url])
 
 
-def poll_and_download(channel_title=None, channel_id=None, download_folder="."):
+async def poll_and_download(channel_title=None, channel_id=None, download_folder="."):
     FIBONACCI_INTERVALS = [5, 8, 13, 21, 30]
 
     if channel_id and not channel_title:
-        channel_title = get_channel_title(channel_id)
+        channel_title = await get_channel_title(channel_id)
         logger.info(f"Resolved channel ID '{channel_id}' to '{channel_title}'")
 
     identifier = channel_title or channel_id
@@ -103,24 +102,24 @@ def poll_and_download(channel_title=None, channel_id=None, download_folder="."):
 
     while True:
         try:
-            video_id = get_live_video_id(channel_title, channel_id)
+            video_id = await get_live_video_id(channel_title, channel_id)
 
             if video_id:
                 fib_index = 0
                 url = get_video_url(video_id)
                 logger.info(f"Streamer is LIVE! Downloading from: {url}")
-                download_live_from_start(url, download_folder)
+                await download_live_from_start(url, download_folder)
                 logger.info("Download finished. Resuming poll...")
             else:
                 interval = FIBONACCI_INTERVALS[fib_index]
                 logger.info(
                     f"Streamer is offline. Checking again in {interval} minutes..."
                 )
-                time.sleep(interval * 60)
+                await asyncio.sleep(interval * 60)
                 fib_index = min(fib_index + 1, len(FIBONACCI_INTERVALS) - 1)
         except Exception as e:
             logger.error(f"Error: {e}. Retrying in 1 minute...")
-            time.sleep(60)
+            await asyncio.sleep(60)
 
 
 def main():
