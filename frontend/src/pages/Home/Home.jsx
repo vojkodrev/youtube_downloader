@@ -10,12 +10,12 @@ export default function Home() {
             {/* Middle: main content + sidebar */}
             <div className="flex flex-1">
 
-                {/* Left: main content + info panel */}
+                {/* Left: video content + info panel */}
                 <div className="flex flex-col flex-1">
-                    <div className="flex-1 bg-white p-4">
-                        <p>Main content</p>
+                    <div className="h-[50rem] bg-white p-4">
+                        <p>Video content</p>
                     </div>
-                    <div className="bg-gray-100 p-4">
+                    <div className="h-[125rem] bg-gray-100 p-4">
                         <p>Info panel</p>
                     </div>
                 </div>
