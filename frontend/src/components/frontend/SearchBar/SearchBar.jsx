@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 
 const TEST_ITEMS = [
     'Big Buck Bunny',
@@ -31,6 +31,11 @@ export default function SearchBar() {
                         onBlur={() => setFocused(false)}
                         className="bg-transparent text-white placeholder-gray-300 text-sm outline-none w-full"
                     />
+                    {query && (
+                        <button onMouseDown={e => { e.preventDefault(); setQuery('') }}>
+                            <X size={14} className="text-gray-300 hover:text-white" />
+                        </button>
+                    )}
                 </div>
                 {focused && results.length > 0 && (
                     <ul className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg z-10">
