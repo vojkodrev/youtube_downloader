@@ -37,16 +37,20 @@ export default function SearchBar() {
                         </button>
                     )}
                 </div>
-                {focused && results.length > 0 && (
+                {focused && query.trim() && (
                     <ul className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg z-10">
-                        {results.map(item => (
-                            <li
-                                key={item}
-                                className="px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 cursor-pointer"
-                            >
-                                {item}
-                            </li>
-                        ))}
+                        {results.length > 0
+                            ? results.map(item => (
+                                <li
+                                    key={item}
+                                    onMouseDown={() => alert(item)}
+                                    className="px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 cursor-pointer"
+                                >
+                                    {item}
+                                </li>
+                            ))
+                            : <li className="px-4 py-2 text-sm text-gray-400 select-none">No results found</li>
+                        }
                     </ul>
                 )}
             </div>
