@@ -1,5 +1,5 @@
 output_folder = "d:/streams"
-log_format = "<green>{time}</green> | <level>{level}</level> | <cyan>{name}:{function}:{line}</cyan> | <magenta>{extra[streamer]}</magenta> | <level>{message}</level>"
+log_format = "<green>{time}</green> | <level>{level:<5}</level> | <cyan>{name}:{function}:{line:<4}</cyan> | <magenta>{extra[streamer]:<15.15}</magenta> | <level>{message}</level>"
 
 channel_ids = [
     "UCUyeluBRhGPCW4rPe_UvBZQ",
