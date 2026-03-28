@@ -1,6 +1,6 @@
 export default function Home() {
     return (
-        <div className="flex flex-col h-screen">
+        <div className="flex flex-col h-[125rem]">
 
             {/* Top */}
             <div className="bg-gray-200 p-4">
@@ -15,7 +15,7 @@ export default function Home() {
                     <div className="h-[50rem] bg-white p-4">
                         <p>Video content</p>
                     </div>
-                    <div className="h-[125rem] bg-gray-100 p-4">
+                    <div className="h-[12.5rem] bg-gray-100 p-4">
                         <p>Info panel</p>
                     </div>
                 </div>
