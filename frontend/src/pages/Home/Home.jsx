@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Tv, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
+import Logo from '@/components/frontend/Logo/Logo'
 
 const TEST_ITEMS = [
     'Big Buck Bunny',
@@ -22,8 +23,7 @@ export default function Home() {
 
             {/* Top */}
             <div className="bg-gray-900 px-6 py-4 flex items-center gap-3">
-                <Tv size={24} className="text-white" />
-                <span className="text-white text-xl font-bold tracking-wide">Watch</span>
+                <Logo />
                 <div className="flex-1 flex justify-center">
                     <div className="relative w-full max-w-md">
                         <div className="flex items-center bg-gray-600 rounded-full px-4 py-1.5 gap-2 focus-within:ring-2 focus-within:ring-gray-400">
