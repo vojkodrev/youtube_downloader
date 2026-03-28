@@ -47,7 +47,12 @@ def _get_live_video_id_sync(channel_title=None, channel_id=None):
     return None
 
 
-def get_channel_title(channel_id):
+async def get_channel_title(channel_id):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _get_channel_title_sync, channel_id)
+
+
+def _get_channel_title_sync(channel_id):
     youtube = build("youtube", "v3", developerKey=os.getenv("API_KEY"))
     response = youtube.channels().list(part="snippet", id=channel_id).execute()
     if not response.get("items"):
