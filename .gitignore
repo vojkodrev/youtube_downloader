@@ -2,3 +2,7 @@
 *.mp4
 *.part
 *.ytdl
+
+# Node
+node_modules/
+dist/
