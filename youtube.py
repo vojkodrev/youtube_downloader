@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import os
 import time
 from dotenv import load_dotenv
@@ -7,10 +8,15 @@ from loguru import logger
 import yt_dlp
 
 
-def get_live_video_id(channel_title=None, channel_id=None):
+async def get_live_video_id(channel_title=None, channel_id=None):
     if not channel_title and not channel_id:
         raise ValueError("at least one of channel_title or channel_id is required")
 
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _get_live_video_id_sync, channel_title, channel_id)
+
+
+def _get_live_video_id_sync(channel_title=None, channel_id=None):
     youtube = build("youtube", "v3", developerKey=os.getenv("API_KEY"))
 
     if channel_id:
