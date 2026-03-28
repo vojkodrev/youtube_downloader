@@ -1,10 +1,13 @@
+import { Tv } from 'lucide-react'
+
 export default function Home() {
     return (
         <div className="flex flex-col h-[125rem]">
 
             {/* Top */}
-            <div className="bg-gray-200 p-4">
-                <p>Top</p>
+            <div className="bg-gray-900 px-6 py-4 flex items-center gap-3">
+                <Tv size={24} className="text-white" />
+                <span className="text-white text-xl font-bold tracking-wide">Watch</span>
             </div>
 
             {/* Middle */}
