@@ -4,4 +4,5 @@ log_format = "{time} | {level} | {name}:{function}:{line} | {extra[streamer]} | 
 channel_ids = [
     "UCUyeluBRhGPCW4rPe_UvBZQ",
     "UC1E-JS8L0j1Ei70D9VEFrPQ",
+    # "UCI_mwTKUhicNzFrhm33MzBQ"
 ]
