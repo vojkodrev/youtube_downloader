@@ -1,4 +1,3 @@
-import argparse
 import asyncio
 import os
 from dotenv import load_dotenv
@@ -124,32 +123,22 @@ async def poll_and_download(channel_title=None, channel_id=None, download_folder
 
 def main():
     load_dotenv()
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-ct",
-        "--channel-title",
-        dest="channel_title",
-        help="YouTube channel title to watch",
-    )
-    parser.add_argument(
-        "-ci", "--channel-id", dest="channel_id", help="YouTube channel ID to watch"
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        default=".",
-        help="Folder to save downloads (default: current directory)",
-    )
-    args = parser.parse_args()
 
-    if not args.channel_title and not args.channel_id:
-        parser.error("at least one of --channel-title or --channel-id is required")
+    channel_ids = [cid for cid in os.getenv("CHANNEL_IDS", "").split(",") if cid]
+    output_folder = os.getenv("OUTPUT_FOLDER", ".")
 
-    if not os.path.isdir(args.output):
-        logger.error(f"Output folder does not exist: {args.output}")
+    if not channel_ids:
+        logger.error("CHANNEL_IDS env var is required")
         exit(1)
 
-    poll_and_download(args.channel_title, args.channel_id, args.output)
+    if not os.path.isdir(output_folder):
+        logger.error(f"Output folder does not exist: {output_folder}")
+        exit(1)
+
+    asyncio.run(asyncio.gather(*[
+        poll_and_download(channel_id=cid, download_folder=output_folder)
+        for cid in channel_ids
+    ]))
 
 
 if __name__ == "__main__":
