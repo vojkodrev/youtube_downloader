@@ -1,0 +1,6 @@
+output_folder = "d:/streams"
+
+channel_ids = [
+    "UCUyeluBRhGPCW4rPe_UvBZQ",
+    "UC1E-JS8L0j1Ei70D9VEFrPQ",
+]

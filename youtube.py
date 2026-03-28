@@ -1,5 +1,6 @@
 import asyncio
 import os
+import tomllib
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from loguru import logger
@@ -124,12 +125,11 @@ async def poll_and_download(channel_title=None, channel_id=None, download_folder
 def main():
     load_dotenv()
 
-    channel_ids = [cid for cid in os.getenv("CHANNEL_IDS", "").split(",") if cid]
-    output_folder = os.getenv("OUTPUT_FOLDER", ".")
+    with open("config.toml", "rb") as f:
+        config = tomllib.load(f)
 
-    if not channel_ids:
-        logger.error("CHANNEL_IDS env var is required")
-        exit(1)
+    channel_ids = config["channel_ids"]
+    output_folder = config["output_folder"]
 
     if not os.path.isdir(output_folder):
         logger.error(f"Output folder does not exist: {output_folder}")
