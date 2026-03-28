@@ -36,11 +36,11 @@ export default function Home() {
                             />
                         </div>
                         {results.length > 0 && (
-                            <ul className="absolute top-full mt-1 w-full bg-gray-800 rounded-lg overflow-hidden shadow-lg z-10">
+                            <ul className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg z-10">
                                 {results.map(item => (
                                     <li
                                         key={item}
-                                        className="px-4 py-2 text-sm text-white hover:bg-gray-700 cursor-pointer"
+                                        className="px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 cursor-pointer"
                                     >
                                         {item}
                                     </li>
