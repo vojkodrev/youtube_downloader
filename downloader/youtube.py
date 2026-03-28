@@ -100,8 +100,7 @@ async def poll_and_download(channel_title=None, channel_id=None, download_folder
     identifier = channel_title or channel_id
     log = logger.bind(streamer=identifier)
 
-    log.info(f"Resolved channel ID '{channel_id}' to '{channel_title}'")
-    log.info("Polling started")
+    log.info(f"Resolved channel ID '{channel_id}'. Polling started...")
 
     fib_index = 0
 
