@@ -11,6 +11,7 @@ const TEST_ITEMS = [
 
 export default function Home() {
     const [query, setQuery] = useState('')
+    const [focused, setFocused] = useState(false)
 
     const results = query.trim()
         ? TEST_ITEMS.filter(item => item.toLowerCase().includes(query.toLowerCase()))
@@ -32,10 +33,12 @@ export default function Home() {
                                 placeholder="Search..."
                                 value={query}
                                 onChange={e => setQuery(e.target.value)}
+                                onFocus={() => setFocused(true)}
+                                onBlur={() => setFocused(false)}
                                 className="bg-transparent text-white placeholder-gray-300 text-sm outline-none w-full"
                             />
                         </div>
-                        {results.length > 0 && (
+                        {focused && results.length > 0 && (
                             <ul className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg z-10">
                                 {results.map(item => (
                                     <li
