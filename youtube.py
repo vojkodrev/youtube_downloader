@@ -12,7 +12,7 @@ async def get_live_video_id(channel_title=None, channel_id=None):
     if not channel_title and not channel_id:
         raise ValueError("at least one of channel_title or channel_id is required")
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, _get_live_video_id_sync, channel_title, channel_id)
 
 
@@ -48,7 +48,7 @@ def _get_live_video_id_sync(channel_title=None, channel_id=None):
 
 
 async def get_channel_title(channel_id):
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, _get_channel_title_sync, channel_id)
 
 
@@ -65,7 +65,7 @@ def get_video_url(video_id):
 
 
 async def download_live_from_start(url, download_folder="."):
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, _download_live_from_start_sync, url, download_folder)
 
 
@@ -137,10 +137,13 @@ def main():
         logger.bind(streamer="-").error(f"Output folder does not exist: {output_folder}")
         exit(1)
 
-    asyncio.run(asyncio.gather(*[
-        poll_and_download(channel_id=cid, download_folder=output_folder)
-        for cid in channel_ids
-    ]))
+    async def run():
+        await asyncio.gather(*[
+            poll_and_download(channel_id=cid, download_folder=output_folder)
+            for cid in channel_ids
+        ])
+
+    asyncio.run(run())
 
 
 if __name__ == "__main__":
