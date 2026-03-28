@@ -64,7 +64,12 @@ def get_video_url(video_id):
     return f"https://www.youtube.com/watch?v={video_id}"
 
 
-def download_live_from_start(url, download_folder="."):
+async def download_live_from_start(url, download_folder="."):
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, _download_live_from_start_sync, url, download_folder)
+
+
+def _download_live_from_start_sync(url, download_folder="."):
     ydl_opts = {
         "format": "bestvideo+bestaudio/best",
         # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
