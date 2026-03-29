@@ -74,14 +74,18 @@ func getVideos(streamsDir string) ([]Video, error) {
 	return videos, nil
 }
 
-func pollVideos(streamsDir string, videos *[]Video, videosMutex *sync.RWMutex) {
+func pollVideos(streamsDir string, videosMap *map[string]Video, videosMutex *sync.RWMutex) {
 	for {
 		fetched, err := getVideos(streamsDir)
 		if err != nil {
 			log.Println("error fetching videos:", err)
 		} else {
+			m := make(map[string]Video, len(fetched))
+			for _, v := range fetched {
+				m[v.ID] = v
+			}
 			videosMutex.Lock()
-			*videos = fetched
+			*videosMap = m
 			videosMutex.Unlock()
 			log.Println("loaded", len(fetched), "videos")
 		}
@@ -93,10 +97,10 @@ func main() {
 	cfg := loadConfig()
 	log.Println("streams dir:", cfg.StreamsDir)
 
-	var videos []Video
+	videosMap := make(map[string]Video)
 	var videosMutex sync.RWMutex
 
-	go pollVideos(cfg.StreamsDir, &videos, &videosMutex)
+	go pollVideos(cfg.StreamsDir, &videosMap, &videosMutex)
 
 	r := gin.Default()
 
@@ -107,14 +111,13 @@ func main() {
 	r.GET("/video/:id", func(c *gin.Context) {
 		id := c.Param("id")
 		videosMutex.RLock()
-		defer videosMutex.RUnlock()
-		for _, v := range videos {
-			if v.ID == id {
-				c.File(cfg.StreamsDir + "/" + v.Filename)
-				return
-			}
+		v, ok := videosMap[id]
+		videosMutex.RUnlock()
+		if !ok {
+			c.Status(404)
+			return
 		}
-		c.Status(404)
+		c.File(cfg.StreamsDir + "/" + v.Filename)
 	})
 
 	r.Run(":8080")
