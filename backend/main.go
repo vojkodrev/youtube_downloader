@@ -72,6 +72,58 @@ func getVideos(streamsDir string) ([]Video, error) {
 	return videos, nil
 }
 
+func diffVideos(videos, previousVideos []Video) (added, removed []Video) {
+	prevMap := make(map[string]struct{})
+	for _, v := range previousVideos {
+		prevMap[v.ID] = struct{}{}
+	}
+
+	currMap := make(map[string]struct{})
+	for _, v := range videos {
+		currMap[v.ID] = struct{}{}
+	}
+
+	for _, v := range videos {
+		if _, exists := prevMap[v.ID]; !exists {
+			added = append(added, v)
+		}
+	}
+
+	for _, v := range previousVideos {
+		if _, exists := currMap[v.ID]; !exists {
+			removed = append(removed, v)
+		}
+	}
+
+	return added, removed
+}
+
+func registerVideos(r *gin.Engine, streamsDir string) {
+	var previousVideos []Video
+
+	for {
+		videos, err := getVideos(streamsDir)
+		if err != nil {
+			log.Println("error fetching videos:", err)
+		} else {
+			added, removed := diffVideos(videos, previousVideos)
+			previousVideos = videos
+
+			for _, v := range removed {
+				log.Println("video removed:", v.Name)
+			}
+
+			for _, v := range added {
+				log.Println("video added:", v.Name)
+				r.GET("/video/"+v.ID, func(c *gin.Context) {
+					c.File(streamsDir + "/" + v.Filename)
+				})
+			}
+		}
+		time.Sleep(1 * time.Minute)
+	}
+}
+
 func main() {
 	cfg := loadConfig()
 	log.Println("streams dir:", cfg.StreamsDir)
