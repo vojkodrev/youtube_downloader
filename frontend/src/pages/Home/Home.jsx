@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import Logo from '@/components/frontend/Logo/Logo'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
 
 const API_URL = import.meta.env.VITE_API_URL
 
 export default function Home() {
+    const { id } = useParams()
+    const navigate = useNavigate()
     const [videos, setVideos] = useState([])
     const [selectedVideo, setSelectedVideo] = useState(null)
     const [duration, setDuration] = useState(null)
@@ -14,9 +17,19 @@ export default function Home() {
             const res = await fetch(`${API_URL}/videos`)
             const data = await res.json()
             setVideos(data)
-            if (data.length > 0) setSelectedVideo(data[0])
         })()
     }, [])
+
+    useEffect(() => {
+        if (videos.length === 0) return
+        if (!id) {
+            navigate(`/watch/${videos[0].id}`, { replace: true })
+            return
+        }
+        const match = videos.find(v => v.id === id)
+        setSelectedVideo(match)
+        setDuration(null)
+    }, [id, videos])
 
     return (
         <div className="flex flex-col h-[125rem]">
@@ -62,25 +75,25 @@ export default function Home() {
                 {/* Sidebar */}
                 <div className="h-[31.25rem] md:h-auto md:w-[28rem] bg-gray-50 overflow-y-auto">
                     {videos.map(video => (
-                        <div
+                        <Link
                             key={video.id}
+                            to={`/watch/${video.id}`}
                             title={video.name}
-                            onClick={() => { setSelectedVideo(video); setDuration(null) }}
-                            className={`flex gap-2 p-2 cursor-pointer hover:bg-gray-100 ${selectedVideo?.id === video.id ? 'bg-gray-200' : ''}`}
+                            className={`flex gap-2 p-2 hover:bg-gray-100 ${selectedVideo?.id === video.id ? 'bg-gray-200' : ''}`}
                         >
                             <img
                                 src={`${API_URL}/thumbnail/${video.id}`}
                                 className="w-36 h-20 object-cover rounded flex-shrink-0 bg-gray-300"
                             />
                             <div className="flex flex-col justify-center min-w-0">
-                                <p className="text-sm font-medium truncate">
+                                <p className="text-sm font-medium truncate text-gray-900">
                                     {video.name}
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
                                     {new Date(video.date).toLocaleString()}
                                 </p>
                             </div>
-                        </div>
+                        </Link>
                     ))}
                 </div>
 
