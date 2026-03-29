@@ -75,13 +75,15 @@ func getVideos(streamsDir string) ([]Video, error) {
 			thumb = thumbFilename
 		}
 
-		videos = append(videos, Video{
+		v := Video{
 			ID:        uuid.NewSHA1(uuid.NameSpaceURL, []byte(entry.Name())).String(),
 			Filename:  entry.Name(),
 			Name:      name,
 			Date:      info.ModTime(),
 			Thumbnail: thumb,
-		})
+		}
+		log.Printf("video: id=%s name=%s thumbnail=%s date=%s", v.ID, v.Name, v.Thumbnail, v.Date.Format("2006-01-02 15:04:05"))
+		videos = append(videos, v)
 	}
 
 	sort.Slice(videos, func(i, j int) bool {
