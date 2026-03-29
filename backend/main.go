@@ -35,11 +35,10 @@ func loadConfig() Config {
 }
 
 type Video struct {
-	ID        string    `json:"id"`
-	Filename  string    `json:"filename"`
-	Name      string    `json:"name"`
-	Date      time.Time `json:"date"`
-	Thumbnail string    `json:"thumbnail_path"`
+	ID       string    `json:"id"`
+	Filename string    `json:"filename"`
+	Name     string    `json:"name"`
+	Date     time.Time `json:"date"`
 }
 
 type VideoResponse struct {
@@ -69,20 +68,13 @@ func getVideos(streamsDir string) ([]Video, error) {
 		}
 
 		name := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
-		thumbFilename := thumbnailFilename(name)
-		thumb := ""
-		if _, err := os.Stat(filepath.Join(streamsDir, thumbFilename)); err == nil {
-			thumb = thumbFilename
-		}
-
 		v := Video{
-			ID:        uuid.NewSHA1(uuid.NameSpaceURL, []byte(entry.Name())).String(),
-			Filename:  entry.Name(),
-			Name:      name,
-			Date:      info.ModTime(),
-			Thumbnail: thumb,
+			ID:       uuid.NewSHA1(uuid.NameSpaceURL, []byte(entry.Name())).String(),
+			Filename: entry.Name(),
+			Name:     name,
+			Date:     info.ModTime(),
 		}
-		log.Printf("video: id=%s name=%s thumbnail=%s date=%s", v.ID, v.Name, v.Thumbnail, v.Date.Format("2006-01-02 15:04:05"))
+		log.Printf("video: id=%s name=%s date=%s", v.ID, v.Name, v.Date.Format("2006-01-02 15:04:05"))
 		videos = append(videos, v)
 	}
 
@@ -135,11 +127,11 @@ func pollThumbnails(streamsDir string, videos *[]Video, videosMutex *sync.RWMute
 		videosMutex.RUnlock()
 
 		for _, v := range current {
-			if v.Thumbnail != "" {
+			thumbPath := filepath.Join(streamsDir, thumbnailFilename(v.Name))
+			if _, err := os.Stat(thumbPath); err == nil {
 				continue
 			}
 			videoPath := filepath.Join(streamsDir, v.Filename)
-			thumbPath := filepath.Join(streamsDir, thumbnailFilename(v.Name))
 			if err := saveThumbnail(videoPath, thumbPath); err != nil {
 				log.Println("error saving thumbnail for", v.Name, ":", err)
 			} else {
@@ -195,11 +187,16 @@ func main() {
 		videosMutex.RLock()
 		v, ok := videosMap[id]
 		videosMutex.RUnlock()
-		if !ok || v.Thumbnail == "" {
+		if !ok {
 			c.Status(404)
 			return
 		}
-		c.File(filepath.Join(cfg.StreamsDir, v.Thumbnail))
+		thumbPath := filepath.Join(cfg.StreamsDir, thumbnailFilename(v.Name))
+		if _, err := os.Stat(thumbPath); err != nil {
+			c.Status(404)
+			return
+		}
+		c.File(thumbPath)
 	})
 
 	r.Run(":8080")
