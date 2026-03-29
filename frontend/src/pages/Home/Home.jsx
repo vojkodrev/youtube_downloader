@@ -8,12 +8,11 @@ export default function Home() {
     const [videos, setVideos] = useState([])
 
     useEffect(() => {
-        async function loadVideos() {
+        (async () => {
             const res = await fetch(`${API_URL}/videos`)
             const data = await res.json()
             setVideos(data)
-        }
-        loadVideos()
+        })()
     }, [])
 
     return (
@@ -39,12 +38,12 @@ export default function Home() {
                 </div>
 
                 {/* Sidebar */}
-                <div className="h-[31.25rem] md:h-auto md:w-[26rem] bg-gray-50 overflow-y-auto">
+                <div className="h-[31.25rem] md:h-auto md:w-[28rem] bg-gray-50 overflow-y-auto">
                     {videos.map(video => (
                         <div key={video.id} title={video.name} className="flex gap-2 p-2 hover:bg-gray-100 cursor-pointer">
                             <img
                                 src={`${API_URL}/thumbnail/${video.id}`}
-                                className="w-24 h-16 object-cover rounded flex-shrink-0 bg-gray-300"
+                                className="w-36 h-20 object-cover rounded flex-shrink-0 bg-gray-300"
                             />
                             <div className="flex flex-col justify-center min-w-0">
                                 <p

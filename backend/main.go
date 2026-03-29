@@ -74,7 +74,7 @@ func getVideos(streamsDir string) ([]Video, error) {
 			Name:     name,
 			Date:     info.ModTime(),
 		}
-		log.Printf("video: id=%s name=%s date=%s", v.ID, v.Name, v.Date.Format("2006-01-02 15:04:05"))
+		// log.Printf("video: id=%s name=%s date=%s", v.ID, v.Name, v.Date.Format("2006-01-02 15:04:05"))
 		videos = append(videos, v)
 	}
 
@@ -126,18 +126,24 @@ func pollThumbnails(streamsDir string, videos *[]Video, videosMutex *sync.RWMute
 		current := *videos
 		videosMutex.RUnlock()
 
+		var wg sync.WaitGroup
 		for _, v := range current {
 			thumbPath := filepath.Join(streamsDir, thumbnailFilename(v.Name))
 			if _, err := os.Stat(thumbPath); err == nil {
 				continue
 			}
-			videoPath := filepath.Join(streamsDir, v.Filename)
-			if err := saveThumbnail(videoPath, thumbPath); err != nil {
-				log.Println("error saving thumbnail for", v.Name, ":", err)
-			} else {
-				log.Println("thumbnail generated for", v.Name)
-			}
+			wg.Add(1)
+			go func(v Video) {
+				defer wg.Done()
+				videoPath := filepath.Join(streamsDir, v.Filename)
+				if err := saveThumbnail(videoPath, thumbPath); err != nil {
+					log.Println("error saving thumbnail for", v.Name, ":", err)
+				} else {
+					log.Println("thumbnail generated for", v.Name)
+				}
+			}(v)
 		}
+		wg.Wait()
 		time.Sleep(1 * time.Minute)
 	}
 }
