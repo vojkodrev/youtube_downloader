@@ -9,7 +9,6 @@ export default function Home() {
     const { id } = useParams()
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
-
     const [videos, setVideos] = useState([])
     const [selectedVideo, setSelectedVideo] = useState(null)
     const [duration, setDuration] = useState(null)
@@ -18,7 +17,11 @@ export default function Home() {
         (async () => {
             const res = await fetch(`${API_URL}/videos`)
             const data = await res.json()
-            setVideos(data)
+            const dataWithTimes = data.map(v => ({
+                ...v,
+                savedTime: localStorage.getItem(`time_${v.id}`)
+            }))
+            setVideos(dataWithTimes)
         })()
     }, [])
 
@@ -27,6 +30,13 @@ export default function Home() {
         if (!id) {
             navigate(`/watch/${videos[0].id}`, { replace: true })
             return
+        }
+        if (!searchParams.get('t')) {
+            const savedTime = Math.floor(parseFloat(localStorage.getItem(`time_${id}`)))
+            if (savedTime && savedTime > 10) {
+                navigate(`/watch/${id}?t=${savedTime}`, { replace: true })
+                return
+            }
         }
         const match = videos.find(v => v.id === id)
         setSelectedVideo(match)
@@ -54,6 +64,12 @@ export default function Home() {
                                 src={`${API_URL}/video/${selectedVideo.id}`}
                                 controls
                                 autoPlay
+                                onTimeUpdate={e => {
+                                    const t = e.target.currentTime
+                                    if (Math.floor(t) % 5 !== 0) return
+                                    localStorage.setItem(`time_${selectedVideo.id}`, Math.floor(t))
+                                    setVideos(prev => prev.map(v => v.id === selectedVideo.id ? { ...v, savedTime: t } : v))
+                                }}
                                 onLoadedMetadata={e => {
                                     setDuration(e.target.duration)
                                     const t = searchParams.get('t')
@@ -83,7 +99,7 @@ export default function Home() {
                     {videos.map(video => (
                         <Link
                             key={video.id}
-                            to={`/watch/${video.id}`}
+                            to={video.savedTime ? `/watch/${video.id}?t=${video.savedTime}` : `/watch/${video.id}`}
                             title={video.name}
                             className={`flex gap-2 p-2 hover:bg-gray-100 ${selectedVideo?.id === video.id ? 'bg-gray-200' : ''}`}
                         >
