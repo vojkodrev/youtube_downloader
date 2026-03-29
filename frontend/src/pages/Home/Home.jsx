@@ -64,6 +64,7 @@ export default function Home() {
                                 src={`${API_URL}/video/${selectedVideo.id}`}
                                 controls
                                 autoPlay
+                                playsInline
                                 onTimeUpdate={e => {
                                     const t = Math.floor(e.target.currentTime)
                                     if (t % 5 !== 0) return
