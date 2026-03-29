@@ -40,8 +40,6 @@ type Video struct {
 }
 
 func getVideos(streamsDir string) ([]Video, error) {
-	// [download] Destination: d:\streams\CENTRIST DEMS GO TO WAR WITH HASAN, THIRD WAY CIVIL WAR, ALSO BIG PV EVENT W⧸ SENATE CANDIDATES.f299.mp4
-	// [download] Destination: d:\streams\CENTRIST DEMS GO TO WAR WITH HASAN, THIRD WAY CIVIL WAR, ALSO BIG PV EVENT W⧸ SENATE CANDIDATES.f140.mp4
 	entries, err := os.ReadDir(streamsDir)
 	if err != nil {
 		return nil, err
@@ -50,6 +48,9 @@ func getVideos(streamsDir string) ([]Video, error) {
 	var videos []Video
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.EqualFold(filepath.Ext(entry.Name()), ".mp4") {
+			continue
+		}
+		if strings.HasSuffix(entry.Name(), "f299.mp4") || strings.HasSuffix(entry.Name(), "f140.mp4") {
 			continue
 		}
 
