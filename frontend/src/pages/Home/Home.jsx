@@ -1,7 +1,21 @@
+import { useState, useEffect } from 'react'
 import Logo from '@/components/frontend/Logo/Logo'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 export default function Home() {
+    const [videos, setVideos] = useState([])
+
+    useEffect(() => {
+        async function loadVideos() {
+            const res = await fetch(`${API_URL}/videos`)
+            const data = await res.json()
+            setVideos(data)
+        }
+        loadVideos()
+    }, [])
+
     return (
         <div className="flex flex-col h-[125rem]">
 

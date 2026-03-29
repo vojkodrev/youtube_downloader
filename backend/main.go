@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
@@ -37,6 +38,12 @@ type Video struct {
 	Filename string    `json:"filename"`
 	Name     string    `json:"name"`
 	Date     time.Time `json:"date"`
+}
+
+type VideoResponse struct {
+	ID   string    `json:"id"`
+	Name string    `json:"name"`
+	Date time.Time `json:"date"`
 }
 
 func getVideos(streamsDir string) ([]Video, error) {
@@ -105,6 +112,7 @@ func main() {
 	go pollVideos(cfg.StreamsDir, &videos, &videosMap, &videosMutex)
 
 	r := gin.Default()
+	r.Use(cors.Default())
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})
@@ -113,7 +121,11 @@ func main() {
 	r.GET("/videos", func(c *gin.Context) {
 		videosMutex.RLock()
 		defer videosMutex.RUnlock()
-		c.JSON(200, videos)
+		response := make([]VideoResponse, len(videos))
+		for i, v := range videos {
+			response[i] = VideoResponse{ID: v.ID, Name: v.Name, Date: v.Date}
+		}
+		c.JSON(200, response)
 	})
 
 	r.GET("/video/:id", func(c *gin.Context) {

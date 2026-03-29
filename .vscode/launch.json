@@ -15,6 +15,13 @@
             "mode": "auto",
             "program": "${workspaceFolder}/backend/main.go",
             "cwd": "${workspaceFolder}/backend"
+        },
+        {
+            "name": "Frontend",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/frontend/src"
         }
     ]
 }
