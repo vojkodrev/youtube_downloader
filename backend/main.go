@@ -35,10 +35,10 @@ func loadConfig() Config {
 }
 
 type Video struct {
-	ID            string    `json:"id"`
-	Filename      string    `json:"filename"`
-	Name          string    `json:"name"`
-	Date          time.Time `json:"date"`
+	ID        string    `json:"id"`
+	Filename  string    `json:"filename"`
+	Name      string    `json:"name"`
+	Date      time.Time `json:"date"`
 	Thumbnail string    `json:"thumbnail_path"`
 }
 
@@ -68,11 +68,19 @@ func getVideos(streamsDir string) ([]Video, error) {
 			continue
 		}
 
+		name := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
+		thumbFilename := thumbnailFilename(name)
+		thumb := ""
+		if _, err := os.Stat(filepath.Join(streamsDir, thumbFilename)); err == nil {
+			thumb = thumbFilename
+		}
+
 		videos = append(videos, Video{
-			ID:       uuid.NewSHA1(uuid.NameSpaceURL, []byte(entry.Name())).String(),
-			Filename: entry.Name(),
-			Name:     strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name())),
-			Date:     info.ModTime(),
+			ID:        uuid.NewSHA1(uuid.NameSpaceURL, []byte(entry.Name())).String(),
+			Filename:  entry.Name(),
+			Name:      name,
+			Date:      info.ModTime(),
+			Thumbnail: thumb,
 		})
 	}
 
@@ -81,6 +89,10 @@ func getVideos(streamsDir string) ([]Video, error) {
 	})
 
 	return videos, nil
+}
+
+func thumbnailFilename(videoName string) string {
+	return videoName + ".jpg"
 }
 
 func saveThumbnail(videoPath, thumbnailPath string) error {
@@ -101,21 +113,36 @@ func pollVideos(streamsDir string, videos *[]Video, videosMap *map[string]Video,
 			log.Println("error fetching videos:", err)
 		} else {
 			m := make(map[string]Video, len(fetched))
-			for i, v := range fetched {
-				thumbnailFilename := v.Name + ".jpg"
-				thumbnailPath := filepath.Join(streamsDir, thumbnailFilename)
-				if err := saveThumbnail(filepath.Join(streamsDir, v.Filename), thumbnailPath); err != nil {
-					log.Println("error saving thumbnail for", v.Name, ":", err)
-				} else {
-					fetched[i].Thumbnail = thumbnailFilename
-				}
-				m[v.ID] = fetched[i]
+			for _, v := range fetched {
+				m[v.ID] = v
 			}
 			videosMutex.Lock()
 			*videos = fetched
 			*videosMap = m
 			videosMutex.Unlock()
 			log.Println("loaded", len(fetched), "videos")
+		}
+		time.Sleep(1 * time.Minute)
+	}
+}
+
+func pollThumbnails(streamsDir string, videos *[]Video, videosMutex *sync.RWMutex) {
+	for {
+		videosMutex.RLock()
+		current := *videos
+		videosMutex.RUnlock()
+
+		for _, v := range current {
+			if v.Thumbnail != "" {
+				continue
+			}
+			videoPath := filepath.Join(streamsDir, v.Filename)
+			thumbPath := filepath.Join(streamsDir, thumbnailFilename(v.Name))
+			if err := saveThumbnail(videoPath, thumbPath); err != nil {
+				log.Println("error saving thumbnail for", v.Name, ":", err)
+			} else {
+				log.Println("thumbnail generated for", v.Name)
+			}
 		}
 		time.Sleep(1 * time.Minute)
 	}
@@ -130,6 +157,7 @@ func main() {
 	var videosMutex sync.RWMutex
 
 	go pollVideos(cfg.StreamsDir, &videos, &videosMap, &videosMutex)
+	go pollThumbnails(cfg.StreamsDir, &videos, &videosMutex)
 
 	r := gin.Default()
 	r.Use(cors.Default())
