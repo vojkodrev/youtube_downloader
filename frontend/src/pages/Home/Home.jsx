@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Logo from '@/components/frontend/Logo/Logo'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
 
@@ -7,7 +7,9 @@ const API_URL = import.meta.env.VITE_API_URL
 
 export default function Home() {
     const { id } = useParams()
+    const [searchParams] = useSearchParams()
     const navigate = useNavigate()
+
     const [videos, setVideos] = useState([])
     const [selectedVideo, setSelectedVideo] = useState(null)
     const [duration, setDuration] = useState(null)
@@ -52,7 +54,11 @@ export default function Home() {
                                 src={`${API_URL}/video/${selectedVideo.id}`}
                                 controls
                                 autoPlay
-                                onLoadedMetadata={e => setDuration(e.target.duration)}
+                                onLoadedMetadata={e => {
+                                    setDuration(e.target.duration)
+                                    const t = searchParams.get('t')
+                                    if (t) e.target.currentTime = parseFloat(t)
+                                }}
                                 className="w-full h-full"
                             />
                         )}
