@@ -91,9 +91,23 @@ async def download_live_from_start(url, download_folder="."):
     await loop.run_in_executor(None, download_live_from_start_sync)
 
 
-async def poll_and_download(channel_title=None, channel_id=None, download_folder="."):
-    FIBONACCI_INTERVALS = [5, 8, 13, 21, 30]
+class FibonacciSleep:
+    INTERVALS = [5, 8, 13, 21, 30]
 
+    def __init__(self):
+        self._index = 0
+
+    async def sleep(self):
+        interval = self.INTERVALS[self._index]
+        self._index = min(self._index + 1, len(self.INTERVALS) - 1)
+        await asyncio.sleep(interval * 60)
+        return interval
+
+    def reset(self):
+        self._index = 0
+
+
+async def poll_and_download(channel_title=None, channel_id=None, download_folder="."):
     if channel_id and not channel_title:
         channel_title = await get_channel_title(channel_id)
 
@@ -102,28 +116,28 @@ async def poll_and_download(channel_title=None, channel_id=None, download_folder
 
     log.info(f"Resolved channel ID '{channel_id}'. Polling started...")
 
-    fib_index = 0
+    sleep_offline = FibonacciSleep()
+    sleep_err = FibonacciSleep()
 
     while True:
         try:
+            sleep_err.reset()
             video_id = await get_live_video_id(channel_title, channel_id)
 
             if video_id:
-                fib_index = 0
+                sleep_offline.reset()
                 url = get_video_url(video_id)
                 log.info(f"Streamer is LIVE! Downloading from: {url}")
                 await download_live_from_start(url, download_folder)
                 log.info("Download finished. Resuming poll...")
             else:
-                interval = FIBONACCI_INTERVALS[fib_index]
+                interval = await sleep_offline.sleep()
                 log.info(
                     f"Streamer is offline. Checking again in {interval} minutes..."
                 )
-                await asyncio.sleep(interval * 60)
-                fib_index = min(fib_index + 1, len(FIBONACCI_INTERVALS) - 1)
         except Exception as e:
-            log.error(f"Error: {e}. Retrying in 1 minute...")
-            await asyncio.sleep(60)
+            interval = await sleep_err.sleep()
+            log.error(f"Error: {e}. Retrying in {interval} minutes...")
 
 
 def main():
