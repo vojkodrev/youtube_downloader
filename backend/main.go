@@ -12,6 +12,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	ffmpeg "github.com/u2takey/ffmpeg-go"
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,10 +35,11 @@ func loadConfig() Config {
 }
 
 type Video struct {
-	ID       string    `json:"id"`
-	Filename string    `json:"filename"`
-	Name     string    `json:"name"`
-	Date     time.Time `json:"date"`
+	ID            string    `json:"id"`
+	Filename      string    `json:"filename"`
+	Name          string    `json:"name"`
+	Date          time.Time `json:"date"`
+	Thumbnail string    `json:"thumbnail_path"`
 }
 
 type VideoResponse struct {
@@ -81,6 +83,17 @@ func getVideos(streamsDir string) ([]Video, error) {
 	return videos, nil
 }
 
+func saveThumbnail(videoPath, thumbnailPath string) error {
+	if _, err := os.Stat(thumbnailPath); err == nil {
+		return nil
+	}
+
+	return ffmpeg.Input(videoPath, ffmpeg.KwArgs{"ss": 10}).
+		Output(thumbnailPath, ffmpeg.KwArgs{"vframes": 1, "format": "image2"}).
+		OverWriteOutput().
+		Run()
+}
+
 func pollVideos(streamsDir string, videos *[]Video, videosMap *map[string]Video, videosMutex *sync.RWMutex) {
 	for {
 		fetched, err := getVideos(streamsDir)
@@ -88,8 +101,15 @@ func pollVideos(streamsDir string, videos *[]Video, videosMap *map[string]Video,
 			log.Println("error fetching videos:", err)
 		} else {
 			m := make(map[string]Video, len(fetched))
-			for _, v := range fetched {
-				m[v.ID] = v
+			for i, v := range fetched {
+				thumbnailFilename := v.Name + ".jpg"
+				thumbnailPath := filepath.Join(streamsDir, thumbnailFilename)
+				if err := saveThumbnail(filepath.Join(streamsDir, v.Filename), thumbnailPath); err != nil {
+					log.Println("error saving thumbnail for", v.Name, ":", err)
+				} else {
+					fetched[i].Thumbnail = thumbnailFilename
+				}
+				m[v.ID] = fetched[i]
 			}
 			videosMutex.Lock()
 			*videos = fetched
