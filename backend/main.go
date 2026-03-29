@@ -188,5 +188,17 @@ func main() {
 		c.File(cfg.StreamsDir + "/" + v.Filename)
 	})
 
+	r.GET("/thumbnail/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		videosMutex.RLock()
+		v, ok := videosMap[id]
+		videosMutex.RUnlock()
+		if !ok || v.Thumbnail == "" {
+			c.Status(404)
+			return
+		}
+		c.File(filepath.Join(cfg.StreamsDir, v.Thumbnail))
+	})
+
 	r.Run(":8080")
 }
