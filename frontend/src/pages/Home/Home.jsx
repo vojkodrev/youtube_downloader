@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Logo from '@/components/frontend/Logo/Logo'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
@@ -10,6 +10,8 @@ export default function Home() {
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
     const [videos, setVideos] = useState([])
+    const videosRef = useRef([])
+    const [videosLoaded, setVideosLoaded] = useState(false)
     const [selectedVideo, setSelectedVideo] = useState(null)
     const [duration, setDuration] = useState(null)
 
@@ -21,14 +23,17 @@ export default function Home() {
                 ...v,
                 savedTime: localStorage.getItem(`time_${v.id}`)
             }))
+            videosRef.current = dataWithTimes
             setVideos(dataWithTimes)
+            setVideosLoaded(true)
         })()
     }, [])
 
     useEffect(() => {
-        if (videos.length === 0) return
+        if (!videosLoaded) return
         if (!id) {
-            navigate(`/watch/${videos[0].id}`, { replace: true })
+            if (videosRef.current.length > 0)
+                navigate(`/watch/${videosRef.current[0].id}`, { replace: true })
             return
         }
         if (!searchParams.get('t')) {
@@ -38,10 +43,10 @@ export default function Home() {
                 return
             }
         }
-        const match = videos.find(v => v.id === id)
+        const match = videosRef.current.find(v => v.id === id)
         setSelectedVideo(match)
         setDuration(null)
-    }, [id, videos])
+    }, [id, videosLoaded])
 
     return (
         <div className="flex flex-col">
@@ -65,10 +70,14 @@ export default function Home() {
                                 controls
                                 autoPlay
                                 onTimeUpdate={e => {
-                                    const t = e.target.currentTime
-                                    if (Math.floor(t) % 5 !== 0) return
-                                    localStorage.setItem(`time_${selectedVideo.id}`, Math.floor(t))
-                                    setVideos(prev => prev.map(v => v.id === selectedVideo.id ? { ...v, savedTime: t } : v))
+                                    const t = Math.floor(e.target.currentTime)
+                                    if (t % 5 !== 0) return
+                                    localStorage.setItem(`time_${selectedVideo.id}`, t)
+                                    setVideos(prev => {
+                                        const updated = prev.map(v => v.id === selectedVideo.id ? { ...v, savedTime: t } : v)
+                                        videosRef.current = updated
+                                        return updated
+                                    })
                                 }}
                                 onLoadedMetadata={e => {
                                     setDuration(e.target.duration)
