@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -72,53 +73,16 @@ func getVideos(streamsDir string) ([]Video, error) {
 	return videos, nil
 }
 
-func diffVideos(videos, previousVideos []Video) (added, removed []Video) {
-	prevMap := make(map[string]struct{})
-	for _, v := range previousVideos {
-		prevMap[v.ID] = struct{}{}
-	}
-
-	currMap := make(map[string]struct{})
-	for _, v := range videos {
-		currMap[v.ID] = struct{}{}
-	}
-
-	for _, v := range videos {
-		if _, exists := prevMap[v.ID]; !exists {
-			added = append(added, v)
-		}
-	}
-
-	for _, v := range previousVideos {
-		if _, exists := currMap[v.ID]; !exists {
-			removed = append(removed, v)
-		}
-	}
-
-	return added, removed
-}
-
-func registerVideos(r *gin.Engine, streamsDir string) {
-	var previousVideos []Video
-
+func pollVideos(streamsDir string, videos *[]Video, videosMutex *sync.RWMutex) {
 	for {
-		videos, err := getVideos(streamsDir)
+		fetched, err := getVideos(streamsDir)
 		if err != nil {
 			log.Println("error fetching videos:", err)
 		} else {
-			added, removed := diffVideos(videos, previousVideos)
-			previousVideos = videos
-
-			for _, v := range removed {
-				log.Println("video removed:", v.Name)
-			}
-
-			for _, v := range added {
-				log.Println("video added:", v.Name)
-				r.GET("/video/"+v.ID, func(c *gin.Context) {
-					c.File(streamsDir + "/" + v.Filename)
-				})
-			}
+			videosMutex.Lock()
+			*videos = fetched
+			videosMutex.Unlock()
+			log.Println("loaded", len(fetched), "videos")
 		}
 		time.Sleep(1 * time.Minute)
 	}
@@ -128,16 +92,28 @@ func main() {
 	cfg := loadConfig()
 	log.Println("streams dir:", cfg.StreamsDir)
 
-	videos, err := getVideos(cfg.StreamsDir)
-	if err != nil {
-		log.Fatal("could not load videos:", err)
-	}
-	log.Println("loaded", len(videos), "videos")
+	var videos []Video
+	var videosMutex sync.RWMutex
+
+	go pollVideos(cfg.StreamsDir, &videos, &videosMutex)
 
 	r := gin.Default()
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})
+	})
+
+	r.GET("/video/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		videosMutex.RLock()
+		defer videosMutex.RUnlock()
+		for _, v := range videos {
+			if v.ID == id {
+				c.File(cfg.StreamsDir + "/" + v.Filename)
+				return
+			}
+		}
+		c.Status(404)
 	})
 
 	r.Run(":8080")
