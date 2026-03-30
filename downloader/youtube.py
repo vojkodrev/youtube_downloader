@@ -92,14 +92,16 @@ async def download_live_from_start(url, download_folder="."):
 
 
 class FibonacciSleep:
-    INTERVALS = [5, 8, 13, 21, 30]
+    SHORT = [5, 8, 13, 21, 30]
+    LONG = [20, 30, 45]
 
-    def __init__(self):
+    def __init__(self, intervals=None):
+        self._intervals = intervals or self.SHORT
         self._index = 0
 
     async def sleep(self):
-        interval = self.INTERVALS[self._index]
-        self._index = min(self._index + 1, len(self.INTERVALS) - 1)
+        interval = self._intervals[self._index]
+        self._index = min(self._index + 1, len(self._intervals) - 1)
         await asyncio.sleep(interval * 60)
         return interval
 
@@ -116,12 +118,11 @@ async def poll_and_download(channel_title=None, channel_id=None, download_folder
 
     log.info(f"Resolved channel ID '{channel_id}'. Polling started...")
 
-    sleep_offline = FibonacciSleep()
-    sleep_err = FibonacciSleep()
+    sleep_offline = FibonacciSleep(FibonacciSleep.LONG)
+    sleep_err = FibonacciSleep(FibonacciSleep.SHORT)
 
     while True:
         try:
-            sleep_err.reset()
             video_id = await get_live_video_id(channel_title, channel_id)
 
             if video_id:
@@ -129,6 +130,7 @@ async def poll_and_download(channel_title=None, channel_id=None, download_folder
                 url = get_video_url(video_id)
                 log.info(f"Streamer is LIVE! Downloading from: {url}")
                 await download_live_from_start(url, download_folder)
+                sleep_err.reset()
                 log.info("Download finished. Resuming poll...")
             else:
                 interval = await sleep_offline.sleep()
@@ -141,7 +143,7 @@ async def poll_and_download(channel_title=None, channel_id=None, download_folder
 
 
 def main():
-    load_dotenv()
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
     with open(os.path.join(os.path.dirname(__file__), "config.toml"), "rb") as f:
         config = tomllib.load(f)
