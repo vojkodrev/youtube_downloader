@@ -57,7 +57,7 @@ export default function Home() {
 
                 {/* Left: video content + info panel */}
                 <div className="flex flex-col md:flex-1">
-                    <div className="h-[25rem] md:h-[45rem] bg-black">
+                    <div className="bg-black">
                         {selectedVideo && (
                             <video
                                 key={selectedVideo.id}
@@ -68,6 +68,7 @@ export default function Home() {
                                 onTimeUpdate={e => {
                                     const t = Math.floor(e.target.currentTime)
                                     if (t % 5 !== 0) return
+                                    if (t === parseInt(searchParams.get('t'))) return
                                     localStorage.setItem(`time_${selectedVideo.id}`, t)
                                     setVideos(prev => prev.map(v => v.id === selectedVideo.id ? { ...v, savedTime: t } : v))
                                 }}
@@ -76,7 +77,7 @@ export default function Home() {
                                     const t = searchParams.get('t')
                                     if (t) e.target.currentTime = parseFloat(t)
                                 }}
-                                className="w-full h-full"
+                                className="w-full"
                             />
                         )}
                     </div>
@@ -96,7 +97,7 @@ export default function Home() {
                 </div>
 
                 {/* Sidebar */}
-                <div className="h-[31.25rem] md:h-auto md:w-[28rem] bg-gray-50 overflow-y-auto">
+                <div className="md:w-[28rem] bg-gray-50">
                     {videos.map(video => (
                         <Link
                             key={video.id}
