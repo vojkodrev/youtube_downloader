@@ -8,7 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL
 
 export default function Home() {
     const { id } = useParams()
-    const [searchParams] = useSearchParams()
+    const [searchParams, setSearchParams] = useSearchParams()
     const navigate = useNavigate()
     const [videos, setVideos] = useState([])
     const [playlists, setPlaylists] = useState([])
@@ -96,6 +96,7 @@ export default function Home() {
                                     if (t % 5 !== 0) return
                                     if (t === parseInt(searchParams.get('t'))) return
                                     localStorage.setItem(`time_${selectedVideo.id}`, t)
+                                    setSearchParams({ t }, { replace: true })
                                     setVideos(prev => {
                                         const v = prev.find(v => v.id === selectedVideo.id)
                                         if (v) v.savedTime = t
@@ -134,7 +135,7 @@ export default function Home() {
                             {playlist.map(video => (
                                 <VideoListItem
                                     key={video.id}
-                                    video={{ ...video, parts: 1 }}
+                                    video={video}
                                     isSelected={selectedVideo?.id === video.id}
                                 />
                             ))}
@@ -145,6 +146,7 @@ export default function Home() {
                             key={video.id}
                             video={video}
                             isSelected={selectedVideo?.id === video.id || playlist.some(v => v.id === video.id)}
+                            partsVisible
                         />
                     ))}
                 </div>
