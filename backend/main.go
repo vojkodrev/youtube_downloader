@@ -1,10 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -53,6 +58,7 @@ func getVideos(streamsDir string) ([]Video, error) {
 		return nil, err
 	}
 
+	partRe := regexp.MustCompile(`^(.+)part\d{2}\.mp4$`)
 	var videos []Video
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.EqualFold(filepath.Ext(entry.Name()), ".mp4") {
@@ -60,6 +66,12 @@ func getVideos(streamsDir string) ([]Video, error) {
 		}
 		if strings.HasSuffix(entry.Name(), "f299.mp4") || strings.HasSuffix(entry.Name(), "f140.mp4") {
 			continue
+		}
+
+		if m := partRe.FindStringSubmatch(entry.Name()); m != nil {
+			if _, err := os.Stat(filepath.Join(streamsDir, m[1]+".mp4")); err == nil {
+				continue
+			}
 		}
 
 		info, err := entry.Info()
@@ -94,13 +106,78 @@ func saveThumbnail(videoPath, thumbnailPath string) error {
 		return nil
 	}
 
-	return ffmpeg.Input(videoPath, ffmpeg.KwArgs{"ss": 10}).
+	cmd := ffmpeg.Input(videoPath, ffmpeg.KwArgs{"ss": 10}).
 		Output(thumbnailPath, ffmpeg.KwArgs{"vframes": 1, "format": "image2"}).
 		OverWriteOutput().
-		Run()
+		Compile()
+
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%w: %s", err, stderr.String())
+	}
+	return nil
 }
 
-func pollVideos(streamsDir string, videos *[]Video, videosMap *map[string]Video, videosMutex *sync.RWMutex) {
+func videoDuration(videoPath string) (float64, error) {
+	probeJSON, err := ffmpeg.Probe(videoPath)
+	if err != nil {
+		return 0, err
+	}
+	var probe struct {
+		Format struct {
+			Duration string `json:"duration"`
+		} `json:"format"`
+	}
+	if err := json.Unmarshal([]byte(probeJSON), &probe); err != nil {
+		return 0, err
+	}
+	return strconv.ParseFloat(probe.Format.Duration, 64)
+}
+
+func splitVideo(videoPath string) error {
+	const splitDuration = 10800
+
+	if regexp.MustCompile(`part\d{2}\.mp4$`).MatchString(videoPath) {
+		return nil
+	}
+
+	dur, err := videoDuration(videoPath)
+	if err != nil {
+		return fmt.Errorf("probe: %w", err)
+	}
+	if dur <= splitDuration {
+		return nil
+	}
+
+	ext := filepath.Ext(videoPath)
+	base := videoPath[:len(videoPath)-len(ext)]
+
+	cmd := ffmpeg.Input(videoPath).
+		Output(base+"part%02d.mp4", ffmpeg.KwArgs{
+			"c":                    "copy",
+			"segment_time":         fmt.Sprintf("%d", splitDuration),
+			"f":                    "segment",
+			"reset_timestamps":     1,
+			"segment_start_number": 1,
+		}).
+		OverWriteOutput().
+		Compile()
+
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%w: %s", err, stderr.String())
+	}
+
+	originalDir := filepath.Join(filepath.Dir(videoPath), "original")
+	if err := os.MkdirAll(originalDir, 0755); err != nil {
+		return err
+	}
+	return os.Rename(videoPath, filepath.Join(originalDir, filepath.Base(videoPath)))
+}
+
+func pollVideosWorker(streamsDir string, videos *[]Video, videosMap *map[string]Video, videosMutex *sync.RWMutex) {
 	for {
 		fetched, err := getVideos(streamsDir)
 		if err != nil {
@@ -120,7 +197,7 @@ func pollVideos(streamsDir string, videos *[]Video, videosMap *map[string]Video,
 	}
 }
 
-func pollThumbnails(streamsDir string, videos *[]Video, videosMutex *sync.RWMutex) {
+func saveThumbnailsWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWMutex) {
 	for {
 		videosMutex.RLock()
 		current := *videos
@@ -148,6 +225,24 @@ func pollThumbnails(streamsDir string, videos *[]Video, videosMutex *sync.RWMute
 	}
 }
 
+func splitVideosWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWMutex) {
+	for {
+		videosMutex.RLock()
+		current := *videos
+		videosMutex.RUnlock()
+
+		for _, v := range current {
+			videoPath := filepath.Join(streamsDir, v.Filename)
+			if err := splitVideo(videoPath); err != nil {
+				log.Println("error splitting", v.Name, ":", err)
+			} else {
+				log.Println("split finished for", v.Name)
+			}
+		}
+		time.Sleep(1 * time.Minute)
+	}
+}
+
 func main() {
 	cfg := loadConfig()
 	log.Println("streams dir:", cfg.StreamsDir)
@@ -156,8 +251,12 @@ func main() {
 	videosMap := make(map[string]Video)
 	var videosMutex sync.RWMutex
 
-	go pollVideos(cfg.StreamsDir, &videos, &videosMap, &videosMutex)
-	go pollThumbnails(cfg.StreamsDir, &videos, &videosMutex)
+	go pollVideosWorker(cfg.StreamsDir, &videos, &videosMap, &videosMutex)
+	go func() {
+		time.Sleep(5 * time.Second)
+		go saveThumbnailsWorker(cfg.StreamsDir, &videos, &videosMutex)
+		go splitVideosWorker(cfg.StreamsDir, &videos, &videosMutex)
+	}()
 
 	r := gin.Default()
 	r.Use(cors.Default())
