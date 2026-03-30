@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import Logo from '@/components/frontend/Logo/Logo'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
+import VideoListItem from '@/components/frontend/VideoListItem/VideoListItem'
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -18,12 +19,24 @@ export default function Home() {
     useEffect(() => {
         (async () => {
             const res = await fetch(`${API_URL}/videos`)
-            const data = await res.json()
-            const dataWithTimes = data.map(v => ({
-                ...v,
-                savedTime: localStorage.getItem(`time_${v.id}`)
-            }))
-            setVideos(dataWithTimes)
+            const data = (await res.json()).map((v, i) => ({ ...v, index: i }))
+
+            const partRe = /^(.+) part(\d{2})$/
+            const grouped = Object.groupBy(data, v => v.name.match(partRe)?.[1] ?? v.name)
+
+            const merged = Object.entries(grouped).map(([base, items]) => {
+                const primary = items.find(v => v.name.match(partRe)?.[2] === '01') ?? items[0]
+                return {
+                    ...primary,
+                    name: base,
+                    parts: items.length,
+                    savedTime: localStorage.getItem(`time_${primary.id}`)
+                }
+            })
+
+            merged.sort((a, b) => a.index - b.index)
+
+            setVideos(merged)
         })()
     }, [])
 
@@ -99,25 +112,11 @@ export default function Home() {
                 {/* Sidebar */}
                 <div className="md:w-[28rem] bg-gray-50">
                     {videos.map(video => (
-                        <Link
+                        <VideoListItem
                             key={video.id}
-                            to={video.savedTime ? `/watch/${video.id}?t=${video.savedTime}` : `/watch/${video.id}`}
-                            title={video.name}
-                            className={`flex gap-2 p-2 hover:bg-gray-100 ${selectedVideo?.id === video.id ? 'bg-gray-200' : ''}`}
-                        >
-                            <img
-                                src={`${API_URL}/thumbnail/${video.id}`}
-                                className="w-36 h-20 object-cover rounded flex-shrink-0 bg-gray-300"
-                            />
-                            <div className="flex flex-col justify-center min-w-0">
-                                <p className="text-sm font-medium truncate text-gray-900">
-                                    {video.name}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    {new Date(video.date).toLocaleString()}
-                                </p>
-                            </div>
-                        </Link>
+                            video={video}
+                            isSelected={selectedVideo?.id === video.id}
+                        />
                     ))}
                 </div>
 
