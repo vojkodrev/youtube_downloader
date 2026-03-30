@@ -11,32 +11,45 @@ export default function Home() {
     const [searchParams] = useSearchParams()
     const navigate = useNavigate()
     const [videos, setVideos] = useState([])
+    const [playlists, setPlaylists] = useState([])
     const [duration, setDuration] = useState(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
     const firstVideoId = useMemo(() => videos[0]?.id, [videos])
+    const playlist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
     useEffect(() => {
         (async () => {
             const res = await fetch(`${API_URL}/videos`)
-            const data = (await res.json()).map((v, i) => ({ ...v, index: i }))
 
             const partRe = /^(.+) part(\d{2})$/
-            const grouped = Object.groupBy(data, v => v.name.match(partRe)?.[1] ?? v.name)
+            const data = (await res.json())
 
-            const merged = Object.entries(grouped).map(([base, items]) => {
+            const videos = data.map(v => ({
+                ...v,
+                visible: parseInt(v.name.match(partRe)?.[2] ?? '1') <= 1,
+                savedTime: localStorage.getItem(`time_${v.id}`)
+            }))
+
+            const videoGroups = Object.groupBy(videos, v => v.name.match(partRe)?.[1] ?? v.name)
+            for (const [base, items] of Object.entries(videoGroups)) {
                 const primary = items.find(v => v.name.match(partRe)?.[2] === '01') ?? items[0]
-                return {
-                    ...primary,
-                    name: base,
-                    parts: items.length,
-                    savedTime: localStorage.getItem(`time_${primary.id}`)
-                }
-            })
+                primary.name = base
+                primary.parts = items.length
+            }
 
-            merged.sort((a, b) => a.index - b.index)
+            const playlistsArr = Object.values(videoGroups)
+                .filter(items => items.length > 1)
+                .map(items => [...items]
+                    .sort((a, b) => {
+                        const na = parseInt(a.name.match(/part(\d{2})$/)?.[1] ?? '0')
+                        const nb = parseInt(b.name.match(/part(\d{2})$/)?.[1] ?? '0')
+                        return na - nb
+                    })
+                )
 
-            setVideos(merged)
+            setPlaylists(playlistsArr)
+            setVideos(videos)
         })()
     }, [])
 
@@ -83,7 +96,11 @@ export default function Home() {
                                     if (t % 5 !== 0) return
                                     if (t === parseInt(searchParams.get('t'))) return
                                     localStorage.setItem(`time_${selectedVideo.id}`, t)
-                                    setVideos(prev => prev.map(v => v.id === selectedVideo.id ? { ...v, savedTime: t } : v))
+                                    setVideos(prev => {
+                                        const v = prev.find(v => v.id === selectedVideo.id)
+                                        if (v) v.savedTime = t
+                                        return [...prev]
+                                    })
                                 }}
                                 onLoadedMetadata={e => {
                                     setDuration(e.target.duration)
@@ -111,11 +128,23 @@ export default function Home() {
 
                 {/* Sidebar */}
                 <div className="md:w-[28rem] bg-gray-50">
-                    {videos.map(video => (
+                    {playlist.length > 0 && (
+                        <div className="border border-gray-400 rounded-lg m-2 overflow-hidden">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-2">Playlist</p>
+                            {playlist.map(video => (
+                                <VideoListItem
+                                    key={video.id}
+                                    video={{ ...video, parts: 1 }}
+                                    isSelected={selectedVideo?.id === video.id}
+                                />
+                            ))}
+                        </div>
+                    )}
+                    {videos.filter(v => v.visible).map(video => (
                         <VideoListItem
                             key={video.id}
                             video={video}
-                            isSelected={selectedVideo?.id === video.id}
+                            isSelected={selectedVideo?.id === video.id || playlist.some(v => v.id === video.id)}
                         />
                     ))}
                 </div>
