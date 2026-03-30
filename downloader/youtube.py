@@ -1,4 +1,5 @@
 import asyncio
+import itertools
 import os
 import sys
 import tomllib
@@ -8,12 +9,12 @@ from loguru import logger
 import yt_dlp
 
 
-async def get_live_video_id(channel_title=None, channel_id=None):
+async def get_live_video_id(api_keys, channel_title=None, channel_id=None):
     if not channel_title and not channel_id:
         raise ValueError("at least one of channel_title or channel_id is required")
 
     def get_live_video_id_sync():
-        youtube = build("youtube", "v3", developerKey=os.getenv("API_KEY"))
+        youtube = build("youtube", "v3", developerKey=api_keys.next())
 
         if channel_id:
             request = youtube.search().list(
@@ -46,12 +47,12 @@ async def get_live_video_id(channel_title=None, channel_id=None):
     return await loop.run_in_executor(None, get_live_video_id_sync)
 
 
-async def get_channel_title(channel_id):
+async def get_channel_title(api_keys, channel_id):
     if not channel_id:
         raise ValueError("channel_id is required")
 
     def get_channel_title_sync():
-        youtube = build("youtube", "v3", developerKey=os.getenv("API_KEY"))
+        youtube = build("youtube", "v3", developerKey=api_keys.next())
         response = youtube.channels().list(part="snippet", id=channel_id).execute()
         if not response.get("items"):
             raise ValueError(f"Could not find channel with ID '{channel_id}'")
@@ -109,9 +110,9 @@ class FibonacciSleep:
         self._index = 0
 
 
-async def poll_and_download(channel_title=None, channel_id=None, download_folder="."):
+async def poll_and_download(api_keys, channel_title=None, channel_id=None, download_folder="."):
     if channel_id and not channel_title:
-        channel_title = await get_channel_title(channel_id)
+        channel_title = await get_channel_title(api_keys, channel_id)
 
     identifier = channel_title or channel_id
     log = logger.bind(streamer=identifier)
@@ -123,7 +124,7 @@ async def poll_and_download(channel_title=None, channel_id=None, download_folder
 
     while True:
         try:
-            video_id = await get_live_video_id(channel_title, channel_id)
+            video_id = await get_live_video_id(api_keys, channel_title, channel_id)
 
             if video_id:
                 sleep_offline.reset()
@@ -142,8 +143,20 @@ async def poll_and_download(channel_title=None, channel_id=None, download_folder
             log.error(f"Error: {e}. Retrying in {interval} minutes...")
 
 
+class ApiKeyPool:
+    def __init__(self):
+        keys = [k.strip() for k in os.getenv("API_KEYS", "").split(",") if k.strip()]
+        if not keys:
+            raise RuntimeError("No API keys found in API_KEYS env var")
+        self._cycle = itertools.cycle(keys)
+
+    def next(self):
+        return next(self._cycle)
+
+
 def main():
     load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+    api_keys = ApiKeyPool()
 
     with open(os.path.join(os.path.dirname(__file__), "config.toml"), "rb") as f:
         config = tomllib.load(f)
@@ -164,7 +177,7 @@ def main():
     async def poll_all_channels():
         await asyncio.gather(
             *[
-                poll_and_download(channel_id=cid, download_folder=output_folder)
+                poll_and_download(api_keys, channel_id=cid, download_folder=output_folder)
                 for cid in channel_ids
             ]
         )
