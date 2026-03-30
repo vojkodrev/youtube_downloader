@@ -106,6 +106,9 @@ class FibonacciSleep:
         await asyncio.sleep(interval * 60)
         return interval
 
+    def peek(self):
+        return self._intervals[self._index]
+
     def reset(self):
         self._index = 0
 
@@ -134,13 +137,11 @@ async def poll_and_download(api_keys, channel_title=None, channel_id=None, downl
                 sleep_err.reset()
                 log.info("Download finished. Resuming poll...")
             else:
-                interval = await sleep_offline.sleep()
-                log.info(
-                    f"Streamer is offline. Checking again in {interval} minutes..."
-                )
+                log.info(f"Streamer is offline. Checking again in {sleep_offline.peek()} minutes...")
+                await sleep_offline.sleep()
         except Exception as e:
-            interval = await sleep_err.sleep()
-            log.error(f"Error: {e}. Retrying in {interval} minutes...")
+            log.error(f"Error: {e}. Retrying in {sleep_err.peek()} minutes...")
+            await sleep_err.sleep()
 
 
 class ApiKeyPool:
