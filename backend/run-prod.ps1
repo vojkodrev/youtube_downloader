@@ -1,3 +1,2 @@
 go build -o backend.exe .
-$env:GIN_MODE = "release"
-./backend.exe
+powershell -NoProfile -Command { $env:GIN_MODE = "release"; ./backend.exe }

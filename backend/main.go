@@ -58,7 +58,7 @@ func getVideos(streamsDir string) ([]Video, error) {
 		return nil, err
 	}
 
-	partRe := regexp.MustCompile(`^(.+)part\d{2}\.mp4$`)
+	partRe := regexp.MustCompile(`^(.+) part\d{2}\.mp4$`)
 	var videos []Video
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.EqualFold(filepath.Ext(entry.Name()), ".mp4") {
@@ -106,7 +106,12 @@ func saveThumbnail(videoPath, thumbnailPath string) error {
 		return nil
 	}
 
-	cmd := ffmpeg.Input(videoPath, ffmpeg.KwArgs{"ss": 10}).
+	dur, err := videoDuration(videoPath)
+	if err != nil {
+		return fmt.Errorf("probe: %w", err)
+	}
+
+	cmd := ffmpeg.Input(videoPath, ffmpeg.KwArgs{"ss": dur / 2}).
 		Output(thumbnailPath, ffmpeg.KwArgs{"vframes": 1, "format": "image2"}).
 		OverWriteOutput().
 		Compile()
@@ -154,7 +159,7 @@ func splitVideo(videoPath string) error {
 	base := videoPath[:len(videoPath)-len(ext)]
 
 	cmd := ffmpeg.Input(videoPath).
-		Output(base+"part%02d.mp4", ffmpeg.KwArgs{
+		Output(base+" part%02d.mp4", ffmpeg.KwArgs{
 			"c":                    "copy",
 			"segment_time":         fmt.Sprintf("%d", splitDuration),
 			"f":                    "segment",
@@ -235,8 +240,6 @@ func splitVideosWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWM
 			videoPath := filepath.Join(streamsDir, v.Filename)
 			if err := splitVideo(videoPath); err != nil {
 				log.Println("error splitting", v.Name, ":", err)
-			} else {
-				log.Println("split finished for", v.Name)
 			}
 		}
 		time.Sleep(1 * time.Minute)
