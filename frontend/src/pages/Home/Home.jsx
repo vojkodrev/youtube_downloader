@@ -54,6 +54,16 @@ export default function Home() {
     }, [])
 
     useEffect(() => {
+        if (!selectedVideo) return
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: selectedVideo.name,
+                artwork: [{ src: `${API_URL}/thumbnail/${selectedVideo.id}`, sizes: '512x512', type: 'image/jpeg' }]
+            })
+        }
+    }, [selectedVideo])
+
+    useEffect(() => {
         if (!id) {
             if (firstVideoId)
                 navigate(`/watch/${firstVideoId}`, { replace: true })
