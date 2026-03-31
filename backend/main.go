@@ -329,6 +329,19 @@ func main() {
 		c.File(cfg.StreamsDir + "/" + v.Filename)
 	})
 
+	r.GET("/download/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		videosMutex.RLock()
+		v, ok := videosMap[id]
+		videosMutex.RUnlock()
+		if !ok {
+			c.Status(404)
+			return
+		}
+		c.Header("Content-Disposition", `attachment; filename="`+v.Filename+`"`)
+		c.File(cfg.StreamsDir + "/" + v.Filename)
+	})
+
 	r.GET("/duration/:id", func(c *gin.Context) {
 		id := c.Param("id")
 		videosMutex.RLock()
