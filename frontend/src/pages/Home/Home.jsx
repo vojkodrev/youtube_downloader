@@ -50,6 +50,13 @@ export default function Home() {
 
             setPlaylists(playlistsArr)
             setVideos(videos)
+
+            Promise.allSettled(videos.map(async v => {
+                const res = await fetch(`${API_URL}/duration/${v.id}`)
+                if (!res.ok) return
+                const { duration } = await res.json()
+                v.duration = duration
+            })).then(() => setVideos(prev => [...prev]))
         })()
     }, [])
 

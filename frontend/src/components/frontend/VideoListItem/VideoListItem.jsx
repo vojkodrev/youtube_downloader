@@ -11,10 +11,17 @@ export default function VideoListItem({ video, isSelected, partsVisible }) {
         >
 
             <div className="flex flex-row gap-2 min-w-0 overflow-x-auto md:overflow-hidden">
-                <img
-                    src={`${API_URL}/thumbnail/${video.id}`}
-                    className="w-36 h-20 object-cover rounded flex-shrink-0 bg-gray-300"
-                />
+                <div className="relative flex-shrink-0">
+                    <img
+                        src={`${API_URL}/thumbnail/${video.id}`}
+                        className="w-36 h-20 object-cover rounded bg-gray-300"
+                    />
+                    {video.duration != null && (
+                        <span className="absolute bottom-1 right-1 bg-black/60 text-white text-xs px-1 rounded">
+                            {new Date(video.duration * 1000).toISOString().substring(video.duration >= 3600 ? 11 : 14, 19)}
+                        </span>
+                    )}
+                </div>
                 <div className="flex flex-col justify-start min-w-0">
                     <p className="text-sm font-medium whitespace-nowrap text-gray-900 md:truncate">
                         {video.name}

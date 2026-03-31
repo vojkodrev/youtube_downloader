@@ -125,6 +125,11 @@ func saveThumbnail(videoPath, thumbnailPath string) error {
 }
 
 func videoDuration(videoPath string) (float64, error) {
+	durationPath := videoPath + ".duration.txt"
+	if data, err := os.ReadFile(durationPath); err == nil {
+		return strconv.ParseFloat(string(data), 64)
+	}
+
 	probeJSON, err := ffmpeg.Probe(videoPath)
 	if err != nil {
 		return 0, err
@@ -230,6 +235,39 @@ func saveThumbnailsWorker(streamsDir string, videos *[]Video, videosMutex *sync.
 	}
 }
 
+func saveDurationsWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWMutex) {
+	for {
+		videosMutex.RLock()
+		current := *videos
+		videosMutex.RUnlock()
+
+		var wg sync.WaitGroup
+		for _, v := range current {
+			durationPath := filepath.Join(streamsDir, v.Filename+".duration.txt")
+			if _, err := os.Stat(durationPath); err == nil {
+				continue
+			}
+			wg.Add(1)
+			go func(v Video) {
+				defer wg.Done()
+				videoPath := filepath.Join(streamsDir, v.Filename)
+				duration, err := videoDuration(videoPath)
+				if err != nil {
+					log.Println("error getting duration for", v.Name, ":", err)
+					return
+				}
+				if err := os.WriteFile(durationPath, []byte(strconv.FormatFloat(duration, 'f', -1, 64)), 0644); err != nil {
+					log.Println("error saving duration for", v.Name, ":", err)
+				} else {
+					log.Println("duration saved for", v.Name)
+				}
+			}(v)
+		}
+		wg.Wait()
+		time.Sleep(1 * time.Minute)
+	}
+}
+
 func splitVideosWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWMutex) {
 	for {
 		videosMutex.RLock()
@@ -258,6 +296,7 @@ func main() {
 	go func() {
 		time.Sleep(5 * time.Second)
 		go saveThumbnailsWorker(cfg.StreamsDir, &videos, &videosMutex)
+		go saveDurationsWorker(cfg.StreamsDir, &videos, &videosMutex)
 		go splitVideosWorker(cfg.StreamsDir, &videos, &videosMutex)
 	}()
 
@@ -288,6 +327,24 @@ func main() {
 			return
 		}
 		c.File(cfg.StreamsDir + "/" + v.Filename)
+	})
+
+	r.GET("/duration/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		videosMutex.RLock()
+		v, ok := videosMap[id]
+		videosMutex.RUnlock()
+		if !ok {
+			c.Status(404)
+			return
+		}
+		duration, err := videoDuration(cfg.StreamsDir + "/" + v.Filename)
+		if err != nil {
+			c.Status(500)
+			return
+		}
+		c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		c.JSON(200, gin.H{"duration": duration})
 	})
 
 	r.GET("/thumbnail/:id", func(c *gin.Context) {
