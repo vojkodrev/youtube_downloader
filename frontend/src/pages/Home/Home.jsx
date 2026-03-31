@@ -15,7 +15,12 @@ export default function Home() {
     const [duration, setDuration] = useState(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
-    const firstVideoId = useMemo(() => videos[0]?.id, [videos])
+    const firstVideoId = useMemo(() => {
+        const firstVideo = videos[0]
+        if (!firstVideo) return undefined
+        const playlist = playlists.find(p => p.some(v => v.id === firstVideo.id))
+        return playlist ? playlist[0].id : firstVideo.id
+    }, [videos, playlists])
     const playlist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
     useEffect(() => {
