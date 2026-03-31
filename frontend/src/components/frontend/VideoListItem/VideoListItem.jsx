@@ -29,7 +29,7 @@ export default function VideoListItem({ video, isSelected, partsVisible }) {
                 title={video.name}
                 className="flex gap-2 min-w-0 flex-1"
             >
-                <div className="flex flex-row gap-2 min-w-0 overflow-x-auto md:overflow-hidden">
+                <div className="flex flex-row gap-2 min-w-0 overflow-hidden">
                     <div className="relative flex-shrink-0">
                         <img
                             src={`${API_URL}/thumbnail/${video.id}`}
@@ -50,7 +50,7 @@ export default function VideoListItem({ video, isSelected, partsVisible }) {
                         )}
                     </div>
                     <div className="flex flex-col justify-start min-w-0">
-                        <p className="text-sm font-medium whitespace-nowrap text-gray-900 md:truncate">
+                        <p className="text-sm font-medium text-gray-900 line-clamp-2">
                             {video.name}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">

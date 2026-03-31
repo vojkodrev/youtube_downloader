@@ -163,6 +163,7 @@ export default function Home() {
                             ))}
                         </div>
                     )}
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-2">Videos</p>
                     {videos.filter(v => v.visible).map(video => (
                         <VideoListItem
                             key={video.id}
