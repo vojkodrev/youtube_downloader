@@ -52,28 +52,37 @@ def get_video_url(video_id):
     return f"https://www.youtube.com/watch?v={video_id}"
 
 
-async def download_live_from_start(url, download_folder="."):
+async def download_video(url, download_folder=".", mode="youtube_live"):
     if not url:
         raise ValueError("url is required")
 
-    def download_live_from_start_sync():
-        ydl_opts = {
-            "format": "bestvideo[height<=720][fps<=30]+bestaudio/bestvideo[height<=720]+bestaudio/best",
-            # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
-            "live_from_start": True,
-            "merge_output_format": "mp4",
-            "outtmpl": os.path.join(download_folder, "%(title)s.%(ext)s"),
-            # "http_headers": {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"},
-            # Optional: retry if the stream connection drops
-            # "ignoreerrors": True,
-            # "concurrent_fragment_downloads": 10,  # Download 10 chunks at once
-        }
+    def download_video_sync():
+        if mode == "youtube_live":
+            ydl_opts = {
+                "format": "bestvideo[height<=720][fps<=30]+bestaudio/bestvideo[height<=720]+bestaudio/best",
+                # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
+                "live_from_start": True,
+                "merge_output_format": "mp4",
+                "outtmpl": os.path.join(download_folder, "%(title)s.%(ext)s"),
+                # "http_headers": {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"},
+                # Optional: retry if the stream connection drops
+                # "ignoreerrors": True,
+                # "concurrent_fragment_downloads": 10,  # Download 10 chunks at once
+            }
+        elif mode == "twitch":
+            ydl_opts = {
+                "format": "best",
+                "merge_output_format": "mp4",
+                "outtmpl": os.path.join(download_folder, "%(title)s.%(ext)s"),
+            }
+        else:
+            raise ValueError(f"Unsupported mode: {mode}")
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
     loop = asyncio.get_running_loop()
-    await loop.run_in_executor(None, download_live_from_start_sync)
+    await loop.run_in_executor(None, download_video_sync)
 
 
 class FibonacciSleep:
@@ -114,7 +123,7 @@ async def poll_and_download(api_keys, channel_id, download_folder="."):
                 sleep_offline.reset()
                 url = get_video_url(video_id)
                 log.info(f"Streamer is LIVE! Downloading from: {url}")
-                await download_live_from_start(url, download_folder)
+                await download_video(url, download_folder)
                 sleep_err.reset()
                 log.info("Download finished. Resuming poll...")
             else:
