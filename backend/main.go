@@ -59,12 +59,13 @@ func getVideos(streamsDir string) ([]Video, error) {
 	}
 
 	partRe := regexp.MustCompile(`^(.+) part\d{2}\.mp4$`)
+	formatRe := regexp.MustCompile(`f\d{3}\.mp4$`)
 	var videos []Video
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.EqualFold(filepath.Ext(entry.Name()), ".mp4") {
 			continue
 		}
-		if strings.HasSuffix(entry.Name(), "f299.mp4") || strings.HasSuffix(entry.Name(), "f140.mp4") {
+		if formatRe.MatchString(entry.Name()) {
 			continue
 		}
 

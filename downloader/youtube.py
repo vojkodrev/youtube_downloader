@@ -74,7 +74,7 @@ async def download_live_from_start(url, download_folder="."):
 
     def download_live_from_start_sync():
         ydl_opts = {
-            "format": "bestvideo+bestaudio/best",
+            "format": "bestvideo[height<=720][fps<=30]+bestaudio/bestvideo[height<=720]+bestaudio/best",
             # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
             "live_from_start": True,
             "merge_output_format": "mp4",
