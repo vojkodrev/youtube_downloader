@@ -9,38 +9,22 @@ from loguru import logger
 import yt_dlp
 
 
-async def get_live_video_id(api_keys, channel_title=None, channel_id=None):
-    if not channel_title and not channel_id:
-        raise ValueError("at least one of channel_title or channel_id is required")
+async def get_live_video_id(api_keys, channel_id):
+    if not channel_id:
+        raise ValueError("channel_id is required")
 
     def get_live_video_id_sync():
         youtube = build("youtube", "v3", developerKey=api_keys.next())
-
-        if channel_id:
-            request = youtube.search().list(
-                part="snippet",
-                channelId=channel_id,
-                eventType="live",
-                type="video",
-                maxResults=1,
-            )
-            response = request.execute()
-            if response.get("items"):
-                return response["items"][0]["id"].get("videoId")
-        else:
-            request = youtube.search().list(
-                part="snippet",
-                q=channel_title,
-                eventType="live",
-                type="video",
-                maxResults=1,
-            )
-            response = request.execute()
-            if response.get("items"):
-                channel_title_resp = response["items"][0]["snippet"]["channelTitle"]
-                if channel_title_resp.lower() == channel_title.lower():
-                    return response["items"][0]["id"].get("videoId")
-
+        request = youtube.search().list(
+            part="snippet",
+            channelId=channel_id,
+            eventType="live",
+            type="video",
+            maxResults=1,
+        )
+        response = request.execute()
+        if response.get("items"):
+            return response["items"][0]["id"].get("videoId")
         return None
 
     loop = asyncio.get_running_loop()
@@ -113,12 +97,9 @@ class FibonacciSleep:
         self._index = 0
 
 
-async def poll_and_download(api_keys, channel_title=None, channel_id=None, download_folder="."):
-    if channel_id and not channel_title:
-        channel_title = await get_channel_title(api_keys, channel_id)
-
-    identifier = channel_title or channel_id
-    log = logger.bind(streamer=identifier)
+async def poll_and_download(api_keys, channel_id, download_folder="."):
+    channel_title = await get_channel_title(api_keys, channel_id)
+    log = logger.bind(streamer=channel_title)
 
     log.info(f"Resolved channel ID '{channel_id}'. Polling started...")
 
@@ -127,7 +108,7 @@ async def poll_and_download(api_keys, channel_title=None, channel_id=None, downl
 
     while True:
         try:
-            video_id = await get_live_video_id(api_keys, channel_title, channel_id)
+            video_id = await get_live_video_id(api_keys, channel_id)
 
             if video_id:
                 sleep_offline.reset()
@@ -137,7 +118,9 @@ async def poll_and_download(api_keys, channel_title=None, channel_id=None, downl
                 sleep_err.reset()
                 log.info("Download finished. Resuming poll...")
             else:
-                log.info(f"Streamer is offline. Checking again in {sleep_offline.peek()} minutes...")
+                log.info(
+                    f"Streamer is offline. Checking again in {sleep_offline.peek()} minutes..."
+                )
                 await sleep_offline.sleep()
         except Exception as e:
             log.error(f"Error: {e}. Retrying in {sleep_err.peek()} minutes...")
@@ -162,7 +145,7 @@ def main():
     with open(os.path.join(os.path.dirname(__file__), "config.toml"), "rb") as f:
         config = tomllib.load(f)
 
-    channel_ids = config["channel_ids"]
+    youtube_channel_ids = config["youtube_channel_ids"]
     output_folder = config["output_folder"]
     log_format = config["log_format"]
 
@@ -178,8 +161,10 @@ def main():
     async def poll_all_channels():
         await asyncio.gather(
             *[
-                poll_and_download(api_keys, channel_id=cid, download_folder=output_folder)
-                for cid in channel_ids
+                poll_and_download(
+                    api_keys, channel_id=cid, download_folder=output_folder
+                )
+                for cid in youtube_channel_ids
             ]
         )
 

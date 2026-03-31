@@ -1,7 +1,7 @@
 output_folder = "d:/streams"
 log_format = "<green>{time}</green> | <level>{level:<5}</level> | <cyan>{name}:{function}:{line:<4}</cyan> | <magenta>{extra[streamer]:<15}</magenta> | <level>{message}</level>"
 
-channel_ids = [
+youtube_channel_ids = [
     "UCUyeluBRhGPCW4rPe_UvBZQ",
     "UC1E-JS8L0j1Ei70D9VEFrPQ",
     # "UCI_mwTKUhicNzFrhm33MzBQ"
