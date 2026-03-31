@@ -115,7 +115,7 @@ export default function Home() {
                     <div className="bg-gray-100 p-4">
                         {selectedVideo && (
                             <>
-                                <p className="font-semibold text-lg truncate" title={selectedVideo.name}>{selectedVideo.name}</p>
+                                <p className="font-semibold text-lg" title={selectedVideo.name}>{selectedVideo.name}</p>
                                 {duration != null && (
                                     <p className="text-sm text-gray-500 mt-1">
                                         {new Date(duration * 1000).toISOString().substring(11, 19)}
