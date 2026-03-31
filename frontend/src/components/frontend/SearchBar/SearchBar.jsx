@@ -1,20 +1,35 @@
 import { useState } from 'react'
 import { Search, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
-const TEST_ITEMS = [
-    'Big Buck Bunny',
-    'Elephant Dream',
-    'Sintel',
-    'Tears of Steel',
-    'Cosmos Laundromat',
-]
+function fuzzyMatch(str, query) {
+    const s = str.toLowerCase()
+    const q = query.toLowerCase()
+    let si = 0, qi = 0, score = 0, consecutive = 0
+    while (si < s.length && qi < q.length) {
+        if (s[si] === q[qi]) {
+            score += 1 + consecutive
+            consecutive++
+            qi++
+        } else {
+            consecutive = 0
+        }
+        si++
+    }
+    return qi === q.length ? score : -1
+}
 
-export default function SearchBar() {
+export default function SearchBar({ videos = [] }) {
     const [query, setQuery] = useState('')
     const [focused, setFocused] = useState(false)
+    const navigate = useNavigate()
 
     const results = query.trim()
-        ? TEST_ITEMS.filter(item => item.toLowerCase().includes(query.toLowerCase()))
+        ? videos
+            .map(v => ({ v, score: fuzzyMatch(v.name, query.trim()) }))
+            .filter(({ score }) => score >= 0)
+            .sort((a, b) => b.score - a.score)
+            .map(({ v }) => v)
         : []
 
     return (
@@ -40,13 +55,15 @@ export default function SearchBar() {
                 {focused && query.trim() && (
                     <ul className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg z-10">
                         {results.length > 0
-                            ? results.map(item => (
+                            ? results.map(video => (
                                 <li
-                                    key={item}
-                                    onMouseDown={() => alert(item)}
-                                    className="px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 cursor-pointer"
+                                    key={video.id}
+                                    onMouseDown={() => { setQuery(''); navigate(`/watch/${video.id}`) }}
+                                    className="px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 cursor-pointer flex items-center gap-2 min-w-0"
+                                    title={video.name}
                                 >
-                                    {item}
+                                    <Search size={14} className="text-gray-400 shrink-0" />
+                                    <span className="truncate">{video.name}</span>
                                 </li>
                             ))
                             : <li className="px-4 py-2 text-sm text-gray-400 select-none">No results found</li>

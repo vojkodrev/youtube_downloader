@@ -97,7 +97,7 @@ export default function Home() {
             {/* Top */}
             <div className="bg-gray-900 px-6 py-4 flex items-center gap-3">
                 <Logo />
-                <SearchBar />
+                <SearchBar videos={videos} />
             </div>
 
             {/* Middle */}
