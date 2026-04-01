@@ -102,11 +102,11 @@ func thumbnailFilename(videoName string) string {
 	return videoName + ".jpg"
 }
 
-func saveThumbnail(videoPath, thumbnailPath string) error {
-	if _, err := os.Stat(thumbnailPath); err == nil {
-		return nil
-	}
+func durationFilename(videoFilename string) string {
+	return videoFilename + ".duration.txt"
+}
 
+func saveThumbnail(videoPath, thumbnailPath string) error {
 	dur, err := videoDuration(videoPath)
 	if err != nil {
 		return fmt.Errorf("probe: %w", err)
@@ -126,7 +126,7 @@ func saveThumbnail(videoPath, thumbnailPath string) error {
 }
 
 func videoDuration(videoPath string) (float64, error) {
-	durationPath := videoPath + ".duration.txt"
+	durationPath := durationFilename(videoPath)
 	if data, err := os.ReadFile(durationPath); err == nil {
 		return strconv.ParseFloat(string(data), 64)
 	}
@@ -238,7 +238,7 @@ func cleanupWorker(streamsDir string) {
 			}
 		}
 
-		time.Sleep(10 * time.Minute)
+		time.Sleep(1 * time.Minute)
 	}
 }
 
@@ -251,8 +251,18 @@ func saveThumbnailsWorker(streamsDir string, videos *[]Video, videosMutex *sync.
 		var wg sync.WaitGroup
 		for _, v := range current {
 			thumbPath := filepath.Join(streamsDir, thumbnailFilename(v.Name))
-			if _, err := os.Stat(thumbPath); err == nil {
-				continue
+			if tInfo, err := os.Stat(thumbPath); err == nil {
+				videoPath := filepath.Join(streamsDir, v.Filename)
+				newerExists := false
+				if vInfo, err := os.Stat(videoPath); err == nil && vInfo.ModTime().After(tInfo.ModTime()) {
+					newerExists = true
+				}
+				if dInfo, err := os.Stat(filepath.Join(streamsDir, durationFilename(v.Filename))); err == nil && dInfo.ModTime().After(tInfo.ModTime()) {
+					newerExists = true
+				}
+				if !newerExists {
+					continue
+				}
 			}
 			wg.Add(1)
 			go func(v Video) {
@@ -278,9 +288,12 @@ func saveDurationsWorker(streamsDir string, videos *[]Video, videosMutex *sync.R
 
 		var wg sync.WaitGroup
 		for _, v := range current {
-			durationPath := filepath.Join(streamsDir, v.Filename+".duration.txt")
-			if _, err := os.Stat(durationPath); err == nil {
-				continue
+			durationPath := filepath.Join(streamsDir, durationFilename(v.Filename))
+			if dInfo, err := os.Stat(durationPath); err == nil {
+				videoPath := filepath.Join(streamsDir, v.Filename)
+				if vInfo, err := os.Stat(videoPath); err == nil && !vInfo.ModTime().After(dInfo.ModTime()) {
+					continue
+				}
 			}
 			wg.Add(1)
 			go func(v Video) {
