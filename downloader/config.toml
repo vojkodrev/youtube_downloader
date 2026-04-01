@@ -9,9 +9,9 @@ mode = "youtube_live"
 id = "UC1E-JS8L0j1Ei70D9VEFrPQ"
 mode = "youtube_live"
 
-# [[channels]]
-# id = "joshstrifehayes"
-# mode = "twitch"
+[[channels]]
+id = "andreamengucci"
+mode = "twitch"
 
 # [[channels]]
 # id = "UCI_mwTKUhicNzFrhm33MzBQ"
