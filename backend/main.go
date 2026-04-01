@@ -62,13 +62,23 @@ func getVideos(streamsDir string) ([]Video, error) {
 	formatRe := regexp.MustCompile(`f\d{3}\.mp4$`)
 	var videos []Video
 	for _, entry := range entries {
-		if entry.IsDir() || !strings.EqualFold(filepath.Ext(entry.Name()), ".mp4") {
+		if entry.IsDir() {
 			continue
 		}
+		// skip non-mp4 files, e.g. "video.jpg", "video.mp4.duration.txt"
+		if !strings.EqualFold(filepath.Ext(entry.Name()), ".mp4") {
+			continue
+		}
+		// skip intermediate format segments, e.g. "video.f140.mp4"
 		if formatRe.MatchString(entry.Name()) {
 			continue
 		}
+		// skip in-progress downloads, e.g. "video.temp.mp4"
+		if strings.HasSuffix(entry.Name(), ".temp.mp4") {
+			continue
+		}
 
+		// skip part files when the merged file exists, e.g. "video part01.mp4" when "video.mp4" exists
 		if m := partRe.FindStringSubmatch(entry.Name()); m != nil {
 			if _, err := os.Stat(filepath.Join(streamsDir, m[1]+".mp4")); err == nil {
 				continue
@@ -251,12 +261,15 @@ func saveThumbnailsWorker(streamsDir string, videos *[]Video, videosMutex *sync.
 		var wg sync.WaitGroup
 		for _, v := range current {
 			thumbPath := filepath.Join(streamsDir, thumbnailFilename(v.Name))
+			// thumbnail already exists — check if it needs to be regenerated
 			if tInfo, err := os.Stat(thumbPath); err == nil {
 				videoPath := filepath.Join(streamsDir, v.Filename)
 				newerExists := false
+				// regenerate if the video file was modified after the thumbnail (e.g. file was replaced)
 				if vInfo, err := os.Stat(videoPath); err == nil && vInfo.ModTime().After(tInfo.ModTime()) {
 					newerExists = true
 				}
+				// regenerate if the duration file was updated after the thumbnail (e.g. seek position changed)
 				if dInfo, err := os.Stat(filepath.Join(streamsDir, durationFilename(v.Filename))); err == nil && dInfo.ModTime().After(tInfo.ModTime()) {
 					newerExists = true
 				}
@@ -289,8 +302,10 @@ func saveDurationsWorker(streamsDir string, videos *[]Video, videosMutex *sync.R
 		var wg sync.WaitGroup
 		for _, v := range current {
 			durationPath := filepath.Join(streamsDir, durationFilename(v.Filename))
+			// duration file already exists — skip unless the video was modified after it
 			if dInfo, err := os.Stat(durationPath); err == nil {
 				videoPath := filepath.Join(streamsDir, v.Filename)
+				// video not newer than duration file, e.g. file was not replaced
 				if vInfo, err := os.Stat(videoPath); err == nil && !vInfo.ModTime().After(dInfo.ModTime()) {
 					continue
 				}
