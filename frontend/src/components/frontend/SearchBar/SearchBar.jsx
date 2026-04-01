@@ -1,35 +1,18 @@
+import { useMemo } from 'react'
 import { useState } from 'react'
 import { Search, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-
-function fuzzyMatch(str, query) {
-    const s = str.toLowerCase()
-    const q = query.toLowerCase()
-    let si = 0, qi = 0, score = 0, consecutive = 0
-    while (si < s.length && qi < q.length) {
-        if (s[si] === q[qi]) {
-            score += 1 + consecutive
-            consecutive++
-            qi++
-        } else {
-            consecutive = 0
-        }
-        si++
-    }
-    return qi === q.length ? score : -1
-}
+import Fuse from 'fuse.js'
 
 export default function SearchBar({ videos = [] }) {
     const [query, setQuery] = useState('')
     const [focused, setFocused] = useState(false)
     const navigate = useNavigate()
 
+    const fuse = useMemo(() => new Fuse(videos, { keys: ['name'], threshold: 0.4 }), [videos])
+
     const results = query.trim()
-        ? videos
-            .map(v => ({ v, score: fuzzyMatch(v.name, query.trim()) }))
-            .filter(({ score }) => score >= 0)
-            .sort((a, b) => b.score - a.score)
-            .map(({ v }) => v)
+        ? fuse.search(query.trim()).map(({ item }) => item)
         : []
 
     return (
