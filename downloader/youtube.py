@@ -83,15 +83,30 @@ class YoutubeMetadataProvider(MetadataProvider):
         return f"https://www.youtube.com/watch?v={video_id}"
 
 
+class TwitchMetadataProvider(MetadataProvider):
+    async def get_video_id(self, channel_id: str) -> str | None:
+        return channel_id
+
+    async def get_channel_title(self, channel_id: str) -> str:
+        return channel_id
+
+    def get_video_url(self, video_id: str) -> str:
+        return f"https://www.twitch.tv/{video_id}"
+
+
 class MetadataProviderFactory:
-    def __init__(self, youtube: YoutubeMetadataProvider):
+    def __init__(
+        self, youtube: YoutubeMetadataProvider, twitch: TwitchMetadataProvider
+    ):
         self._youtube = youtube
+        self._twitch = twitch
 
     def create(self, mode: str) -> MetadataProvider:
-        if mode in ("youtube", "youtube_live"):
+        if mode == "youtube_live":
             return self._youtube
-        else:
-            raise ValueError(f"Unsupported mode: {mode}")
+        if mode == "twitch":
+            return self._twitch
+        raise ValueError(f"Unsupported mode: {mode}")
 
 
 class Downloader(ABC):
@@ -129,15 +144,42 @@ class YoutubeLiveDownloader(Downloader):
         await loop.run_in_executor(None, sync)
 
 
+class TwitchDownloader(Downloader):
+    def __init__(self, config):
+        self._config = config
+
+    async def download(self, url: str) -> None:
+        if not url:
+            raise ValueError("url is required")
+
+        def sync():
+            ydl_opts = {
+                "format": "best",
+                "merge_output_format": "mp4",
+                "overwrites": True,
+                "outtmpl": os.path.join(
+                    self._config["output_folder"],
+                    "%(uploader)s %(upload_date>%Y-%m-%d)s.%(ext)s",
+                ),
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, sync)
+
+
 class DownloaderFactory:
-    def __init__(self, youtube_live: YoutubeLiveDownloader):
+    def __init__(self, youtube_live: YoutubeLiveDownloader, twitch: TwitchDownloader):
         self._youtube_live = youtube_live
+        self._twitch = twitch
 
     def create(self, mode: str) -> Downloader:
         if mode == "youtube_live":
             return self._youtube_live
-        else:
-            raise ValueError(f"Unsupported mode: {mode}")
+        if mode == "twitch":
+            return self._twitch
+        raise ValueError(f"Unsupported mode: {mode}")
 
 
 class FibonacciSleepFactory:
@@ -230,8 +272,8 @@ class MultiChannelPoller:
     async def poll_all(self) -> None:
         await asyncio.gather(
             *[
-                self._poller.poll(cid, mode="youtube_live")
-                for cid in self._config["channel_ids"]
+                self._poller.poll(ch["id"], mode=ch["mode"])
+                for ch in self._config["channels"]
             ]
         )
 
@@ -262,13 +304,19 @@ class Container(containers.DeclarativeContainer):
     youtube_metadata_provider = providers.Singleton(
         YoutubeMetadataProvider, api_keys=api_keys
     )
+    twitch_metadata_provider = providers.Singleton(TwitchMetadataProvider)
     metadata_provider_factory = providers.Singleton(
-        MetadataProviderFactory, youtube=youtube_metadata_provider
+        MetadataProviderFactory,
+        youtube=youtube_metadata_provider,
+        twitch=twitch_metadata_provider,
     )
 
     youtube_live_downloader = providers.Singleton(YoutubeLiveDownloader, config=config)
+    twitch_downloader = providers.Singleton(TwitchDownloader, config=config)
     downloader_factory = providers.Singleton(
-        DownloaderFactory, youtube_live=youtube_live_downloader
+        DownloaderFactory,
+        youtube_live=youtube_live_downloader,
+        twitch=twitch_downloader,
     )
 
     sleep_factory = providers.Singleton(
