@@ -6,6 +6,7 @@ import os
 import sys
 import tomllib
 from abc import ABC, abstractmethod
+from dependency_injector import containers, providers
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from loguru import logger
@@ -68,6 +69,17 @@ class YoutubeMetadataProvider(MetadataProvider):
         return f"https://www.youtube.com/watch?v={video_id}"
 
 
+class MetadataProviderFactory:
+    def __init__(self, youtube: YoutubeMetadataProvider):
+        self._youtube = youtube
+
+    def create(self, mode: str) -> MetadataProvider:
+        if mode in ("youtube", "youtube_live"):
+            return self._youtube
+        else:
+            raise ValueError(f"Unsupported mode: {mode}")
+
+
 class Downloader(ABC):
     @abstractmethod
     async def download(self, url: str) -> None: ...
@@ -102,6 +114,17 @@ class YoutubeLiveDownloader(Downloader):
         await loop.run_in_executor(None, sync)
 
 
+class DownloaderFactory:
+    def __init__(self, youtube_live: YoutubeLiveDownloader):
+        self._youtube_live = youtube_live
+
+    def create(self, mode: str) -> Downloader:
+        if mode == "youtube_live":
+            return self._youtube_live
+        else:
+            raise ValueError(f"Unsupported mode: {mode}")
+
+
 class FibonacciSleepFactory:
     def __init__(self, short: FibonacciSleep, long: FibonacciSleep):
         self._short = short
@@ -117,9 +140,6 @@ class FibonacciSleepFactory:
 
 
 class FibonacciSleep:
-    # SHORT = [5, 8, 13, 21, 30]
-    # LONG = [20, 30, 45]
-
     def __init__(self, intervals):
         self._intervals = intervals
         self._index = 0
@@ -137,44 +157,53 @@ class FibonacciSleep:
         self._index = 0
 
 
-async def poll_and_download(
-    api_keys, channel_title=None, channel_id=None, download_folder="."
-):
-    if channel_id and not channel_title:
-        channel_title = await get_channel_title(api_keys, channel_id)
+class ChannelPoller:
+    def __init__(
+        self,
+        meta_provider_factory: MetadataProviderFactory,
+        downloader_factory: DownloaderFactory,
+        sleep_factory: FibonacciSleepFactory,
+    ):
+        self._meta_provider_factory = meta_provider_factory
+        self._downloader_factory = downloader_factory
+        self._sleep_factory = sleep_factory
 
-    identifier = channel_title or channel_id
-    log = logger.bind(streamer=identifier)
+    async def poll(self, channel_id: str, mode: str) -> None:
+        meta = self._meta_provider_factory.create(mode)
+        downloader = self._downloader_factory.create(mode)
 
-    log.info(f"Resolved channel ID '{channel_id}'. Polling started...")
+        channel_title = await meta.get_channel_title(channel_id)
+        log = logger.bind(streamer=channel_title)
 
-    sleep_offline = FibonacciSleep(FibonacciSleep.LONG)
-    sleep_err = FibonacciSleep(FibonacciSleep.SHORT)
+        log.info(f"Resolved channel ID '{channel_id}'. Polling started...")
 
-    while True:
-        try:
-            video_id = await get_live_video_id(api_keys, channel_title, channel_id)
+        sleep_offline = self._sleep_factory.create("long")
+        sleep_err = self._sleep_factory.create("short")
 
-            if video_id:
-                sleep_offline.reset()
-                url = get_video_url(video_id)
-                log.info(f"Streamer is LIVE! Downloading from: {url}")
-                await download_live_from_start(url, download_folder)
-                sleep_err.reset()
-                log.info("Download finished. Resuming poll...")
-            else:
-                log.info(
-                    f"Streamer is offline. Checking again in {sleep_offline.peek()} minutes..."
-                )
-                await sleep_offline.sleep()
-        except Exception as e:
-            log.error(f"Error: {e}. Retrying in {sleep_err.peek()} minutes...")
-            await sleep_err.sleep()
+        while True:
+            try:
+                video_id = await meta.get_live_video_id(channel_id)
+
+                if video_id:
+                    sleep_offline.reset()
+                    url = meta.get_video_url(video_id)
+                    log.info(f"Streamer is LIVE! Downloading from: {url}")
+                    await downloader.download(url)
+                    sleep_err.reset()
+                    log.info("Download finished. Resuming poll...")
+                else:
+                    log.info(
+                        f"Streamer is offline. Checking again in {sleep_offline.peek()} minutes..."
+                    )
+                    await sleep_offline.sleep()
+            except Exception as e:
+                log.error(f"Error: {e}. Retrying in {sleep_err.peek()} minutes...")
+                await sleep_err.sleep()
 
 
 class YoutubeApiKeyPool:
-    def __init__(self):
-        keys = [k.strip() for k in os.getenv("API_KEYS", "").split(",") if k.strip()]
+    def __init__(self, api_keys_str: str):
+        keys = [k.strip() for k in api_keys_str.split(",") if k.strip()]
         if not keys:
             raise RuntimeError("No API keys found in API_KEYS env var")
         self._cycle = itertools.cycle(keys)
@@ -183,33 +212,62 @@ class YoutubeApiKeyPool:
         return next(self._cycle)
 
 
-def main():
+class Container(containers.DeclarativeContainer):
     load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
-    api_keys = YoutubeApiKeyPool()
 
-    with open(os.path.join(os.path.dirname(__file__), "config.toml"), "rb") as f:
-        config = tomllib.load(f)
+    with open(os.path.join(os.path.dirname(__file__), "config.toml"), "rb") as _f:
+        _config = tomllib.load(_f)
 
-    channel_ids = config["channel_ids"]
-    output_folder = config["output_folder"]
-    log_format = config["log_format"]
+    config = providers.Object(_config)
+
+    api_keys = providers.Singleton(
+        YoutubeApiKeyPool, api_keys_str=os.getenv("API_KEYS", "")
+    )
+
+    youtube_metadata_provider = providers.Singleton(
+        YoutubeMetadataProvider, api_keys=api_keys
+    )
+    metadata_provider_factory = providers.Singleton(
+        MetadataProviderFactory, youtube=youtube_metadata_provider
+    )
+
+    youtube_live_downloader = providers.Singleton(YoutubeLiveDownloader, config=config)
+    downloader_factory = providers.Singleton(
+        DownloaderFactory, youtube_live=youtube_live_downloader
+    )
+
+    sleep_factory = providers.Singleton(
+        FibonacciSleepFactory,
+        short=providers.Factory(FibonacciSleep, intervals=[5, 8, 13, 21, 30]),
+        long=providers.Factory(FibonacciSleep, intervals=[20, 30, 45]),
+    )
+
+    channel_poller = providers.Singleton(
+        ChannelPoller,
+        meta_provider_factory=metadata_provider_factory,
+        downloader_factory=downloader_factory,
+        sleep_factory=sleep_factory,
+    )
+
+
+def main():
+    container = Container()
+    config = container.config()
 
     logger.remove()
-    logger.add(sys.stderr, format=log_format)
+    logger.add(sys.stderr, format=config["log_format"])
 
-    if not os.path.isdir(output_folder):
+    if not os.path.isdir(config["output_folder"]):
         logger.bind(streamer="-").error(
-            f"Output folder does not exist: {output_folder}"
+            f"Output folder does not exist: {config['output_folder']}"
         )
         exit(1)
 
     async def poll_all_channels():
         await asyncio.gather(
             *[
-                poll_and_download(
-                    api_keys, channel_id=cid, download_folder=output_folder
-                )
-                for cid in channel_ids
+                container.channel_poller().poll(cid, mode="youtube_live")
+                for cid in config["channel_ids"]
             ]
         )
 
