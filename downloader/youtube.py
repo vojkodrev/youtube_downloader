@@ -201,6 +201,20 @@ class ChannelPoller:
                 await sleep_err.sleep()
 
 
+class MultiChannelPoller:
+    def __init__(self, poller: ChannelPoller, config: dict):
+        self._poller = poller
+        self._config = config
+
+    async def poll_all(self) -> None:
+        await asyncio.gather(
+            *[
+                self._poller.poll(cid, mode="youtube_live")
+                for cid in self._config["channel_ids"]
+            ]
+        )
+
+
 class YoutubeApiKeyPool:
     def __init__(self, api_keys_str: str):
         keys = [k.strip() for k in api_keys_str.split(",") if k.strip()]
@@ -249,6 +263,12 @@ class Container(containers.DeclarativeContainer):
         sleep_factory=sleep_factory,
     )
 
+    multi_channel_poller = providers.Singleton(
+        MultiChannelPoller,
+        poller=channel_poller,
+        config=config,
+    )
+
 
 def main():
     container = Container()
@@ -263,15 +283,8 @@ def main():
         )
         exit(1)
 
-    async def poll_all_channels():
-        await asyncio.gather(
-            *[
-                container.channel_poller().poll(cid, mode="youtube_live")
-                for cid in config["channel_ids"]
-            ]
-        )
-
-    asyncio.run(poll_all_channels())
+    multi_poller = container.multi_channel_poller()
+    asyncio.run(multi_poller.poll_all())
 
 
 if __name__ == "__main__":
