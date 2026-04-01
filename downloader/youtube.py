@@ -1,22 +1,38 @@
+from __future__ import annotations
+
 import asyncio
 import itertools
 import os
 import sys
 import tomllib
+from abc import ABC, abstractmethod
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from loguru import logger
 import yt_dlp
 
 
-async def get_live_video_id(api_keys, channel_title=None, channel_id=None):
-    if not channel_title and not channel_id:
-        raise ValueError("at least one of channel_title or channel_id is required")
+class MetadataProvider(ABC):
+    @abstractmethod
+    async def get_live_video_id(self, channel_id: str) -> str | None: ...
 
-    def get_live_video_id_sync():
-        youtube = build("youtube", "v3", developerKey=api_keys.next())
+    @abstractmethod
+    async def get_channel_title(self, channel_id: str) -> str: ...
 
-        if channel_id:
+    @abstractmethod
+    def get_video_url(self, video_id: str) -> str: ...
+
+
+class YoutubeMetadataProvider(MetadataProvider):
+    def __init__(self, api_keys: YoutubeApiKeyPool):
+        self._api_keys = api_keys
+
+    async def get_live_video_id(self, channel_id: str) -> str | None:
+        if not channel_id:
+            raise ValueError("channel_id is required")
+
+        def get_live_video_id_sync():
+            youtube = build("youtube", "v3", developerKey=self._api_keys.next())
             request = youtube.search().list(
                 part="snippet",
                 channelId=channel_id,
@@ -27,77 +43,85 @@ async def get_live_video_id(api_keys, channel_title=None, channel_id=None):
             response = request.execute()
             if response.get("items"):
                 return response["items"][0]["id"].get("videoId")
+            return None
+
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, get_live_video_id_sync)
+
+    async def get_channel_title(self, channel_id: str) -> str:
+        if not channel_id:
+            raise ValueError("channel_id is required")
+
+        def get_channel_title_sync():
+            youtube = build("youtube", "v3", developerKey=self._api_keys.next())
+            response = youtube.channels().list(part="snippet", id=channel_id).execute()
+            if not response.get("items"):
+                raise ValueError(f"Could not find channel with ID '{channel_id}'")
+            return response["items"][0]["snippet"]["title"]
+
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, get_channel_title_sync)
+
+    def get_video_url(self, video_id: str) -> str:
+        if not video_id:
+            raise ValueError("video_id is required")
+        return f"https://www.youtube.com/watch?v={video_id}"
+
+
+class Downloader(ABC):
+    @abstractmethod
+    async def download(self, url: str) -> None: ...
+
+
+class YoutubeLiveDownloader(Downloader):
+    def __init__(self, config):
+        self._config = config
+
+    async def download(self, url: str) -> None:
+        if not url:
+            raise ValueError("url is required")
+
+        def sync():
+            ydl_opts = {
+                "format": "bestvideo+bestaudio/best",
+                # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
+                "live_from_start": True,
+                "merge_output_format": "mp4",
+                "outtmpl": os.path.join(
+                    self._config["output_folder"], "%(title)s.%(ext)s"
+                ),
+                # "http_headers": {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"},
+                # Optional: retry if the stream connection drops
+                # "ignoreerrors": True,
+                # "concurrent_fragment_downloads": 10,  # Download 10 chunks at once
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, sync)
+
+
+class FibonacciSleepFactory:
+    def __init__(self, short: FibonacciSleep, long: FibonacciSleep):
+        self._short = short
+        self._long = long
+
+    def create(self, mode: str) -> FibonacciSleep:
+        if mode == "short":
+            return self._short
+        elif mode == "long":
+            return self._long
         else:
-            request = youtube.search().list(
-                part="snippet",
-                q=channel_title,
-                eventType="live",
-                type="video",
-                maxResults=1,
-            )
-            response = request.execute()
-            if response.get("items"):
-                channel_title_resp = response["items"][0]["snippet"]["channelTitle"]
-                if channel_title_resp.lower() == channel_title.lower():
-                    return response["items"][0]["id"].get("videoId")
-
-        return None
-
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, get_live_video_id_sync)
-
-
-async def get_channel_title(api_keys, channel_id):
-    if not channel_id:
-        raise ValueError("channel_id is required")
-
-    def get_channel_title_sync():
-        youtube = build("youtube", "v3", developerKey=api_keys.next())
-        response = youtube.channels().list(part="snippet", id=channel_id).execute()
-        if not response.get("items"):
-            raise ValueError(f"Could not find channel with ID '{channel_id}'")
-        return response["items"][0]["snippet"]["title"]
-
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, get_channel_title_sync)
-
-
-def get_video_url(video_id):
-    if not video_id:
-        raise ValueError("video_id is required")
-    return f"https://www.youtube.com/watch?v={video_id}"
-
-
-async def download_live_from_start(url, download_folder="."):
-    if not url:
-        raise ValueError("url is required")
-
-    def download_live_from_start_sync():
-        ydl_opts = {
-            "format": "bestvideo+bestaudio/best",
-            # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
-            "live_from_start": True,
-            "merge_output_format": "mp4",
-            "outtmpl": os.path.join(download_folder, "%(title)s.%(ext)s"),
-            # "http_headers": {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"},
-            # Optional: retry if the stream connection drops
-            # "ignoreerrors": True,
-            # "concurrent_fragment_downloads": 10,  # Download 10 chunks at once
-        }
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(None, download_live_from_start_sync)
+            raise ValueError(f"Unsupported mode: {mode}")
 
 
 class FibonacciSleep:
-    SHORT = [5, 8, 13, 21, 30]
-    LONG = [20, 30, 45]
+    # SHORT = [5, 8, 13, 21, 30]
+    # LONG = [20, 30, 45]
 
-    def __init__(self, intervals=None):
-        self._intervals = intervals or self.SHORT
+    def __init__(self, intervals):
+        self._intervals = intervals
         self._index = 0
 
     async def sleep(self):
@@ -113,7 +137,9 @@ class FibonacciSleep:
         self._index = 0
 
 
-async def poll_and_download(api_keys, channel_title=None, channel_id=None, download_folder="."):
+async def poll_and_download(
+    api_keys, channel_title=None, channel_id=None, download_folder="."
+):
     if channel_id and not channel_title:
         channel_title = await get_channel_title(api_keys, channel_id)
 
@@ -137,14 +163,16 @@ async def poll_and_download(api_keys, channel_title=None, channel_id=None, downl
                 sleep_err.reset()
                 log.info("Download finished. Resuming poll...")
             else:
-                log.info(f"Streamer is offline. Checking again in {sleep_offline.peek()} minutes...")
+                log.info(
+                    f"Streamer is offline. Checking again in {sleep_offline.peek()} minutes..."
+                )
                 await sleep_offline.sleep()
         except Exception as e:
             log.error(f"Error: {e}. Retrying in {sleep_err.peek()} minutes...")
             await sleep_err.sleep()
 
 
-class ApiKeyPool:
+class YoutubeApiKeyPool:
     def __init__(self):
         keys = [k.strip() for k in os.getenv("API_KEYS", "").split(",") if k.strip()]
         if not keys:
@@ -157,7 +185,7 @@ class ApiKeyPool:
 
 def main():
     load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
-    api_keys = ApiKeyPool()
+    api_keys = YoutubeApiKeyPool()
 
     with open(os.path.join(os.path.dirname(__file__), "config.toml"), "rb") as f:
         config = tomllib.load(f)
@@ -178,7 +206,9 @@ def main():
     async def poll_all_channels():
         await asyncio.gather(
             *[
-                poll_and_download(api_keys, channel_id=cid, download_folder=output_folder)
+                poll_and_download(
+                    api_keys, channel_id=cid, download_folder=output_folder
+                )
                 for cid in channel_ids
             ]
         )
