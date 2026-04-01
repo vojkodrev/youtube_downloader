@@ -94,21 +94,6 @@ class TwitchMetadataProvider(MetadataProvider):
         return f"https://www.twitch.tv/{video_id}"
 
 
-class MetadataProviderFactory:
-    def __init__(
-        self, youtube: YoutubeMetadataProvider, twitch: TwitchMetadataProvider
-    ):
-        self._youtube = youtube
-        self._twitch = twitch
-
-    def create(self, mode: str) -> MetadataProvider:
-        if mode == "youtube_live":
-            return self._youtube
-        if mode == "twitch":
-            return self._twitch
-        raise ValueError(f"Unsupported mode: {mode}")
-
-
 class Downloader(ABC):
     @abstractmethod
     async def download(self, url: str) -> None: ...
@@ -169,31 +154,13 @@ class TwitchDownloader(Downloader):
         await loop.run_in_executor(None, sync)
 
 
-class DownloaderFactory:
-    def __init__(self, youtube_live: YoutubeLiveDownloader, twitch: TwitchDownloader):
-        self._youtube_live = youtube_live
-        self._twitch = twitch
-
-    def create(self, mode: str) -> Downloader:
-        if mode == "youtube_live":
-            return self._youtube_live
-        if mode == "twitch":
-            return self._twitch
-        raise ValueError(f"Unsupported mode: {mode}")
-
-
 class FibonacciSleepFactory:
-    def __init__(self, short: FibonacciSleep, long: FibonacciSleep):
-        self._short = short
-        self._long = long
-
     def create(self, mode: str) -> FibonacciSleep:
         if mode == "short":
-            return self._short
-        elif mode == "long":
-            return self._long
-        else:
-            raise ValueError(f"Unsupported mode: {mode}")
+            return FibonacciSleep(intervals=[5, 8, 13, 21, 34])
+        if mode == "long":
+            return FibonacciSleep(intervals=[13, 21, 34, 55])
+        raise ValueError(f"Unsupported mode: {mode}")
 
 
 class FibonacciSleep:
@@ -217,17 +184,17 @@ class FibonacciSleep:
 class ChannelPoller:
     def __init__(
         self,
-        meta_provider_factory: MetadataProviderFactory,
-        downloader_factory: DownloaderFactory,
+        meta_providers: dict,
+        downloaders: dict,
         sleep_factory: FibonacciSleepFactory,
     ):
-        self._meta_provider_factory = meta_provider_factory
-        self._downloader_factory = downloader_factory
+        self._meta_providers = meta_providers
+        self._downloaders = downloaders
         self._sleep_factory = sleep_factory
 
     async def poll(self, channel_id: str, mode: str) -> None:
-        meta = self._meta_provider_factory.create(mode)
-        downloader = self._downloader_factory.create(mode)
+        meta = self._meta_providers[mode]
+        downloader = self._downloaders[mode]
 
         log = logger.bind(streamer=channel_id)
         channel_title = None
@@ -305,30 +272,25 @@ class Container(containers.DeclarativeContainer):
         YoutubeMetadataProvider, api_keys=api_keys
     )
     twitch_metadata_provider = providers.Singleton(TwitchMetadataProvider)
-    metadata_provider_factory = providers.Singleton(
-        MetadataProviderFactory,
-        youtube=youtube_metadata_provider,
-        twitch=twitch_metadata_provider,
-    )
 
     youtube_live_downloader = providers.Singleton(YoutubeLiveDownloader, config=config)
     twitch_downloader = providers.Singleton(TwitchDownloader, config=config)
-    downloader_factory = providers.Singleton(
-        DownloaderFactory,
+
+    sleep_factory = providers.Singleton(FibonacciSleepFactory)
+
+    meta_providers = providers.Dict(
+        youtube_live=youtube_metadata_provider,
+        twitch=twitch_metadata_provider,
+    )
+    downloaders = providers.Dict(
         youtube_live=youtube_live_downloader,
         twitch=twitch_downloader,
     )
 
-    sleep_factory = providers.Singleton(
-        FibonacciSleepFactory,
-        short=providers.Factory(FibonacciSleep, intervals=[5, 8, 13, 21, 34]),
-        long=providers.Factory(FibonacciSleep, intervals=[13, 21, 34, 55]),
-    )
-
     channel_poller = providers.Singleton(
         ChannelPoller,
-        meta_provider_factory=metadata_provider_factory,
-        downloader_factory=downloader_factory,
+        meta_providers=meta_providers,
+        downloaders=downloaders,
         sleep_factory=sleep_factory,
     )
 
