@@ -208,6 +208,40 @@ func pollVideosWorker(streamsDir string, videos *[]Video, videosMap *map[string]
 	}
 }
 
+func cleanupWorker(streamsDir string) {
+	for {
+		entries, err := os.ReadDir(streamsDir)
+		if err != nil {
+			log.Println("cleanup: error reading streams dir:", err)
+			time.Sleep(10 * time.Minute)
+			continue
+		}
+
+		for _, entry := range entries {
+			name := entry.Name()
+			var baseName string
+			if base, ok := strings.CutSuffix(name, ".mp4.duration.txt"); ok {
+				baseName = base + ".mp4"
+			} else if base, ok := strings.CutSuffix(name, ".jpg"); ok {
+				baseName = base + ".mp4"
+			} else {
+				continue
+			}
+
+			if _, err := os.Stat(filepath.Join(streamsDir, baseName)); os.IsNotExist(err) {
+				path := filepath.Join(streamsDir, name)
+				if err := os.Remove(path); err != nil {
+					log.Println("cleanup: error removing", name, ":", err)
+				} else {
+					log.Println("cleanup: removed orphaned file", name)
+				}
+			}
+		}
+
+		time.Sleep(10 * time.Minute)
+	}
+}
+
 func saveThumbnailsWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWMutex) {
 	for {
 		videosMutex.RLock()
@@ -299,6 +333,7 @@ func main() {
 		go saveThumbnailsWorker(cfg.StreamsDir, &videos, &videosMutex)
 		go saveDurationsWorker(cfg.StreamsDir, &videos, &videosMutex)
 		go splitVideosWorker(cfg.StreamsDir, &videos, &videosMutex)
+		go cleanupWorker(cfg.StreamsDir)
 	}()
 
 	r := gin.Default()
