@@ -13,6 +13,10 @@ from loguru import logger
 import yt_dlp
 
 
+class ChannelTitleNotFoundError(Exception):
+    pass
+
+
 class MetadataProvider(ABC):
     @abstractmethod
     async def get_video_id(self, channel_id: str) -> str | None: ...
@@ -29,6 +33,10 @@ class YoutubeMetadataProvider(MetadataProvider):
         self._api_keys = api_keys
 
     async def get_video_id(self, channel_id: str) -> str | None:
+        # DEBUG
+        # if channel_id == "UCUyeluBRhGPCW4rPe_UvBZQ":
+        #     return "smHwBiT1Zrk"
+
         if not channel_id:
             raise ValueError("channel_id is required")
 
@@ -50,6 +58,10 @@ class YoutubeMetadataProvider(MetadataProvider):
         return await loop.run_in_executor(None, get_video_id_sync)
 
     async def get_channel_title(self, channel_id: str) -> str:
+        # DEBUG
+        # if channel_id == "UCUyeluBRhGPCW4rPe_UvBZQ":
+        #     return "primetime"
+
         if not channel_id:
             raise ValueError("channel_id is required")
 
@@ -57,7 +69,9 @@ class YoutubeMetadataProvider(MetadataProvider):
             youtube = build("youtube", "v3", developerKey=self._api_keys.next())
             response = youtube.channels().list(part="snippet", id=channel_id).execute()
             if not response.get("items"):
-                raise ValueError(f"Could not find channel with ID '{channel_id}'")
+                raise ChannelTitleNotFoundError(
+                    f"Could not find channel with ID '{channel_id}'"
+                )
             return response["items"][0]["snippet"]["title"]
 
         loop = asyncio.get_running_loop()
@@ -173,16 +187,19 @@ class ChannelPoller:
         meta = self._meta_provider_factory.create(mode)
         downloader = self._downloader_factory.create(mode)
 
-        channel_title = await meta.get_channel_title(channel_id)
-        log = logger.bind(streamer=channel_title)
-
-        log.info(f"Resolved channel ID '{channel_id}'. Polling started...")
+        log = logger.bind(streamer=channel_id)
+        channel_title = None
 
         sleep_offline = self._sleep_factory.create("long")
         sleep_err = self._sleep_factory.create("short")
 
         while True:
             try:
+                if channel_title is None:
+                    channel_title = await meta.get_channel_title(channel_id)
+                    log = logger.bind(streamer=channel_title)
+                    log.info(f"Resolved channel ID '{channel_id}'. Polling started...")
+
                 video_id = await meta.get_video_id(channel_id)
 
                 if video_id:
@@ -198,6 +215,8 @@ class ChannelPoller:
                         f"Streamer is offline. Checking again in {sleep_offline.peek()} minutes..."
                     )
                     await sleep_offline.sleep()
+            except ChannelTitleNotFoundError:
+                raise
             except Exception as e:
                 log.error(f"Error: {e}. Retrying in {sleep_err.peek()} minutes...")
                 await sleep_err.sleep()
