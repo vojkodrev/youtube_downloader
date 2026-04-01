@@ -15,7 +15,7 @@ import yt_dlp
 
 class MetadataProvider(ABC):
     @abstractmethod
-    async def get_live_video_id(self, channel_id: str) -> str | None: ...
+    async def get_video_id(self, channel_id: str) -> str | None: ...
 
     @abstractmethod
     async def get_channel_title(self, channel_id: str) -> str: ...
@@ -28,11 +28,11 @@ class YoutubeMetadataProvider(MetadataProvider):
     def __init__(self, api_keys: YoutubeApiKeyPool):
         self._api_keys = api_keys
 
-    async def get_live_video_id(self, channel_id: str) -> str | None:
+    async def get_video_id(self, channel_id: str) -> str | None:
         if not channel_id:
             raise ValueError("channel_id is required")
 
-        def get_live_video_id_sync():
+        def get_video_id_sync():
             youtube = build("youtube", "v3", developerKey=self._api_keys.next())
             request = youtube.search().list(
                 part="snippet",
@@ -47,7 +47,7 @@ class YoutubeMetadataProvider(MetadataProvider):
             return None
 
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, get_live_video_id_sync)
+        return await loop.run_in_executor(None, get_video_id_sync)
 
     async def get_channel_title(self, channel_id: str) -> str:
         if not channel_id:
@@ -99,6 +99,7 @@ class YoutubeLiveDownloader(Downloader):
                 # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
                 "live_from_start": True,
                 "merge_output_format": "mp4",
+                "overwrites": True,
                 "outtmpl": os.path.join(
                     self._config["output_folder"], "%(title)s.%(ext)s"
                 ),
@@ -182,7 +183,7 @@ class ChannelPoller:
 
         while True:
             try:
-                video_id = await meta.get_live_video_id(channel_id)
+                video_id = await meta.get_video_id(channel_id)
 
                 if video_id:
                     sleep_offline.reset()
@@ -191,6 +192,7 @@ class ChannelPoller:
                     await downloader.download(url)
                     sleep_err.reset()
                     log.info("Download finished. Resuming poll...")
+                    await sleep_offline.sleep()
                 else:
                     log.info(
                         f"Streamer is offline. Checking again in {sleep_offline.peek()} minutes..."
@@ -252,8 +254,8 @@ class Container(containers.DeclarativeContainer):
 
     sleep_factory = providers.Singleton(
         FibonacciSleepFactory,
-        short=providers.Factory(FibonacciSleep, intervals=[5, 8, 13, 21, 30]),
-        long=providers.Factory(FibonacciSleep, intervals=[20, 30, 45]),
+        short=providers.Factory(FibonacciSleep, intervals=[5, 8, 13, 21, 34]),
+        long=providers.Factory(FibonacciSleep, intervals=[13, 21, 34, 55]),
     )
 
     channel_poller = providers.Singleton(
