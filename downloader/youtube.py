@@ -184,8 +184,8 @@ class FibonacciSleep:
 class ChannelPoller:
     def __init__(
         self,
-        meta_providers: dict,
-        downloaders: dict,
+        meta_providers: dict[str, MetadataProvider],
+        downloaders: dict[str, Downloader],
         sleep_factory: FibonacciSleepFactory,
     ):
         self._meta_providers = meta_providers
@@ -214,10 +214,10 @@ class ChannelPoller:
                 if video_id:
                     sleep_offline.reset()
                     url = meta.get_video_url(video_id)
-                    log.info(f"Streamer is LIVE! Downloading from: {url}")
+                    log.info(f"Downloading from: {url}")
                     await downloader.download(url)
                     sleep_err.reset()
-                    log.info("Download finished. Resuming poll...")
+                    log.info(f"Download finished. Resuming poll in {sleep_offline.peek()} minutes...")
                     await sleep_offline.sleep()
                 else:
                     log.info(
