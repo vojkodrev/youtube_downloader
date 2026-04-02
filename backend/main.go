@@ -420,7 +420,7 @@ func main() {
 			c.Status(500)
 			return
 		}
-		c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		c.Header("Cache-Control", "public, max-age=18000")
 		c.JSON(200, gin.H{"duration": duration})
 	})
 

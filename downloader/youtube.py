@@ -115,7 +115,7 @@ class YoutubeLiveDownloader(Downloader):
                 "merge_output_format": "mp4",
                 "overwrites": True,
                 "outtmpl": os.path.join(
-                    self._config["output_folder"], "%(title)s.%(ext)s"
+                    self._config["output_folder"], "[%(uploader)s] %(title)s.%(ext)s"
                 ),
                 # "http_headers": {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"},
                 # Optional: retry if the stream connection drops
@@ -144,7 +144,7 @@ class TwitchDownloader(Downloader):
                 "overwrites": True,
                 "outtmpl": os.path.join(
                     self._config["output_folder"],
-                    "%(uploader)s %(upload_date>%Y-%m-%d)s.%(ext)s",
+                    "[%(uploader)s] %(title)s.%(ext)s",
                 ),
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
