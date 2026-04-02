@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -12,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -43,6 +45,7 @@ type Video struct {
 	ID       string    `json:"id"`
 	Filename string    `json:"filename"`
 	Name     string    `json:"name"`
+	Channel  string    `json:"channel"`
 	Date     time.Time `json:"date"`
 }
 
@@ -60,6 +63,7 @@ func getVideos(streamsDir string) ([]Video, error) {
 
 	partRe := regexp.MustCompile(`^(.+) part\d{2}\.mp4$`)
 	formatRe := regexp.MustCompile(`f\d{3}\.mp4$`)
+	channelRe := regexp.MustCompile(`^\[([^\]]+)\] ?`)
 	var videos []Video
 	for _, entry := range entries {
 		if entry.IsDir() {
@@ -91,10 +95,16 @@ func getVideos(streamsDir string) ([]Video, error) {
 		}
 
 		name := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
+		var channel string
+		if m := channelRe.FindStringSubmatch(name); m != nil {
+			channel = m[1]
+			name = name[len(m[0]):]
+		}
 		v := Video{
 			ID:       uuid.NewSHA1(uuid.NameSpaceURL, []byte(entry.Name())).String(),
 			Filename: entry.Name(),
 			Name:     name,
+			Channel:  channel,
 			Date:     info.ModTime(),
 		}
 		// log.Printf("video: id=%s name=%s date=%s", v.ID, v.Name, v.Date.Format("2006-01-02 15:04:05"))
@@ -108,12 +118,14 @@ func getVideos(streamsDir string) ([]Video, error) {
 	return videos, nil
 }
 
-func thumbnailFilename(videoName string) string {
-	return videoName + ".jpg"
+func thumbnailFilename(videoPath string) string {
+	base := filepath.Base(videoPath)
+	return strings.TrimSuffix(base, filepath.Ext(base)) + ".jpg"
 }
 
-func durationFilename(videoFilename string) string {
-	return videoFilename + ".duration.txt"
+func durationFilename(videoPath string) string {
+	base := filepath.Base(videoPath)
+	return strings.TrimSuffix(base, filepath.Ext(base)) + ".duration.txt"
 }
 
 func saveThumbnail(videoPath, thumbnailPath string) error {
@@ -158,10 +170,6 @@ func videoDuration(videoPath string) (float64, error) {
 
 func splitVideo(videoPath string) error {
 	const splitDuration = 10800
-
-	if regexp.MustCompile(`part\d{2}\.mp4$`).MatchString(videoPath) {
-		return nil
-	}
 
 	dur, err := videoDuration(videoPath)
 	if err != nil {
@@ -223,14 +231,13 @@ func cleanupWorker(streamsDir string) {
 		entries, err := os.ReadDir(streamsDir)
 		if err != nil {
 			log.Println("cleanup: error reading streams dir:", err)
-			time.Sleep(10 * time.Minute)
 			continue
 		}
 
 		for _, entry := range entries {
 			name := entry.Name()
 			var baseName string
-			if base, ok := strings.CutSuffix(name, ".mp4.duration.txt"); ok {
+			if base, ok := strings.CutSuffix(name, ".duration.txt"); ok {
 				baseName = base + ".mp4"
 			} else if base, ok := strings.CutSuffix(name, ".jpg"); ok {
 				baseName = base + ".mp4"
@@ -260,33 +267,31 @@ func saveThumbnailsWorker(streamsDir string, videos *[]Video, videosMutex *sync.
 
 		var wg sync.WaitGroup
 		for _, v := range current {
-			thumbPath := filepath.Join(streamsDir, thumbnailFilename(v.Name))
+			thumbPath := filepath.Join(streamsDir, thumbnailFilename(v.Filename))
+			videoPath := filepath.Join(streamsDir, v.Filename)
+			durationPath := filepath.Join(streamsDir, durationFilename(v.Filename))
 			// thumbnail already exists — check if it needs to be regenerated
 			if tInfo, err := os.Stat(thumbPath); err == nil {
-				videoPath := filepath.Join(streamsDir, v.Filename)
 				newerExists := false
 				// regenerate if the video file was modified after the thumbnail (e.g. file was replaced)
 				if vInfo, err := os.Stat(videoPath); err == nil && vInfo.ModTime().After(tInfo.ModTime()) {
 					newerExists = true
 				}
 				// regenerate if the duration file was updated after the thumbnail (e.g. seek position changed)
-				if dInfo, err := os.Stat(filepath.Join(streamsDir, durationFilename(v.Filename))); err == nil && dInfo.ModTime().After(tInfo.ModTime()) {
+				if dInfo, err := os.Stat(durationPath); err == nil && dInfo.ModTime().After(tInfo.ModTime()) {
 					newerExists = true
 				}
 				if !newerExists {
 					continue
 				}
 			}
-			wg.Add(1)
-			go func(v Video) {
-				defer wg.Done()
-				videoPath := filepath.Join(streamsDir, v.Filename)
+			wg.Go(func() {
 				if err := saveThumbnail(videoPath, thumbPath); err != nil {
-					log.Println("error saving thumbnail for", v.Name, ":", err)
+					log.Println("error saving thumbnail for", v.Filename, ":", err)
 				} else {
-					log.Println("thumbnail generated for", v.Name)
+					log.Println("thumbnail generated for", v.Filename)
 				}
-			}(v)
+			})
 		}
 		wg.Wait()
 		time.Sleep(1 * time.Minute)
@@ -302,29 +307,26 @@ func saveDurationsWorker(streamsDir string, videos *[]Video, videosMutex *sync.R
 		var wg sync.WaitGroup
 		for _, v := range current {
 			durationPath := filepath.Join(streamsDir, durationFilename(v.Filename))
+			videoPath := filepath.Join(streamsDir, v.Filename)
 			// duration file already exists — skip unless the video was modified after it
 			if dInfo, err := os.Stat(durationPath); err == nil {
-				videoPath := filepath.Join(streamsDir, v.Filename)
 				// video not newer than duration file, e.g. file was not replaced
 				if vInfo, err := os.Stat(videoPath); err == nil && !vInfo.ModTime().After(dInfo.ModTime()) {
 					continue
 				}
 			}
-			wg.Add(1)
-			go func(v Video) {
-				defer wg.Done()
-				videoPath := filepath.Join(streamsDir, v.Filename)
+			wg.Go(func() {
 				duration, err := videoDuration(videoPath)
 				if err != nil {
-					log.Println("error getting duration for", v.Name, ":", err)
+					log.Println("error getting duration for", v.Filename, ":", err)
 					return
 				}
 				if err := os.WriteFile(durationPath, []byte(strconv.FormatFloat(duration, 'f', -1, 64)), 0644); err != nil {
-					log.Println("error saving duration for", v.Name, ":", err)
+					log.Println("error saving duration for", v.Filename, ":", err)
 				} else {
-					log.Println("duration saved for", v.Name)
+					log.Println("duration saved for", v.Filename)
 				}
-			}(v)
+			})
 		}
 		wg.Wait()
 		time.Sleep(1 * time.Minute)
@@ -337,14 +339,36 @@ func splitVideosWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWM
 		current := *videos
 		videosMutex.RUnlock()
 
+		partRe := regexp.MustCompile(` part\d{2}\.mp4$`)
 		for _, v := range current {
+			if partRe.MatchString(v.Filename) {
+				continue
+			}
 			videoPath := filepath.Join(streamsDir, v.Filename)
 			if err := splitVideo(videoPath); err != nil {
-				log.Println("error splitting", v.Name, ":", err)
+				log.Println("error splitting", v.Filename, ":", err)
 			}
 		}
 		time.Sleep(1 * time.Minute)
 	}
+}
+
+func serveFileSharable(c *gin.Context, path string, filename string) {
+	handle, err := syscall.Open(path, syscall.O_RDONLY, syscall.FILE_SHARE_READ|syscall.FILE_SHARE_DELETE)
+	if err != nil {
+		c.Status(500)
+		return
+	}
+	f := os.NewFile(uintptr(handle), path)
+	defer f.Close()
+
+	stat, err := f.Stat()
+	if err != nil {
+		c.Status(500)
+		return
+	}
+
+	http.ServeContent(c.Writer, c.Request, filename, stat.ModTime(), f)
 }
 
 func main() {
@@ -390,7 +414,7 @@ func main() {
 			c.Status(404)
 			return
 		}
-		c.File(cfg.StreamsDir + "/" + v.Filename)
+		serveFileSharable(c, cfg.StreamsDir+"/"+v.Filename, v.Filename)
 	})
 
 	r.GET("/download/:id", func(c *gin.Context) {
@@ -403,7 +427,7 @@ func main() {
 			return
 		}
 		c.Header("Content-Disposition", `attachment; filename="`+v.Filename+`"`)
-		c.File(cfg.StreamsDir + "/" + v.Filename)
+		serveFileSharable(c, cfg.StreamsDir+"/"+v.Filename, v.Filename)
 	})
 
 	r.GET("/duration/:id", func(c *gin.Context) {
@@ -433,11 +457,12 @@ func main() {
 			c.Status(404)
 			return
 		}
-		thumbPath := filepath.Join(cfg.StreamsDir, thumbnailFilename(v.Name))
+		thumbPath := filepath.Join(cfg.StreamsDir, thumbnailFilename(v.Filename))
 		if _, err := os.Stat(thumbPath); err != nil {
 			c.Status(404)
 			return
 		}
+		c.Header("Cache-Control", "public, max-age=18000")
 		c.File(thumbPath)
 	})
 
