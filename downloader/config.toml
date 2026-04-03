@@ -10,6 +10,10 @@ id = "UC1E-JS8L0j1Ei70D9VEFrPQ"
 mode = "youtube_live"
 
 [[channels]]
+id = "UCaTznQhurW5AaiYPbhEA-KA"
+mode = "youtube_live"
+
+[[channels]]
 id = "andreamengucci"
 mode = "twitch"
 
