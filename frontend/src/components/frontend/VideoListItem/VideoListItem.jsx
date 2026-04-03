@@ -64,10 +64,8 @@ export default function VideoListItem({ video, isSelected, partsVisible }) {
             </Link>
 
             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <button className="rounded hover:bg-gray-200 flex-shrink-0">
-                        <EllipsisVertical className="w-4 h-4 text-gray-500" />
-                    </button>
+                <DropdownMenuTrigger className="rounded hover:bg-gray-200 flex-shrink-0 cursor-pointer">
+                    <EllipsisVertical className="w-4 h-4 text-gray-500" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-44">
                     <DropdownMenuItem>
