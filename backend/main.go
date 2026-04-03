@@ -64,26 +64,27 @@ func getVideos(streamsDir string) ([]Video, error) {
 		return nil, err
 	}
 
-	partRe := regexp.MustCompile(`^(.+) part\d{2}\.mp4$`)
+	splitPartRe := regexp.MustCompile(`^(.+) part\d{2}\.mp4$`)
 	formatRe := regexp.MustCompile(`f\d{3}\.mp4$`)
-	ytdlRe := regexp.MustCompile(`\.f\d{3}\.[^.]+\.ytdl$`)
+	downloadingPartRe := regexp.MustCompile(`\.f\d{3}\.[^.]+\.part$`)
 	channelRe := regexp.MustCompile(`^\[([^\]]+)\] ?`)
+	formatSegmentRe := regexp.MustCompile(`\.f\d{3}$`)
 
-	// pre-scan: for each ytdl base name, find the largest file
-	largestYtdl := map[string]string{} // base -> filename with largest size
-	largestYtdlSize := map[string]int64{}
+	// pre-scan: for each base name, find the largest part file
+	largestDownloadingPart := map[string]string{} // base -> filename of largest .part file
+	largestDownloadingPartSize := map[string]int64{}
 	for _, entry := range entries {
-		if strings.ToLower(filepath.Ext(entry.Name())) != ".ytdl" {
+		if strings.ToLower(filepath.Ext(entry.Name())) != ".part" {
 			continue
 		}
-		base := ytdlRe.ReplaceAllString(entry.Name(), "")
+		base := downloadingPartRe.ReplaceAllString(entry.Name(), "")
 		info, err := entry.Info()
 		if err != nil {
 			continue
 		}
-		if info.Size() > largestYtdlSize[base] {
-			largestYtdlSize[base] = info.Size()
-			largestYtdl[base] = entry.Name()
+		if info.Size() > largestDownloadingPartSize[base] {
+			largestDownloadingPartSize[base] = info.Size()
+			largestDownloadingPart[base] = entry.Name()
 		}
 	}
 
@@ -92,19 +93,16 @@ func getVideos(streamsDir string) ([]Video, error) {
 		if entry.IsDir() {
 			continue
 		}
-		// skip non-mp4/ytdl/part files, e.g. "video.jpg", "video.mp4.duration.txt"
+		// skip non-mp4/part files, e.g. "video.jpg", "video.mp4.duration.txt"
 		ext := strings.ToLower(filepath.Ext(entry.Name()))
-		if ext != ".mp4" && ext != ".ytdl" && ext != ".part" {
+		if ext != ".mp4" && ext != ".part" {
 			continue
 		}
 		status := "Ready"
 		if ext == ".part" {
-			status = "Downloading"
-		}
-		if ext == ".ytdl" {
-			// only include the largest ytdl file per base (skip smaller format segments)
-			base := ytdlRe.ReplaceAllString(entry.Name(), "")
-			if largestYtdl[base] != entry.Name() {
+			// only include the largest part file per base (skip smaller format segments)
+			base := downloadingPartRe.ReplaceAllString(entry.Name(), "")
+			if largestDownloadingPart[base] != entry.Name() {
 				continue
 			}
 			status = "Downloading"
@@ -117,7 +115,7 @@ func getVideos(streamsDir string) ([]Video, error) {
 		if strings.HasSuffix(entry.Name(), ".temp.mp4") {
 			status = "Downloading"
 		}
-		if m := partRe.FindStringSubmatch(entry.Name()); m != nil {
+		if m := splitPartRe.FindStringSubmatch(entry.Name()); m != nil {
 			// this is a partXX file — skip it if the source file still exists (splitting in progress)
 			if _, err := os.Stat(filepath.Join(streamsDir, m[1]+".mp4")); err == nil {
 				continue
@@ -137,6 +135,8 @@ func getVideos(streamsDir string) ([]Video, error) {
 		}
 
 		name := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
+		name = strings.TrimSuffix(name, ".mp4")
+		name = formatSegmentRe.ReplaceAllString(name, "")
 		var channel string
 		if m := channelRe.FindStringSubmatch(name); m != nil {
 			channel = m[1]
@@ -280,7 +280,7 @@ func cleanupWorker(streamsDir string) {
 			}
 
 			exists := false
-			for _, ext := range []string{".mp4", ".ytdl", ".part"} {
+			for _, ext := range []string{".mp4", ".part"} {
 				if _, err := os.Stat(filepath.Join(streamsDir, base+ext)); err == nil {
 					exists = true
 					break
@@ -381,9 +381,9 @@ func splitVideosWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWM
 		current := *videos
 		videosMutex.RUnlock()
 
-		partRe := regexp.MustCompile(` part\d{2}\.mp4$`)
+		splitPartRe := regexp.MustCompile(` part\d{2}\.mp4$`)
 		for _, v := range current {
-			if v.Status != "Ready" || partRe.MatchString(v.Filename) {
+			if v.Status != "Ready" || splitPartRe.MatchString(v.Filename) {
 				continue
 			}
 			videoPath := filepath.Join(streamsDir, v.Filename)
