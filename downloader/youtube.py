@@ -138,6 +138,7 @@ class TwitchDownloader(Downloader):
             raise ValueError("url is required")
 
         def sync():
+            # check every 15 minutes if stream is still live
             ydl_opts = {
                 "format": "best",
                 "merge_output_format": "mp4",

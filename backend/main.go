@@ -92,12 +92,15 @@ func getVideos(streamsDir string) ([]Video, error) {
 		if entry.IsDir() {
 			continue
 		}
-		// skip non-mp4/ytdl files, e.g. "video.jpg", "video.mp4.duration.txt"
+		// skip non-mp4/ytdl/part files, e.g. "video.jpg", "video.mp4.duration.txt"
 		ext := strings.ToLower(filepath.Ext(entry.Name()))
-		if ext != ".mp4" && ext != ".ytdl" {
+		if ext != ".mp4" && ext != ".ytdl" && ext != ".part" {
 			continue
 		}
 		status := "Ready"
+		if ext == ".part" {
+			status = "Downloading"
+		}
 		if ext == ".ytdl" {
 			// only include the largest ytdl file per base (skip smaller format segments)
 			base := ytdlRe.ReplaceAllString(entry.Name(), "")
@@ -277,7 +280,7 @@ func cleanupWorker(streamsDir string) {
 			}
 
 			exists := false
-			for _, ext := range []string{".mp4", ".ytdl"} {
+			for _, ext := range []string{".mp4", ".ytdl", ".part"} {
 				if _, err := os.Stat(filepath.Join(streamsDir, base+ext)); err == nil {
 					exists = true
 					break
@@ -491,7 +494,9 @@ func main() {
 			c.Status(500)
 			return
 		}
-		c.Header("Cache-Control", "public, max-age=18000")
+		if v.Status == "Ready" {
+			c.Header("Cache-Control", "public, max-age=18000")
+		}
 		c.JSON(200, gin.H{"duration": duration})
 	})
 
@@ -509,7 +514,9 @@ func main() {
 			c.Status(404)
 			return
 		}
-		c.Header("Cache-Control", "public, max-age=18000")
+		if v.Status == "Ready" {
+			c.Header("Cache-Control", "public, max-age=18000")
+		}
 		c.File(thumbPath)
 	})
 
