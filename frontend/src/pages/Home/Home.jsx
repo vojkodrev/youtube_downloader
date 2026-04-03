@@ -33,7 +33,7 @@ export default function Home() {
             for (const [base, items] of Object.entries(videoGroups)) {
                 const primary = items.find(v => v.name.match(partRe)?.[2] === '01') ?? items[0]
                 primary.name = base
-                primary.parts = items.length
+                primary.videoCount = items.length
             }
 
             const playlistsArr = Object.values(videoGroups)
@@ -162,7 +162,7 @@ export default function Home() {
                             key={video.id}
                             video={video}
                             isSelected={selectedVideo?.id === video.id || playlist.some(v => v.id === video.id)}
-                            partsVisible
+                            infoVisible
                         />
                     ))}
                 </div>

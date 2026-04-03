@@ -19,7 +19,7 @@ function saveDownloadInfo(id, filename) {
     localStorage.setItem(`download_${id}`, JSON.stringify({ filename }))
 }
 
-export default function VideoListItem({ video, isSelected, partsVisible }) {
+export default function VideoListItem({ video, isSelected, infoVisible }) {
     const [downloadInfo, setDownloadInfo] = useState(getDownloadInfo(video.id))
 
     return (
@@ -56,8 +56,8 @@ export default function VideoListItem({ video, isSelected, partsVisible }) {
                         <p className="text-xs text-gray-500 mt-1">
                             {[video.channel, new Date(video.date).toLocaleString()].filter(Boolean).join(' · ')}
                         </p>
-                        {partsVisible && video.parts > 1 && (
-                            <p className="text-xs text-gray-400 mt-1">{video.parts} videos</p>
+                        {infoVisible && video.videoCount > 1 && (
+                            <p className="text-xs text-gray-400 mt-1">{video.videoCount} videos</p>
                         )}
                     </div>
                 </div>
