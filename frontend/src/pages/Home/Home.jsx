@@ -162,7 +162,7 @@ export default function Home() {
                             key={video.id}
                             video={video}
                             isSelected={selectedVideo?.id === video.id || playlist.some(v => v.id === video.id)}
-                            infoVisible
+                            videoCountVisible
                         />
                     ))}
                 </div>

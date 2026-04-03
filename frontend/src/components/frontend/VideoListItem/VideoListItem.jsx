@@ -19,15 +19,15 @@ function saveDownloadInfo(id, filename) {
     localStorage.setItem(`download_${id}`, JSON.stringify({ filename }))
 }
 
-export default function VideoListItem({ video, isSelected, infoVisible }) {
+export default function VideoListItem({ video, isSelected, videoCountVisible }) {
     const [downloadInfo, setDownloadInfo] = useState(getDownloadInfo(video.id))
 
     return (
         <div className={`flex items-center p-2 hover:bg-gray-100 ${isSelected ? 'bg-gray-200' : ''}`}>
             <Link
-                to={video.savedTime ? `/watch/${video.id}?t=${video.savedTime}` : `/watch/${video.id}`}
+                to={video.status === 'Ready' ? (video.savedTime ? `/watch/${video.id}?t=${video.savedTime}` : `/watch/${video.id}`) : '#'}
                 title={video.name}
-                className="flex gap-2 min-w-0 flex-1"
+                className={`flex gap-2 min-w-0 flex-1${video.status !== 'Ready' ? ' pointer-events-none' : ''}`}
             >
                 <div className="flex flex-row gap-2 min-w-0 overflow-hidden">
                     <div className="relative flex-shrink-0">
@@ -56,9 +56,10 @@ export default function VideoListItem({ video, isSelected, infoVisible }) {
                         <p className="text-xs text-gray-500 mt-1">
                             {[video.channel, new Date(video.date).toLocaleString()].filter(Boolean).join(' · ')}
                         </p>
-                        {infoVisible && video.videoCount > 1 && (
-                            <p className="text-xs text-gray-400 mt-1">{video.videoCount} videos</p>
-                        )}
+                        {video.status !== 'Ready'
+                            ? <p className="text-xs text-gray-400 mt-1">{video.status}</p>
+                            : videoCountVisible && video.videoCount > 1 && <p className="text-xs text-gray-400 mt-1">{video.videoCount} videos</p>
+                        }
                     </div>
                 </div>
             </Link>
@@ -68,7 +69,7 @@ export default function VideoListItem({ video, isSelected, infoVisible }) {
                     <EllipsisVertical className="w-4 h-4 text-gray-500" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-44">
-                    <DropdownMenuItem>
+                    <DropdownMenuItem disabled={video.status !== 'Ready'}>
                         <a
                             href={`${API_URL}/download/${video.id}`}
                             download={`${video.name}.mp4`}
