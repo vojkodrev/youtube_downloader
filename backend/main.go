@@ -208,16 +208,7 @@ func videoDuration(videoPath string) (float64, error) {
 	return strconv.ParseFloat(probe.Format.Duration, 64)
 }
 
-func splitVideo(videoPath string) error {
-	const splitDuration = 10800
-
-	dur, err := videoDuration(videoPath)
-	if err != nil {
-		return fmt.Errorf("probe: %w", err)
-	}
-	if dur <= splitDuration {
-		return nil
-	}
+func splitVideo(videoPath string, splitDuration float64) error {
 
 	ext := filepath.Ext(videoPath)
 	base := videoPath[:len(videoPath)-len(ext)]
@@ -225,7 +216,7 @@ func splitVideo(videoPath string) error {
 	cmd := ffmpeg.Input(videoPath).
 		Output(base+" part%02d.mp4", ffmpeg.KwArgs{
 			"c":                    "copy",
-			"segment_time":         fmt.Sprintf("%d", splitDuration),
+			"segment_time":         fmt.Sprintf("%g", splitDuration),
 			"f":                    "segment",
 			"reset_timestamps":     1,
 			"segment_start_number": 1,
@@ -381,6 +372,7 @@ func saveDurationsWorker(streamsDir string, videos *[]Video, videosMutex *sync.R
 }
 
 func splitVideosWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWMutex) {
+	const splitDuration = 3 * 60 * 60
 	for {
 		videosMutex.RLock()
 		current := *videos
@@ -392,7 +384,15 @@ func splitVideosWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWM
 				continue
 			}
 			videoPath := filepath.Join(streamsDir, v.Filename)
-			if err := splitVideo(videoPath); err != nil {
+			dur, err := videoDuration(videoPath)
+			if err != nil {
+				log.Println("error probing", v.Filename, ":", err)
+				continue
+			}
+			if dur <= splitDuration {
+				continue
+			}
+			if err := splitVideo(videoPath, splitDuration); err != nil {
 				log.Println("error splitting", v.Filename, ":", err)
 			}
 		}
