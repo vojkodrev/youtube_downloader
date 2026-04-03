@@ -47,6 +47,7 @@ type Video struct {
 	Name     string    `json:"name"`
 	Channel  string    `json:"channel"`
 	Date     time.Time `json:"date"`
+	Status   string    `json:"status"`
 }
 
 type VideoResponse struct {
@@ -54,6 +55,7 @@ type VideoResponse struct {
 	Name    string    `json:"name"`
 	Channel string    `json:"channel"`
 	Date    time.Time `json:"date"`
+	Status  string    `json:"status"`
 }
 
 func getVideos(streamsDir string) ([]Video, error) {
@@ -64,29 +66,65 @@ func getVideos(streamsDir string) ([]Video, error) {
 
 	partRe := regexp.MustCompile(`^(.+) part\d{2}\.mp4$`)
 	formatRe := regexp.MustCompile(`f\d{3}\.mp4$`)
+	ytdlRe := regexp.MustCompile(`\.f\d{3}\.[^.]+\.ytdl$`)
 	channelRe := regexp.MustCompile(`^\[([^\]]+)\] ?`)
+
+	// pre-scan: for each ytdl base name, find the largest file
+	largestYtdl := map[string]string{} // base -> filename with largest size
+	largestYtdlSize := map[string]int64{}
+	for _, entry := range entries {
+		if strings.ToLower(filepath.Ext(entry.Name())) != ".ytdl" {
+			continue
+		}
+		base := ytdlRe.ReplaceAllString(entry.Name(), "")
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		if info.Size() > largestYtdlSize[base] {
+			largestYtdlSize[base] = info.Size()
+			largestYtdl[base] = entry.Name()
+		}
+	}
+
 	var videos []Video
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		// skip non-mp4 files, e.g. "video.jpg", "video.mp4.duration.txt"
-		if !strings.EqualFold(filepath.Ext(entry.Name()), ".mp4") {
+		// skip non-mp4/ytdl files, e.g. "video.jpg", "video.mp4.duration.txt"
+		ext := strings.ToLower(filepath.Ext(entry.Name()))
+		if ext != ".mp4" && ext != ".ytdl" {
 			continue
+		}
+		status := "Ready"
+		if ext == ".ytdl" {
+			// only include the largest ytdl file per base (skip smaller format segments)
+			base := ytdlRe.ReplaceAllString(entry.Name(), "")
+			if largestYtdl[base] != entry.Name() {
+				continue
+			}
+			status = "Downloading"
 		}
 		// skip intermediate format segments, e.g. "video.f140.mp4"
 		if formatRe.MatchString(entry.Name()) {
 			continue
 		}
-		// skip in-progress downloads, e.g. "video.temp.mp4"
+		// in-progress yt-dlp download
 		if strings.HasSuffix(entry.Name(), ".temp.mp4") {
-			continue
+			status = "Downloading"
 		}
-
-		// skip part files when the merged file exists, e.g. "video part01.mp4" when "video.mp4" exists
 		if m := partRe.FindStringSubmatch(entry.Name()); m != nil {
+			// this is a partXX file — skip it if the source file still exists (splitting in progress)
 			if _, err := os.Stat(filepath.Join(streamsDir, m[1]+".mp4")); err == nil {
 				continue
+			}
+		} else {
+			// this is a plain mp4 — mark as Processing if any partXX files exist (splitting in progress)
+			base := strings.TrimSuffix(entry.Name(), ".mp4")
+			pattern := filepath.Join(streamsDir, base+" part*.mp4")
+			if matches, _ := filepath.Glob(pattern); len(matches) > 0 {
+				status = "Processing"
 			}
 		}
 
@@ -107,6 +145,7 @@ func getVideos(streamsDir string) ([]Video, error) {
 			Name:     name,
 			Channel:  channel,
 			Date:     info.ModTime(),
+			Status:   status,
 		}
 		// log.Printf("video: id=%s name=%s date=%s", v.ID, v.Name, v.Date.Format("2006-01-02 15:04:05"))
 		videos = append(videos, v)
@@ -237,16 +276,23 @@ func cleanupWorker(streamsDir string) {
 
 		for _, entry := range entries {
 			name := entry.Name()
-			var baseName string
-			if base, ok := strings.CutSuffix(name, ".duration.txt"); ok {
-				baseName = base + ".mp4"
-			} else if base, ok := strings.CutSuffix(name, ".jpg"); ok {
-				baseName = base + ".mp4"
+			var base string
+			if b, ok := strings.CutSuffix(name, ".duration.txt"); ok {
+				base = b
+			} else if b, ok := strings.CutSuffix(name, ".jpg"); ok {
+				base = b
 			} else {
 				continue
 			}
 
-			if _, err := os.Stat(filepath.Join(streamsDir, baseName)); os.IsNotExist(err) {
+			exists := false
+			for _, ext := range []string{".mp4", ".ytdl"} {
+				if _, err := os.Stat(filepath.Join(streamsDir, base+ext)); err == nil {
+					exists = true
+					break
+				}
+			}
+			if !exists {
 				path := filepath.Join(streamsDir, name)
 				if err := os.Remove(path); err != nil {
 					log.Println("cleanup: error removing", name, ":", err)
@@ -342,7 +388,7 @@ func splitVideosWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWM
 
 		partRe := regexp.MustCompile(` part\d{2}\.mp4$`)
 		for _, v := range current {
-			if partRe.MatchString(v.Filename) {
+			if v.Status != "Ready" || partRe.MatchString(v.Filename) {
 				continue
 			}
 			videoPath := filepath.Join(streamsDir, v.Filename)
@@ -401,7 +447,7 @@ func main() {
 		defer videosMutex.RUnlock()
 		response := make([]VideoResponse, len(videos))
 		for i, v := range videos {
-			response[i] = VideoResponse{ID: v.ID, Name: v.Name, Channel: v.Channel, Date: v.Date}
+			response[i] = VideoResponse{ID: v.ID, Name: v.Name, Channel: v.Channel, Date: v.Date, Status: v.Status}
 		}
 		c.JSON(200, response)
 	})
