@@ -14,20 +14,14 @@ export default function Home() {
     const [playlists, setPlaylists] = useState([])
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
-    const firstVideoId = useMemo(() => {
-        const firstVideo = videos[0]
-        if (!firstVideo) return undefined
-        const playlist = playlists.find(p => p.some(v => v.id === firstVideo.id))
-        return playlist ? playlist[0].id : firstVideo.id
-    }, [videos, playlists])
     const playlist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
     useEffect(() => {
         (async () => {
             const res = await fetch(`${API_URL}/videos`)
+            const data = (await res.json())
 
             const partRe = /^(.+) part(\d{2})$/
-            const data = (await res.json())
 
             const videos = data.map(v => ({
                 ...v,
@@ -75,11 +69,13 @@ export default function Home() {
     }, [selectedVideo])
 
     useEffect(() => {
-        // check if the id in the url is valid, if not redirect to the first video
-
-        if (!id) {
-            if (firstVideoId)
-                navigate(`/watch/${firstVideoId}`, { replace: true })
+        if (!id || (videos.length > 0 && !videos.find(v => v.id === id))) {
+            const firstVideo = videos[0]
+            if (firstVideo) {
+                const playlist = playlists.find(p => p.some(v => v.id === firstVideo.id))
+                const firstId = playlist ? playlist[0].id : firstVideo.id
+                navigate(`/watch/${firstId}`, { replace: true })
+            }
             return
         }
         if (!searchParams.get('t')) {
@@ -89,7 +85,7 @@ export default function Home() {
                 return
             }
         }
-    }, [id, firstVideoId])
+    }, [id, videos, playlists])
 
     return (
         <div className="flex flex-col">
