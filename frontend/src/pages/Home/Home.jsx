@@ -12,7 +12,6 @@ export default function Home() {
     const navigate = useNavigate()
     const [videos, setVideos] = useState([])
     const [playlists, setPlaylists] = useState([])
-    const [duration, setDuration] = useState(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
     const firstVideoId = useMemo(() => {
@@ -76,6 +75,8 @@ export default function Home() {
     }, [selectedVideo])
 
     useEffect(() => {
+        // check if the id in the url is valid, if not redirect to the first video
+
         if (!id) {
             if (firstVideoId)
                 navigate(`/watch/${firstVideoId}`, { replace: true })
@@ -88,7 +89,6 @@ export default function Home() {
                 return
             }
         }
-        setDuration(null)
     }, [id, firstVideoId])
 
     return (
@@ -126,7 +126,6 @@ export default function Home() {
                                     })
                                 }}
                                 onLoadedMetadata={e => {
-                                    setDuration(e.target.duration)
                                     const t = searchParams.get('t')
                                     if (t) e.target.currentTime = parseFloat(t)
                                 }}
@@ -138,10 +137,8 @@ export default function Home() {
                         {selectedVideo && (
                             <>
                                 <p className="font-semibold text-lg" title={selectedVideo.name}>{selectedVideo.name}</p>
-                                {duration != null && (
-                                    <p className="text-sm text-gray-500 mt-1">
-                                        {new Date(duration * 1000).toISOString().substring(11, 19)}
-                                    </p>
+                                {selectedVideo.channel && (
+                                    <p className="text-sm text-gray-500 mt-1">{selectedVideo.channel}</p>
                                 )}
                                 <p className="text-sm text-gray-500 mt-1">{new Date(selectedVideo.date).toLocaleString()}</p>
                             </>

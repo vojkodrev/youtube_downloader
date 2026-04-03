@@ -50,9 +50,10 @@ type Video struct {
 }
 
 type VideoResponse struct {
-	ID   string    `json:"id"`
-	Name string    `json:"name"`
-	Date time.Time `json:"date"`
+	ID      string    `json:"id"`
+	Name    string    `json:"name"`
+	Channel string    `json:"channel"`
+	Date    time.Time `json:"date"`
 }
 
 func getVideos(streamsDir string) ([]Video, error) {
@@ -400,7 +401,7 @@ func main() {
 		defer videosMutex.RUnlock()
 		response := make([]VideoResponse, len(videos))
 		for i, v := range videos {
-			response[i] = VideoResponse{ID: v.ID, Name: v.Name, Date: v.Date}
+			response[i] = VideoResponse{ID: v.ID, Name: v.Name, Channel: v.Channel, Date: v.Date}
 		}
 		c.JSON(200, response)
 	})
