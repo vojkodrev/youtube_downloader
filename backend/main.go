@@ -112,20 +112,33 @@ func getVideos(streamsDir string) ([]Video, error) {
 			continue
 		}
 		// in-progress yt-dlp download
-		if strings.HasSuffix(entry.Name(), ".temp.mp4") {
-			status = "Downloading"
+		if base, ok := strings.CutSuffix(entry.Name(), ".temp.mp4"); ok {
+			// skip temp file if the final mp4 already exists
+			if _, err := os.Stat(filepath.Join(streamsDir, base+".mp4")); err == nil {
+				continue
+			}
+			status = "Processing"
+		} else if ext == ".mp4" {
+			// if a temp file exists alongside the final mp4, mark as Processing
+			base, _ := strings.CutSuffix(entry.Name(), ".mp4")
+			if _, err := os.Stat(filepath.Join(streamsDir, base+".temp.mp4")); err == nil {
+				status = "Processing"
+			}
 		}
 		if m := splitPartRe.FindStringSubmatch(entry.Name()); m != nil {
 			// this is a partXX file — skip it if the source file still exists (splitting in progress)
 			if _, err := os.Stat(filepath.Join(streamsDir, m[1]+".mp4")); err == nil {
 				continue
 			}
-		} else {
+		} else if ext == ".mp4" {
 			// this is a plain mp4 — mark as Processing if any partXX files exist (splitting in progress)
 			base := strings.TrimSuffix(entry.Name(), ".mp4")
-			pattern := filepath.Join(streamsDir, base+" part*.mp4")
-			if matches, _ := filepath.Glob(pattern); len(matches) > 0 {
-				status = "Processing"
+			partFileRe := regexp.MustCompile(`^` + regexp.QuoteMeta(base) + ` part\d{2}\.mp4$`)
+			for _, e := range entries {
+				if partFileRe.MatchString(e.Name()) {
+					status = "Processing"
+					break
+				}
 			}
 		}
 
