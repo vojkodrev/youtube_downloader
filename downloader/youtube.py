@@ -156,11 +156,15 @@ class TwitchDownloader(Downloader):
 
 
 class FibonacciSleepFactory:
-    def create(self, mode: str) -> FibonacciSleep:
-        if mode == "short":
-            return FibonacciSleep(intervals=[5, 8, 13, 21, 34])
-        if mode == "long":
-            return FibonacciSleep(intervals=[13, 21, 34, 55])
+    def create(self, interval_type: str, mode: str) -> FibonacciSleep:
+        if mode == "twitch":
+            return FibonacciSleep(intervals=[15])
+        if mode == "youtube_live":
+            if interval_type == "short":
+                return FibonacciSleep(intervals=[5, 8, 13, 21, 34])
+            if interval_type == "long":
+                return FibonacciSleep(intervals=[13, 21, 34, 55])
+            raise ValueError(f"Unsupported interval_type: {interval_type}")
         raise ValueError(f"Unsupported mode: {mode}")
 
 
@@ -200,8 +204,8 @@ class ChannelPoller:
         log = logger.bind(streamer=channel_id)
         channel_title = None
 
-        sleep_offline = self._sleep_factory.create("long")
-        sleep_err = self._sleep_factory.create("short")
+        sleep_offline = self._sleep_factory.create("long", mode)
+        sleep_err = self._sleep_factory.create("short", mode)
 
         while True:
             try:
