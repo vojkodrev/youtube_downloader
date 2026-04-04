@@ -22,7 +22,33 @@ func setupVideoReader(t *testing.T, fsys fstest.MapFS) *VideoReader {
 	return vr
 }
 
-func TestGetVideos_StatusReady(t *testing.T) {
+func TestGetVideos_PartFile_ReturnsStatusDownloading(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"video2026-04-04 17_55.mp4.part": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Equal(t, "Downloading", videos[0].Status)
+}
+
+func TestGetVideos_TwoPartFiles_ReturnsOnlyLargerWithStatusDownloading(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"video2026-04-04 17_55.f140.webm.part": &fstest.MapFile{Data: make([]byte, 100)},
+		"video2026-04-04 17_55.f251.webm.part": &fstest.MapFile{Data: make([]byte, 200)},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Equal(t, "video2026-04-04 17_55.f251.webm.part", videos[0].Filename)
+	assert.Equal(t, "Downloading", videos[0].Status)
+}
+
+func TestGetVideos_Mp4File_ReturnsStatusReady(t *testing.T) {
 	vr := setupVideoReader(t, fstest.MapFS{
 		"video.mp4": &fstest.MapFile{},
 	})

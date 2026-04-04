@@ -43,7 +43,7 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 		if err != nil {
 			continue
 		}
-		if info.Size() > largestDownloadingPartSize[base] {
+		if info.Size() >= largestDownloadingPartSize[base] {
 			largestDownloadingPartSize[base] = info.Size()
 			largestDownloadingPart[base] = entry.Name()
 		}
