@@ -82,6 +82,7 @@ func TestGetVideos_Mp4WithTempMp4_ReturnsStatusProcessing(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Len(t, videos, 1)
+	assert.Equal(t, "video.mp4", videos[0].Filename)
 	assert.Equal(t, "Processing", videos[0].Status)
 }
 
