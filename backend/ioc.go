@@ -1,6 +1,11 @@
 package main
 
-import "go.uber.org/fx"
+import (
+	"context"
+	"time"
+
+	"go.uber.org/fx"
+)
 
 func NewIOC() *fx.App {
 	return fx.New(
@@ -17,5 +22,31 @@ func NewIOC() *fx.App {
 		fx.Provide(NewPollVideosWorker),
 		fx.Provide(NewVideoSplitter),
 		fx.Provide(NewSplitVideosWorker),
+		fx.Provide(NewGinServer),
+
+		fx.Invoke(func(lc fx.Lifecycle, ginServer *GinServer) {
+			ginServer.Hook(lc)
+		}),
+		fx.Invoke(func(
+			lc fx.Lifecycle,
+			pollVideosWorker *PollVideosWorker,
+			thumbnailsWorker *ThumbnailsWorker,
+			durationsWorker *DurationsWorker,
+			splitVideosWorker *SplitVideosWorker,
+			cleanupWorker *CleanupWorker) {
+			lc.Append(fx.Hook{
+				OnStart: func(ctx context.Context) error {
+					go pollVideosWorker.Start()
+					go func() {
+						time.Sleep(5 * time.Second)
+						go thumbnailsWorker.Start()
+						go durationsWorker.Start()
+						go splitVideosWorker.Start()
+						go cleanupWorker.Start()
+					}()
+					return nil
+				},
+			})
+		}),
 	)
 }
