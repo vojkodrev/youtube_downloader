@@ -10,8 +10,16 @@ import (
 	"github.com/google/uuid"
 )
 
-func getVideos(streamsDir string) ([]Video, error) {
-	entries, err := os.ReadDir(streamsDir)
+type VideoReader struct {
+	cfg *Config
+}
+
+func NewVideoReader(cfg *Config) *VideoReader {
+	return &VideoReader{cfg: cfg}
+}
+
+func (vr *VideoReader) GetVideos() ([]Video, error) {
+	entries, err := os.ReadDir(vr.cfg.StreamsDir)
 	if err != nil {
 		return nil, err
 	}
@@ -66,20 +74,20 @@ func getVideos(streamsDir string) ([]Video, error) {
 		// in-progress yt-dlp download
 		if base, ok := strings.CutSuffix(entry.Name(), ".temp.mp4"); ok {
 			// skip temp file if the final mp4 already exists
-			if _, err := os.Stat(filepath.Join(streamsDir, base+".mp4")); err == nil {
+			if _, err := os.Stat(filepath.Join(vr.cfg.StreamsDir, base+".mp4")); err == nil {
 				continue
 			}
 			status = "Processing"
 		} else if ext == ".mp4" {
 			// if a temp file exists alongside the final mp4, mark as Processing
 			base, _ := strings.CutSuffix(entry.Name(), ".mp4")
-			if _, err := os.Stat(filepath.Join(streamsDir, base+".temp.mp4")); err == nil {
+			if _, err := os.Stat(filepath.Join(vr.cfg.StreamsDir, base+".temp.mp4")); err == nil {
 				status = "Processing"
 			}
 		}
 		if m := splitPartRe.FindStringSubmatch(entry.Name()); m != nil {
 			// this is a partXX file — skip it if the source file still exists (splitting in progress)
-			if _, err := os.Stat(filepath.Join(streamsDir, m[1]+".mp4")); err == nil {
+			if _, err := os.Stat(filepath.Join(vr.cfg.StreamsDir, m[1]+".mp4")); err == nil {
 				continue
 			}
 		} else if ext == ".mp4" {

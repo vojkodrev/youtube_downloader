@@ -2,13 +2,21 @@ package main
 
 import (
 	"log"
-	"sync"
 	"time"
 )
 
-func pollVideosWorker(streamsDir string, videos *[]Video, videosMap *map[string]Video, videosMutex *sync.RWMutex) {
+type PollVideosWorker struct {
+	videoReader *VideoReader
+	store       *VideoStore
+}
+
+func NewPollVideosWorker(videoReader *VideoReader, store *VideoStore) *PollVideosWorker {
+	return &PollVideosWorker{videoReader: videoReader, store: store}
+}
+
+func (pw *PollVideosWorker) Start() {
 	for {
-		fetched, err := getVideos(streamsDir)
+		fetched, err := pw.videoReader.GetVideos()
 		if err != nil {
 			log.Println("error fetching videos:", err)
 		} else {
@@ -16,10 +24,10 @@ func pollVideosWorker(streamsDir string, videos *[]Video, videosMap *map[string]
 			for _, v := range fetched {
 				m[v.ID] = v
 			}
-			videosMutex.Lock()
-			*videos = fetched
-			*videosMap = m
-			videosMutex.Unlock()
+			pw.store.Mutex.Lock()
+			pw.store.Videos = fetched
+			pw.store.VideosMap = m
+			pw.store.Mutex.Unlock()
 			log.Println("loaded", len(fetched), "videos")
 		}
 		time.Sleep(1 * time.Minute)

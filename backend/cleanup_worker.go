@@ -8,9 +8,17 @@ import (
 	"time"
 )
 
-func cleanupWorker(streamsDir string) {
+type CleanupWorker struct {
+	cfg *Config
+}
+
+func NewCleanupWorker(cfg *Config) *CleanupWorker {
+	return &CleanupWorker{cfg: cfg}
+}
+
+func (cw *CleanupWorker) Start() {
 	for {
-		entries, err := os.ReadDir(streamsDir)
+		entries, err := os.ReadDir(cw.cfg.StreamsDir)
 		if err != nil {
 			log.Println("cleanup: error reading streams dir:", err)
 			continue
@@ -29,13 +37,13 @@ func cleanupWorker(streamsDir string) {
 
 			exists := false
 			for _, ext := range []string{".mp4", ".part"} {
-				if _, err := os.Stat(filepath.Join(streamsDir, base+ext)); err == nil {
+				if _, err := os.Stat(filepath.Join(cw.cfg.StreamsDir, base+ext)); err == nil {
 					exists = true
 					break
 				}
 			}
 			if !exists {
-				path := filepath.Join(streamsDir, name)
+				path := filepath.Join(cw.cfg.StreamsDir, name)
 				if err := os.Remove(path); err != nil {
 					log.Println("cleanup: error removing", name, ":", err)
 				} else {
