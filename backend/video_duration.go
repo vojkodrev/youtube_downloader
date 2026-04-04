@@ -8,8 +8,16 @@ import (
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
-func videoDuration(videoPath string) (float64, error) {
-	durationPath := durationFilename(videoPath)
+type VideoDuration struct {
+	filenames *Filenames
+}
+
+func NewVideoDuration(filenames *Filenames) *VideoDuration {
+	return &VideoDuration{filenames: filenames}
+}
+
+func (vd *VideoDuration) Get(videoPath string) (float64, error) {
+	durationPath := vd.filenames.Duration(videoPath)
 	if data, err := os.ReadFile(durationPath); err == nil {
 		return strconv.ParseFloat(string(data), 64)
 	}

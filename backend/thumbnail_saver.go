@@ -7,8 +7,16 @@ import (
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
-func saveThumbnail(videoPath, thumbnailPath string) error {
-	dur, err := videoDuration(videoPath)
+type ThumbnailSaver struct {
+	videoDuration *VideoDuration
+}
+
+func NewThumbnailSaver(videoDuration *VideoDuration) *ThumbnailSaver {
+	return &ThumbnailSaver{videoDuration: videoDuration}
+}
+
+func (ts *ThumbnailSaver) Save(videoPath, thumbnailPath string) error {
+	dur, err := ts.videoDuration.Get(videoPath)
 	if err != nil {
 		return fmt.Errorf("probe: %w", err)
 	}

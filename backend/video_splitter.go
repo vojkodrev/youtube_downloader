@@ -9,7 +9,13 @@ import (
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
-func splitVideo(videoPath string, splitDuration float64) error {
+type VideoSplitter struct{}
+
+func NewVideoSplitter() *VideoSplitter {
+	return &VideoSplitter{}
+}
+
+func (vs *VideoSplitter) Split(videoPath string, splitDuration float64) error {
 	ext := filepath.Ext(videoPath)
 	base := videoPath[:len(videoPath)-len(ext)]
 

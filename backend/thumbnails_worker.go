@@ -8,17 +8,28 @@ import (
 	"time"
 )
 
-func saveThumbnailsWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWMutex) {
+type ThumbnailsWorker struct {
+	cfg            *Config
+	store          *VideoStore
+	filenames      *Filenames
+	thumbnailSaver *ThumbnailSaver
+}
+
+func NewThumbnailsWorker(cfg *Config, store *VideoStore, filenames *Filenames, thumbnailSaver *ThumbnailSaver) *ThumbnailsWorker {
+	return &ThumbnailsWorker{cfg: cfg, store: store, filenames: filenames, thumbnailSaver: thumbnailSaver}
+}
+
+func (tw *ThumbnailsWorker) Start() {
 	for {
-		videosMutex.RLock()
-		current := *videos
-		videosMutex.RUnlock()
+		tw.store.Mutex.RLock()
+		current := tw.store.Videos
+		tw.store.Mutex.RUnlock()
 
 		var wg sync.WaitGroup
 		for _, v := range current {
-			thumbPath := filepath.Join(streamsDir, thumbnailFilename(v.Filename))
-			videoPath := filepath.Join(streamsDir, v.Filename)
-			durationPath := filepath.Join(streamsDir, durationFilename(v.Filename))
+			thumbPath := filepath.Join(tw.cfg.StreamsDir, tw.filenames.Thumbnail(v.Filename))
+			videoPath := filepath.Join(tw.cfg.StreamsDir, v.Filename)
+			durationPath := filepath.Join(tw.cfg.StreamsDir, tw.filenames.Duration(v.Filename))
 			// thumbnail already exists — check if it needs to be regenerated
 			if tInfo, err := os.Stat(thumbPath); err == nil {
 				newerExists := false
@@ -35,7 +46,7 @@ func saveThumbnailsWorker(streamsDir string, videos *[]Video, videosMutex *sync.
 				}
 			}
 			wg.Go(func() {
-				if err := saveThumbnail(videoPath, thumbPath); err != nil {
+				if err := tw.thumbnailSaver.Save(videoPath, thumbPath); err != nil {
 					log.Println("error saving thumbnail for", v.Filename, ":", err)
 				} else {
 					log.Println("thumbnail generated for", v.Filename)

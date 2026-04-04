@@ -9,16 +9,27 @@ import (
 	"time"
 )
 
-func saveDurationsWorker(streamsDir string, videos *[]Video, videosMutex *sync.RWMutex) {
+type DurationsWorker struct {
+	cfg           *Config
+	store         *VideoStore
+	filenames     *Filenames
+	videoDuration *VideoDuration
+}
+
+func NewDurationsWorker(cfg *Config, store *VideoStore, filenames *Filenames, videoDuration *VideoDuration) *DurationsWorker {
+	return &DurationsWorker{cfg: cfg, store: store, filenames: filenames, videoDuration: videoDuration}
+}
+
+func (dw *DurationsWorker) Start() {
 	for {
-		videosMutex.RLock()
-		current := *videos
-		videosMutex.RUnlock()
+		dw.store.Mutex.RLock()
+		current := dw.store.Videos
+		dw.store.Mutex.RUnlock()
 
 		var wg sync.WaitGroup
 		for _, v := range current {
-			durationPath := filepath.Join(streamsDir, durationFilename(v.Filename))
-			videoPath := filepath.Join(streamsDir, v.Filename)
+			durationPath := filepath.Join(dw.cfg.StreamsDir, dw.filenames.Duration(v.Filename))
+			videoPath := filepath.Join(dw.cfg.StreamsDir, v.Filename)
 			// duration file already exists — skip unless the video was modified after it
 			if dInfo, err := os.Stat(durationPath); err == nil {
 				// video not newer than duration file, e.g. file was not replaced
@@ -27,7 +38,7 @@ func saveDurationsWorker(streamsDir string, videos *[]Video, videosMutex *sync.R
 				}
 			}
 			wg.Go(func() {
-				duration, err := videoDuration(videoPath)
+				duration, err := dw.videoDuration.Get(videoPath)
 				if err != nil {
 					log.Println("error getting duration for", v.Filename, ":", err)
 					return
