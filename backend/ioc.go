@@ -2,14 +2,16 @@ package main
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"go.uber.org/fx"
 )
 
-func NewIOC() *fx.App {
-	return fx.New(
+func CoreProviders() fx.Option {
+	return fx.Options(
 		fx.Provide(func() *Config { cfg := loadConfig(); return &cfg }),
+		fx.Provide(func(cfg *Config) StreamsFS { return StreamsFS(os.DirFS(cfg.StreamsDir)) }),
 		fx.Provide(NewFilenames),
 		fx.Provide(NewVideoDuration),
 		fx.Provide(NewThumbnailSaver),
@@ -23,6 +25,12 @@ func NewIOC() *fx.App {
 		fx.Provide(NewVideoSplitter),
 		fx.Provide(NewSplitVideosWorker),
 		fx.Provide(NewGinServer),
+	)
+}
+
+func NewIOC() *fx.App {
+	return fx.New(
+		CoreProviders(),
 
 		fx.Invoke(func(
 			lc fx.Lifecycle,
