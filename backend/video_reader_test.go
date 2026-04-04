@@ -48,6 +48,80 @@ func TestGetVideos_TwoPartFiles_ReturnsOnlyLargerWithStatusDownloading(t *testin
 	assert.Equal(t, "Downloading", videos[0].Status)
 }
 
+func TestGetVideos_FormatSegmentMp4_IsSkipped(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"video.f140.mp4": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	assert.Empty(t, videos)
+}
+
+func TestGetVideos_TempMp4WithFinalMp4_TempIsSkipped(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"video.mp4":      &fstest.MapFile{},
+		"video.temp.mp4": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Equal(t, "video.mp4", videos[0].Filename)
+}
+
+func TestGetVideos_Mp4WithTempMp4_ReturnsStatusProcessing(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"video.mp4":      &fstest.MapFile{},
+		"video.temp.mp4": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Equal(t, "Processing", videos[0].Status)
+}
+
+func TestGetVideos_PartXxFileWithSourceMp4_PartIsSkipped(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"video.mp4":         &fstest.MapFile{},
+		"video part01.mp4":  &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Equal(t, "video.mp4", videos[0].Filename)
+}
+
+func TestGetVideos_Mp4WithPartXxFiles_ReturnsStatusProcessing(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"video.mp4":        &fstest.MapFile{},
+		"video part01.mp4": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Equal(t, "Processing", videos[0].Status)
+}
+
+func TestGetVideos_FragmentPartFile_IsSkipped(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"[Channel] Video Title.f140.mp4.part-Frag12899.part": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	assert.Empty(t, videos)
+}
+
 func TestGetVideos_Mp4File_ReturnsStatusReady(t *testing.T) {
 	vr := setupVideoReader(t, fstest.MapFS{
 		"video.mp4": &fstest.MapFile{},

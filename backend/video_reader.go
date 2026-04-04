@@ -28,6 +28,7 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 	splitPartRe := regexp.MustCompile(`^(.+) part\d{2}\.mp4$`)
 	formatRe := regexp.MustCompile(`f\d{3}\.mp4$`)
 	downloadingPartRe := regexp.MustCompile(`\.f\d{3}\.[^.]+\.part$`)
+	fragmentPartRe := regexp.MustCompile(`\.f\d{3}\.mp4\.part-.+\.part$`)
 	channelRe := regexp.MustCompile(`^\[([^\]]+)\] ?`)
 	formatSegmentRe := regexp.MustCompile(`\.f\d{3}$`)
 
@@ -70,6 +71,10 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 		}
 		// skip intermediate format segments, e.g. "video.f140.mp4"
 		if formatRe.MatchString(entry.Name()) {
+			continue
+		}
+		// skip fragment part files, e.g. "video.f140.mp4.part-Frag123.part"
+		if fragmentPartRe.MatchString(entry.Name()) {
 			continue
 		}
 		// in-progress yt-dlp download
