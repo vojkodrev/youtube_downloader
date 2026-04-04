@@ -122,6 +122,41 @@ func TestGetVideos_FragmentPartFile_IsSkipped(t *testing.T) {
 	assert.Empty(t, videos)
 }
 
+func TestGetVideos_MixedFiles_ReturnsCorrectVideosAndStatuses(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		// ready
+		"ready.mp4": &fstest.MapFile{},
+		// downloading — two format parts, only larger returned
+		"downloading.f140.webm.part": &fstest.MapFile{Data: make([]byte, 100)},
+		"downloading.f251.webm.part": &fstest.MapFile{Data: make([]byte, 200)},
+		// processing — mp4 with temp alongside
+		"processing.mp4":      &fstest.MapFile{},
+		"processing.temp.mp4": &fstest.MapFile{},
+		// processing — mp4 with partXX files
+		"splitting.mp4":        &fstest.MapFile{},
+		"splitting part01.mp4": &fstest.MapFile{},
+		// skipped — format segment
+		"video.f140.mp4": &fstest.MapFile{},
+		// skipped — fragment part file
+		"[Channel] Video Title.f140.mp4.part-Frag12899.part": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 4)
+
+	byFilename := make(map[string]Video)
+	for _, v := range videos {
+		byFilename[v.Filename] = v
+	}
+
+	assert.Equal(t, "Ready", byFilename["ready.mp4"].Status)
+	assert.Equal(t, "Downloading", byFilename["downloading.f251.webm.part"].Status)
+	assert.Equal(t, "Processing", byFilename["processing.mp4"].Status)
+	assert.Equal(t, "Processing", byFilename["splitting.mp4"].Status)
+}
+
 func TestGetVideos_Mp4File_ReturnsStatusReady(t *testing.T) {
 	vr := setupVideoReader(t, fstest.MapFS{
 		"video.mp4": &fstest.MapFile{},
