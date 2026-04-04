@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/fx"
 )
 
 type GinServer struct {
@@ -21,14 +19,12 @@ type GinServer struct {
 
 func NewGinServer(cfg *Config, store *VideoStore, filenames *Filenames, videoDuration *VideoDuration, fileServer *GinSharableFileServer) *GinServer {
 	r := gin.Default()
-	r.Use(cors.Default())
-
-	s := &GinServer{cfg: cfg, store: store, filenames: filenames, videoDuration: videoDuration, fileServer: fileServer, router: r}
-	s.registerRoutes()
-	return s
+	return &GinServer{cfg: cfg, store: store, filenames: filenames, videoDuration: videoDuration, fileServer: fileServer, router: r}
 }
 
 func (s *GinServer) registerRoutes() {
+	s.router.Use(cors.Default())
+
 	s.router.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
@@ -109,11 +105,3 @@ func (s *GinServer) registerRoutes() {
 	})
 }
 
-func (s *GinServer) Hook(lc fx.Lifecycle) {
-	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			go s.router.Run(":8080")
-			return nil
-		},
-	})
-}

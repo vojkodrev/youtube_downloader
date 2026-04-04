@@ -24,9 +24,6 @@ func NewIOC() *fx.App {
 		fx.Provide(NewSplitVideosWorker),
 		fx.Provide(NewGinServer),
 
-		fx.Invoke(func(lc fx.Lifecycle, ginServer *GinServer) {
-			ginServer.Hook(lc)
-		}),
 		fx.Invoke(func(
 			lc fx.Lifecycle,
 			pollVideosWorker *PollVideosWorker,
@@ -44,6 +41,16 @@ func NewIOC() *fx.App {
 						go splitVideosWorker.Start()
 						go cleanupWorker.Start()
 					}()
+					return nil
+				},
+			})
+		}),
+
+		fx.Invoke(func(lc fx.Lifecycle, ginServer *GinServer) {
+			lc.Append(fx.Hook{
+				OnStart: func(ctx context.Context) error {
+					ginServer.registerRoutes()
+					go ginServer.router.Run(":8080")
 					return nil
 				},
 			})
