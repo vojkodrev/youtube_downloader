@@ -24,6 +24,7 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewPollVideosWorker),
 		fx.Provide(NewVideoSplitter),
 		fx.Provide(NewSplitVideosWorker),
+		fx.Provide(NewFixFrameRateWorker),
 		fx.Provide(NewGinServer),
 	)
 }
@@ -38,6 +39,7 @@ func NewIOC() *fx.App {
 			thumbnailsWorker *ThumbnailsWorker,
 			durationsWorker *DurationsWorker,
 			splitVideosWorker *SplitVideosWorker,
+			fixFrameRateWorker *FixFrameRateWorker,
 			cleanupWorker *CleanupWorker) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
@@ -47,6 +49,7 @@ func NewIOC() *fx.App {
 						go thumbnailsWorker.Start()
 						go durationsWorker.Start()
 						go splitVideosWorker.Start()
+						go fixFrameRateWorker.Start()
 						go cleanupWorker.Start()
 					}()
 					return nil
