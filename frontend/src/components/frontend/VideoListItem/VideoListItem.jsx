@@ -25,9 +25,9 @@ export default function VideoListItem({ video, isSelected, videoCountVisible }) 
     return (
         <div className={`flex items-center p-2 hover:bg-gray-100 ${isSelected ? 'bg-gray-200' : ''}`}>
             <Link
-                to={video.status === 'Ready' ? (video.savedTime ? `/watch/${video.id}?t=${video.savedTime}` : `/watch/${video.id}`) : '#'}
+                to={video.savedTime ? `/watch/${video.id}?t=${video.savedTime}` : `/watch/${video.id}`}
                 title={video.name}
-                className={`flex gap-2 min-w-0 flex-1${video.status !== 'Ready' ? ' pointer-events-none' : ''}`}
+                className="flex gap-2 min-w-0 flex-1"
             >
                 <div className="flex flex-row gap-2 min-w-0 overflow-hidden">
                     <div className="relative flex-shrink-0">
