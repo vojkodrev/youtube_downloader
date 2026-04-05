@@ -158,6 +158,21 @@ func TestGetVideos_MixedFiles_ReturnsCorrectVideosAndStatuses(t *testing.T) {
 	assert.Equal(t, "Processing", byFilename["splitting.mp4"].Status)
 }
 
+func TestGetVideos_TwoFormatSegmentsWithTempMp4_ReturnsSingleProcessingVideo(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"video.f140.mp4": &fstest.MapFile{},
+		"video.f251.mp4": &fstest.MapFile{},
+		"video.temp.mp4": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Equal(t, "video.temp.mp4", videos[0].Filename)
+	assert.Equal(t, "Processing", videos[0].Status)
+}
+
 func TestGetVideos_Mp4File_ReturnsStatusReady(t *testing.T) {
 	vr := setupVideoReader(t, fstest.MapFS{
 		"video.mp4": &fstest.MapFile{},
