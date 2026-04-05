@@ -19,7 +19,9 @@ func NewSplitVideosWorker(cfg *Config, store *VideoStore, videoDuration *VideoDu
 }
 
 func (sw *SplitVideosWorker) Start() {
-	const splitDuration = 3 * 60 * 60
+	if sw.cfg.SplitDuration == 0 {
+		log.Fatal("split_duration is not set in config")
+	}
 	for {
 		sw.store.Mutex.RLock()
 		current := sw.store.Videos
@@ -36,10 +38,10 @@ func (sw *SplitVideosWorker) Start() {
 				log.Println("error probing", v.Filename, ":", err)
 				continue
 			}
-			if dur <= splitDuration {
+			if dur <= sw.cfg.SplitDuration {
 				continue
 			}
-			if err := sw.videoSplitter.Split(videoPath, splitDuration); err != nil {
+			if err := sw.videoSplitter.Split(videoPath, sw.cfg.SplitDuration); err != nil {
 				log.Println("error splitting", v.Filename, ":", err)
 			}
 		}

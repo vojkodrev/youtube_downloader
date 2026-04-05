@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,13 +12,14 @@ import (
 )
 
 type FixIOSWorker struct {
-	cfg       *Config
-	store     *VideoStore
-	filenames *Filenames
+	cfg           *Config
+	store         *VideoStore
+	filenames     *Filenames
+	videoDuration *VideoDuration
 }
 
-func NewFixIOSWorker(cfg *Config, store *VideoStore, filenames *Filenames) *FixIOSWorker {
-	return &FixIOSWorker{cfg: cfg, store: store, filenames: filenames}
+func NewFixIOSWorker(cfg *Config, store *VideoStore, filenames *Filenames, videoDuration *VideoDuration) *FixIOSWorker {
+	return &FixIOSWorker{cfg: cfg, store: store, filenames: filenames, videoDuration: videoDuration}
 }
 
 func (fw *FixIOSWorker) Start() {
@@ -33,6 +33,10 @@ func (fw *FixIOSWorker) Start() {
 				continue
 			}
 			videoPath := filepath.Join(fw.cfg.StreamsDir, v.Filename)
+			dur, err := fw.videoDuration.Get(videoPath)
+			if err != nil || dur > fw.cfg.SplitDuration {
+				continue
+			}
 			fixPath := filepath.Join(fw.cfg.StreamsDir, fw.filenames.IOSFix(v.Filename))
 			// skip if marker exists and video has not been replaced since
 			if fixInfo, err := os.Stat(fixPath); err == nil {
@@ -40,7 +44,7 @@ func (fw *FixIOSWorker) Start() {
 					continue
 				}
 			}
-			needsFix, err := fw.needsFix(videoPath)
+			needsFix, bitrate, err := fw.needsFix(videoPath)
 			if err != nil {
 				log.Println("error probing", v.Filename, ":", err)
 				continue
@@ -52,7 +56,7 @@ func (fw *FixIOSWorker) Start() {
 				continue
 			}
 			log.Println("fixing ios compatibility for", v.Filename)
-			if err := fw.fix(videoPath); err != nil {
+			if err := fw.fix(videoPath, bitrate); err != nil {
 				log.Println("error fixing", v.Filename, ":", err)
 				continue
 			}
@@ -65,59 +69,63 @@ func (fw *FixIOSWorker) Start() {
 	}
 }
 
-// needsFix probes the video and returns true when the stream has B-frames or
-// a missing SAR, either of which causes iOS to refuse playback.
+// needsFix probes the video and returns (needsFix, videoBitrate, error).
+// needsFix is true when the stream has B-frames or a missing SAR, either of
+// which causes iOS to refuse playback.
 // A working file has has_b_frames=0 and a valid sample_aspect_ratio like "1:1".
-func (fw *FixIOSWorker) needsFix(videoPath string) (bool, error) {
+func (fw *FixIOSWorker) needsFix(videoPath string) (bool, int64, error) {
 	probeJSON, err := ffmpeg.Probe(videoPath)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 	var probe struct {
 		Streams []struct {
 			CodecType  string `json:"codec_type"`
 			SAR        string `json:"sample_aspect_ratio"`
 			HasBFrames int    `json:"has_b_frames"`
+			BitRate    string `json:"bit_rate"`
 		} `json:"streams"`
 	}
 	if err := json.Unmarshal([]byte(probeJSON), &probe); err != nil {
-		return false, err
+		return false, 0, err
 	}
 	for _, s := range probe.Streams {
 		if s.CodecType != "video" {
 			continue
 		}
-		log.Printf("sample_aspect_ratio=%q has_b_frames=%d for %s", s.SAR, s.HasBFrames, videoPath)
+		log.Printf("sample_aspect_ratio=%q has_b_frames=%d bit_rate=%s for %s", s.SAR, s.HasBFrames, s.BitRate, videoPath)
+		var bitrate int64
+		fmt.Sscan(s.BitRate, &bitrate)
 		missingSAR := s.SAR == "" || s.SAR == "N/A" || s.SAR == "0:1"
-		return missingSAR || s.HasBFrames > 0, nil
+		return missingSAR || s.HasBFrames > 0, bitrate, nil
 	}
-	return false, fmt.Errorf("no video stream found in %s", videoPath)
+	return false, 0, fmt.Errorf("no video stream found in %s", videoPath)
 }
 
-// fix re-encodes the video with B-frames disabled and an explicit SAR of 1:1
-// so iOS can play the file. Audio is stream-copied unchanged.
-func (fw *FixIOSWorker) fix(videoPath string) error {
+// fix re-encodes the video with B-frames disabled targeting the original bitrate
+// so iOS can play the file at roughly the same file size. Audio is stream-copied.
+func (fw *FixIOSWorker) fix(videoPath string, bitrate int64) error {
 	ext := filepath.Ext(videoPath)
 	base := videoPath[:len(videoPath)-len(ext)]
 	tmpPath := base + ".temp" + ext
 
 	cmd := ffmpeg.Input(videoPath).
 		Output(tmpPath, ffmpeg.KwArgs{
-			"c:v":      "libx264",
+			"c:v":       "libx264",
 			"profile:v": "main",
-			"level":    "4.0",
-			"bf":       0,
-			"c:a":      "copy",
-			"movflags": "+faststart",
+			"level":     "4.0",
+			"bf":        0,
+			"b:v":       fmt.Sprintf("%d", bitrate),
+			"c:a":       "copy",
+			"movflags":  "+faststart",
 		}).
 		OverWriteOutput().
 		Compile()
 
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		_ = os.Remove(tmpPath)
-		return fmt.Errorf("%w: %s", err, stderr.String())
+		return err
 	}
 
 	originalDir := filepath.Join(filepath.Dir(videoPath), "original")
