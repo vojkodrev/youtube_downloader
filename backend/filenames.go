@@ -21,7 +21,7 @@ func (f *Filenames) Duration(videoPath string) string {
 	return strings.TrimSuffix(base, filepath.Ext(base)) + ".duration.txt"
 }
 
-func (f *Filenames) FrameRateFix(videoPath string) string {
+func (f *Filenames) IOSFix(videoPath string) string {
 	base := filepath.Base(videoPath)
-	return strings.TrimSuffix(base, filepath.Ext(base)) + ".frame_rate_fix.txt"
+	return strings.TrimSuffix(base, filepath.Ext(base)) + ".ios_fix.txt"
 }
