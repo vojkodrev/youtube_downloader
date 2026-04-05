@@ -49,7 +49,7 @@ func NewIOC() *fx.App {
 						go thumbnailsWorker.Start()
 						go durationsWorker.Start()
 						go splitVideosWorker.Start()
-						go fixFrameRateWorker.Start()
+						// go fixFrameRateWorker.Start()
 						go cleanupWorker.Start()
 					}()
 					return nil

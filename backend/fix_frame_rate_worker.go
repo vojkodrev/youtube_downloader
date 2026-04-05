@@ -99,12 +99,13 @@ func (fw *FixFrameRateWorker) checkFrameRate(videoPath string) (int, bool, error
 				return 0, false, fmt.Errorf("could not determine fps from %q / %q", s.AvgFPS, s.RFps)
 			}
 		}
+		log.Printf("fps for %s: %.4f (avg_frame_rate=%s r_frame_rate=%s)", videoPath, fps, s.AvgFPS, s.RFps)
 		target := 30
 		if fps > 35 {
 			target = 60
 		}
-		// consider it already correct when fps is within 0.1% of the target
-		if math.Abs(fps-float64(target))/float64(target) < 0.001 {
+		// consider it already correct when fps is within 0.001 of the target (a true CFR stream reports exactly e.g. "30/1")
+		if math.Abs(fps-float64(target)) < 0.001 {
 			return target, false, nil
 		}
 		return target, true, nil
