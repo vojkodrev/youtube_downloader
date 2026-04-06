@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
@@ -24,7 +25,7 @@ func NewVideoIOSValidator() *VideoIOSValidator {
 // which causes iOS to refuse playback.
 // A working file has has_b_frames=0 and a valid sample_aspect_ratio like "1:1".
 func (v *VideoIOSValidator) Validate(videoPath string) (VideoIOSValidation, error) {
-	probeJSON, err := ffmpeg.Probe(videoPath)
+	probeJSON, err := ffmpeg.ProbeWithTimeout(videoPath, 15*time.Second, ffmpeg.KwArgs{})
 	if err != nil {
 		return VideoIOSValidation{}, err
 	}
