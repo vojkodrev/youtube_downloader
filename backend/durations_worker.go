@@ -38,7 +38,7 @@ func (dw *DurationsWorker) Start() {
 				}
 			}
 			wg.Go(func() {
-				duration, err := dw.videoDuration.Get(videoPath)
+				duration, err := dw.videoDuration.GetForce(videoPath)
 				if err != nil {
 					log.Println("error getting duration for", v.Filename, ":", err)
 					return

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
@@ -19,12 +20,22 @@ func NewVideoDuration(cfg *Config, filenames *Filenames) *VideoDuration {
 }
 
 func (vd *VideoDuration) Get(videoPath string) (float64, error) {
+	return vd.get(videoPath, false)
+}
+
+func (vd *VideoDuration) GetForce(videoPath string) (float64, error) {
+	return vd.get(videoPath, true)
+}
+
+func (vd *VideoDuration) get(videoPath string, force bool) (float64, error) {
 	durationPath := filepath.Join(vd.cfg.StreamsDir, vd.filenames.Duration(videoPath))
-	if data, err := os.ReadFile(durationPath); err == nil {
-		return strconv.ParseFloat(string(data), 64)
+	if !force {
+		if data, err := os.ReadFile(durationPath); err == nil {
+			return strconv.ParseFloat(string(data), 64)
+		}
 	}
 
-	probeJSON, err := ffmpeg.Probe(videoPath)
+	probeJSON, err := ffmpeg.ProbeWithTimeout(videoPath, 45*time.Second, ffmpeg.KwArgs{})
 	if err != nil {
 		return 0, err
 	}
