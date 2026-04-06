@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import Logo from '@/components/frontend/Logo/Logo'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
@@ -12,8 +12,19 @@ export default function Home() {
     const navigate = useNavigate()
     const [videos, setVideos] = useState([])
     const [playlists, setPlaylists] = useState([])
+    const videoRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
+
+    function handleWatchedReset(video) {
+        localStorage.removeItem(`time_${video.id}`)
+        video.savedTime = null
+        setVideos(prev => [...prev])
+        if (video.id === id) {
+            videoRef.current.currentTime = 0
+            setSearchParams({ t: 0 }, { replace: true })
+        }
+    }
     const playlist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
     useEffect(() => {
@@ -104,6 +115,7 @@ export default function Home() {
                     <div className="bg-black">
                         {selectedVideo && (
                             <video
+                                ref={videoRef}
                                 key={selectedVideo.id}
                                 src={`${API_URL}/video/${selectedVideo.id}`}
                                 controls
@@ -152,6 +164,7 @@ export default function Home() {
                                     key={video.id}
                                     video={video}
                                     isSelected={selectedVideo?.id === video.id}
+                                    onWatchedReset={handleWatchedReset}
                                 />
                             ))}
                         </div>
@@ -163,6 +176,7 @@ export default function Home() {
                             video={video}
                             isSelected={selectedVideo?.id === video.id || playlist.some(v => v.id === video.id)}
                             videoCountVisible
+                            onWatchedReset={handleWatchedReset}
                         />
                     ))}
                 </div>

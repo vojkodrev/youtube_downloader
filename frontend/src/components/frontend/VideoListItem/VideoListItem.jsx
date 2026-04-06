@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { EllipsisVertical, Download, X } from 'lucide-react'
+import { EllipsisVertical, Download, X, RotateCcw } from 'lucide-react'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
@@ -19,7 +20,7 @@ function saveDownloadInfo(id, filename) {
     localStorage.setItem(`download_${id}`, JSON.stringify({ filename }))
 }
 
-export default function VideoListItem({ video, isSelected, videoCountVisible }) {
+export default function VideoListItem({ video, isSelected, videoCountVisible, onWatchedReset }) {
     const [downloadInfo, setDownloadInfo] = useState(getDownloadInfo(video.id))
 
     return (
@@ -68,7 +69,7 @@ export default function VideoListItem({ video, isSelected, videoCountVisible }) 
                 <DropdownMenuTrigger className="rounded hover:bg-gray-200 flex-shrink-0 cursor-pointer">
                     <EllipsisVertical className="w-4 h-4 text-gray-500" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-44">
+                <DropdownMenuContent align="end" className="min-w-56">
                     <DropdownMenuItem disabled={video.status !== 'Ready'}>
                         <a
                             href={`${API_URL}/download/${video.id}`}
@@ -80,12 +81,21 @@ export default function VideoListItem({ video, isSelected, videoCountVisible }) 
                             {downloadInfo ? 'Download again' : 'Download'}
                         </a>
                     </DropdownMenuItem>
-                    {downloadInfo && (
-                        <DropdownMenuItem onClick={() => { localStorage.removeItem(`download_${video.id}`); setDownloadInfo(null) }}>
-                            <X className="w-4 h-4 shrink-0" />
-                            Clear
-                        </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem
+                        disabled={!downloadInfo}
+                        onClick={() => { localStorage.removeItem(`download_${video.id}`); setDownloadInfo(null) }}
+                    >
+                        <X className="w-4 h-4 shrink-0" />
+                        Reset Download Info
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        disabled={!video.savedTime}
+                        onClick={() => onWatchedReset?.(video)}
+                    >
+                        <RotateCcw className="w-4 h-4 shrink-0" />
+                        Reset Watched
+                    </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
