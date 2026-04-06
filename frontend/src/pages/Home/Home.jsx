@@ -16,10 +16,10 @@ export default function Home() {
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
 
-    function handleWatchedReset(video) {
+    function handleWatchedReset(video, updateVideos = true) {
         localStorage.removeItem(`time_${video.id}`)
         video.savedTime = null
-        setVideos(prev => [...prev])
+        if (updateVideos) setVideos(prev => [...prev])
         if (video.id === id) {
             videoRef.current.currentTime = 0
             setSearchParams({ t: 0 }, { replace: true })
@@ -176,7 +176,11 @@ export default function Home() {
                             video={video}
                             isSelected={selectedVideo?.id === video.id || playlist.some(v => v.id === video.id)}
                             videoCountVisible
-                            onWatchedReset={handleWatchedReset}
+                            onWatchedReset={v => {
+                                const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
+                                pl.forEach(pv => handleWatchedReset(pv, false))
+                                setVideos(prev => [...prev])
+                            }}
                         />
                     ))}
                 </div>
