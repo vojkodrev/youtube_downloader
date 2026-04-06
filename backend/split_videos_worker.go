@@ -8,14 +8,15 @@ import (
 )
 
 type SplitVideosWorker struct {
-	cfg           *Config
-	store         *VideoStore
-	videoDuration *VideoDuration
-	videoSplitter *VideoSplitter
+	cfg              *Config
+	store            *VideoStore
+	videoDuration    *VideoDuration
+	videoSplitter    *VideoSplitter
+	videoIOSValidator *VideoIOSValidator
 }
 
-func NewSplitVideosWorker(cfg *Config, store *VideoStore, videoDuration *VideoDuration, videoSplitter *VideoSplitter) *SplitVideosWorker {
-	return &SplitVideosWorker{cfg: cfg, store: store, videoDuration: videoDuration, videoSplitter: videoSplitter}
+func NewSplitVideosWorker(cfg *Config, store *VideoStore, videoDuration *VideoDuration, videoSplitter *VideoSplitter, videoIOSValidator *VideoIOSValidator) *SplitVideosWorker {
+	return &SplitVideosWorker{cfg: cfg, store: store, videoDuration: videoDuration, videoSplitter: videoSplitter, videoIOSValidator: videoIOSValidator}
 }
 
 func (sw *SplitVideosWorker) Start() {
@@ -39,6 +40,15 @@ func (sw *SplitVideosWorker) Start() {
 				continue
 			}
 			if dur <= sw.cfg.SplitDuration {
+				continue
+			}
+			validation, err := sw.videoIOSValidator.Validate(videoPath)
+			if err != nil {
+				log.Println("error validating ios compatibility for", v.Filename, ":", err)
+				continue
+			}
+			if validation.NeedsIOSFix {
+				log.Println("skipping split for", v.Filename, "— ios fix pending")
 				continue
 			}
 			if err := sw.videoSplitter.Split(videoPath, sw.cfg.SplitDuration); err != nil {
