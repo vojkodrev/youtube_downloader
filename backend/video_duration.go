@@ -3,21 +3,23 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
 type VideoDuration struct {
+	cfg       *Config
 	filenames *Filenames
 }
 
-func NewVideoDuration(filenames *Filenames) *VideoDuration {
-	return &VideoDuration{filenames: filenames}
+func NewVideoDuration(cfg *Config, filenames *Filenames) *VideoDuration {
+	return &VideoDuration{cfg: cfg, filenames: filenames}
 }
 
 func (vd *VideoDuration) Get(videoPath string) (float64, error) {
-	durationPath := vd.filenames.Duration(videoPath)
+	durationPath := filepath.Join(vd.cfg.StreamsDir, vd.filenames.Duration(videoPath))
 	if data, err := os.ReadFile(durationPath); err == nil {
 		return strconv.ParseFloat(string(data), 64)
 	}
