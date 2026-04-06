@@ -121,6 +121,8 @@ class YoutubeLiveDownloader(Downloader):
                 # Optional: retry if the stream connection drops
                 # "ignoreerrors": True,
                 # "concurrent_fragment_downloads": 10,  # Download 10 chunks at once
+                "retries": 10,
+                "retry_sleep_functions": {"http": lambda _: 15, "fragment": lambda _: 15, "file_access": lambda _: 15, "extractor": lambda _: 15},
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
@@ -147,6 +149,8 @@ class TwitchDownloader(Downloader):
                     self._config["output_folder"],
                     "[%(uploader)s] %(title)s.%(ext)s",
                 ),
+                "retries": 10,
+                "retry_sleep_functions": {"http": lambda _: 15, "fragment": lambda _: 15, "file_access": lambda _: 15, "extractor": lambda _: 15},
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
