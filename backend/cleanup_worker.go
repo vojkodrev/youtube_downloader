@@ -31,6 +31,8 @@ func (cw *CleanupWorker) Start() {
 				base = b
 			} else if b, ok := strings.CutSuffix(name, ".jpg"); ok {
 				base = b
+			} else if b, ok := strings.CutSuffix(name, ".ios_fix.txt"); ok {
+				base = b
 			} else {
 				continue
 			}
