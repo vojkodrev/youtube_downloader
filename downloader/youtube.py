@@ -121,8 +121,17 @@ class YoutubeLiveDownloader(Downloader):
                 # Optional: retry if the stream connection drops
                 # "ignoreerrors": True,
                 # "concurrent_fragment_downloads": 10,  # Download 10 chunks at once
-                "retries": 10,
-                "retry_sleep_functions": {"http": lambda _: 15, "fragment": lambda _: 15, "file_access": lambda _: 15, "extractor": lambda _: 15},
+                # --- The Retry Trio ---
+                "retries": 10,  # Generic network retries
+                "fragment_retries": 10,  # Video chunk/fragment retries
+                "extractor_retries": 10,  # Website parsing/scraping retries
+                "file_access_retries": 10,  # Local disk/NAS access retries
+                # --- Precise Timing Control ---
+                "sleep_interval": 15,  # Seconds to wait between download tasks
+                "max_sleep_interval": 15,  # Keep it strictly at 15s (no randomization)
+                "sleep_requests": 5,  # Wait 5s between finding info for each video
+                # --- Safety Buffers ---
+                "socket_timeout": 30,  # Wait 30s before considering a socket "dead"
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
@@ -149,8 +158,17 @@ class TwitchDownloader(Downloader):
                     self._config["output_folder"],
                     "[%(uploader)s] %(title)s.%(ext)s",
                 ),
-                "retries": 10,
-                "retry_sleep_functions": {"http": lambda _: 15, "fragment": lambda _: 15, "file_access": lambda _: 15, "extractor": lambda _: 15},
+                # --- The Retry Trio ---
+                "retries": 10,  # Generic network retries
+                "fragment_retries": 10,  # Video chunk/fragment retries
+                "extractor_retries": 10,  # Website parsing/scraping retries
+                "file_access_retries": 10,  # Local disk/NAS access retries
+                # --- Precise Timing Control ---
+                "sleep_interval": 15,  # Seconds to wait between download tasks
+                "max_sleep_interval": 15,  # Keep it strictly at 15s (no randomization)
+                "sleep_requests": 5,  # Wait 5s between finding info for each video
+                # --- Safety Buffers ---
+                "socket_timeout": 30,  # Wait 30s before considering a socket "dead"
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
@@ -226,7 +244,9 @@ class ChannelPoller:
                     log.info(f"Downloading from: {url}")
                     await downloader.download(url)
                     sleep_err.reset()
-                    log.info(f"Download finished. Resuming poll in {sleep_offline.peek()} minutes...")
+                    log.info(
+                        f"Download finished. Resuming poll in {sleep_offline.peek()} minutes..."
+                    )
                     await sleep_offline.sleep()
                 else:
                     log.info(
