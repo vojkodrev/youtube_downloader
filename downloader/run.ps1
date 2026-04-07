@@ -1,1 +1,1 @@
-python youtube.py
+python main.py

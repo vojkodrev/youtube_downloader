@@ -1,0 +1,2 @@
+class ChannelTitleNotFoundError(Exception):
+    pass
