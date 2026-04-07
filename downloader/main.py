@@ -5,14 +5,14 @@ import sys
 from loguru import logger
 from injector import Injector
 
-from ioc import Ioc
+from config import Config
+from downloader_module import DownloaderModule
 from multi_channel_poller import MultiChannelPoller
 
 
 def main():
-    ioc = Ioc()
-    container = Injector([ioc])
-    config = ioc._config
+    container = Injector([DownloaderModule()])
+    config = container.get(Config)
 
     logger.remove()
     logger.add(sys.stderr, format=config["log_format"])

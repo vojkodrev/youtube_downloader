@@ -3,11 +3,15 @@ import os
 
 import yt_dlp
 
+from injector import inject
+
+from config import Config
 from downloader import Downloader
 
 
 class YoutubeLiveDownloader(Downloader):
-    def __init__(self, config):
+    @inject
+    def __init__(self, config: Config):
         self._config = config
 
     async def download(self, url: str) -> None:

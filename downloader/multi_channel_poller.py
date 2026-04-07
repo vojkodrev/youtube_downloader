@@ -1,10 +1,14 @@
 import asyncio
 
+from injector import inject
+
 from channel_poller import ChannelPoller
+from config import Config
 
 
 class MultiChannelPoller:
-    def __init__(self, poller: ChannelPoller, config: dict):
+    @inject
+    def __init__(self, poller: ChannelPoller, config: Config):
         self._poller = poller
         self._config = config
 

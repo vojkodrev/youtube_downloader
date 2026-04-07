@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from loguru import logger
 
+from injector import inject
+
 from channel_title_not_found_error import ChannelTitleNotFoundError
 from downloader_map import DownloaderMap
 from fibonacci_sleep_factory import FibonacciSleepFactory
@@ -9,6 +11,7 @@ from metadata_provider_map import MetadataProviderMap
 
 
 class ChannelPoller:
+    @inject
     def __init__(
         self,
         meta_providers: MetadataProviderMap,

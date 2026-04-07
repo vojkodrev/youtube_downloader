@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 
 from googleapiclient.discovery import build
+from injector import inject
 
 from channel_title_not_found_error import ChannelTitleNotFoundError
 from metadata_provider import MetadataProvider
@@ -10,6 +11,7 @@ from youtube_api_key_pool import YoutubeApiKeyPool
 
 
 class YoutubeMetadataProvider(MetadataProvider):
+    @inject
     def __init__(self, api_keys: YoutubeApiKeyPool):
         self._api_keys = api_keys
 
