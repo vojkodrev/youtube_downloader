@@ -3,16 +3,16 @@ from __future__ import annotations
 from loguru import logger
 
 from channel_title_not_found_error import ChannelTitleNotFoundError
-from downloader import Downloader
+from downloader_map import DownloaderMap
 from fibonacci_sleep_factory import FibonacciSleepFactory
-from metadata_provider import MetadataProvider
+from metadata_provider_map import MetadataProviderMap
 
 
 class ChannelPoller:
     def __init__(
         self,
-        meta_providers: dict[str, MetadataProvider],
-        downloaders: dict[str, Downloader],
+        meta_providers: MetadataProviderMap,
+        downloaders: DownloaderMap,
         sleep_factory: FibonacciSleepFactory,
     ):
         self._meta_providers = meta_providers

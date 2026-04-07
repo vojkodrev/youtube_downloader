@@ -1,59 +1,73 @@
 import os
 import tomllib
 
-from dependency_injector import containers, providers
 from dotenv import load_dotenv
+from injector import Module, provider, singleton
 
 from channel_poller import ChannelPoller
+from downloader_map import DownloaderMap
+from fibonacci_sleep_factory import FibonacciSleepFactory
+from metadata_provider_map import MetadataProviderMap
 from multi_channel_poller import MultiChannelPoller
 from twitch_downloader import TwitchDownloader
 from twitch_metadata_provider import TwitchMetadataProvider
 from youtube_api_key_pool import YoutubeApiKeyPool
 from youtube_live_downloader import YoutubeLiveDownloader
 from youtube_metadata_provider import YoutubeMetadataProvider
-from fibonacci_sleep_factory import FibonacciSleepFactory
 
 
-class Ioc(containers.DeclarativeContainer):
-    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
-    with open(os.path.join(os.path.dirname(__file__), "config.toml"), "rb") as _f:
-        _config = tomllib.load(_f)
+class Ioc(Module):
+    def __init__(self):
+        load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+        with open(os.path.join(os.path.dirname(__file__), "config.toml"), "rb") as f:
+            self._config = tomllib.load(f)
 
-    config = providers.Object(_config)
+    @provider
+    @singleton
+    def api_keys(self) -> YoutubeApiKeyPool:
+        return YoutubeApiKeyPool(os.getenv("API_KEYS", ""))
 
-    api_keys = providers.Singleton(
-        YoutubeApiKeyPool, api_keys_str=os.getenv("API_KEYS", "")
-    )
+    @provider
+    @singleton
+    def meta_providers(
+        self,
+        youtube: YoutubeMetadataProvider,
+        twitch: TwitchMetadataProvider,
+    ) -> MetadataProviderMap:
+        return MetadataProviderMap({
+            "youtube_live": youtube,
+            "twitch": twitch,
+        })
 
-    youtube_metadata_provider = providers.Singleton(
-        YoutubeMetadataProvider, api_keys=api_keys
-    )
-    twitch_metadata_provider = providers.Singleton(TwitchMetadataProvider)
+    @provider
+    @singleton
+    def downloaders(
+        self,
+        youtube: YoutubeLiveDownloader,
+        twitch: TwitchDownloader,
+    ) -> DownloaderMap:
+        return DownloaderMap({
+            "youtube_live": youtube,
+            "twitch": twitch,
+        })
 
-    youtube_live_downloader = providers.Singleton(YoutubeLiveDownloader, config=config)
-    twitch_downloader = providers.Singleton(TwitchDownloader, config=config)
+    @provider
+    @singleton
+    def youtube_live_downloader(self) -> YoutubeLiveDownloader:
+        return YoutubeLiveDownloader(self._config)
 
-    sleep_factory = providers.Singleton(FibonacciSleepFactory)
+    @provider
+    @singleton
+    def twitch_downloader(self) -> TwitchDownloader:
+        return TwitchDownloader(self._config)
 
-    meta_providers = providers.Dict(
-        youtube_live=youtube_metadata_provider,
-        twitch=twitch_metadata_provider,
-    )
-    downloaders = providers.Dict(
-        youtube_live=youtube_live_downloader,
-        twitch=twitch_downloader,
-    )
+    @provider
+    @singleton
+    def multi_channel_poller(self, poller: ChannelPoller) -> MultiChannelPoller:
+        return MultiChannelPoller(poller, self._config)
 
-    channel_poller = providers.Singleton(
-        ChannelPoller,
-        meta_providers=meta_providers,
-        downloaders=downloaders,
-        sleep_factory=sleep_factory,
-    )
-
-    multi_channel_poller = providers.Singleton(
-        MultiChannelPoller,
-        poller=channel_poller,
-        config=config,
-    )
+    @provider
+    @singleton
+    def sleep_factory(self) -> FibonacciSleepFactory:
+        return FibonacciSleepFactory()

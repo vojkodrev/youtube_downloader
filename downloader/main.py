@@ -3,13 +3,16 @@ import os
 import sys
 
 from loguru import logger
+from injector import Injector
 
 from ioc import Ioc
+from multi_channel_poller import MultiChannelPoller
 
 
 def main():
-    container = Ioc()
-    config = container.config()
+    ioc = Ioc()
+    container = Injector([ioc])
+    config = ioc._config
 
     logger.remove()
     logger.add(sys.stderr, format=config["log_format"])
@@ -20,7 +23,7 @@ def main():
         )
         exit(1)
 
-    multi_poller = container.multi_channel_poller()
+    multi_poller = container.get(MultiChannelPoller)
     asyncio.run(multi_poller.poll_all())
 
 
