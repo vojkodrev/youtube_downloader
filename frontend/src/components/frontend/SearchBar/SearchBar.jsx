@@ -9,7 +9,7 @@ export default function SearchBar({ videos = [] }) {
     const [focused, setFocused] = useState(false)
     const navigate = useNavigate()
 
-    const fuse = useMemo(() => new Fuse(videos, { keys: ['name'], threshold: 0.4 }), [videos])
+    const fuse = useMemo(() => new Fuse(videos, { keys: ['name', 'channel'], threshold: 0.4 }), [videos])
 
     const results = query.trim()
         ? fuse.search(query.trim()).map(({ item }) => item)
