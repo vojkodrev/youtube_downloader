@@ -14,7 +14,7 @@ from youtube_metadata_provider import YoutubeMetadataProvider
 from fibonacci_sleep_factory import FibonacciSleepFactory
 
 
-class Container(containers.DeclarativeContainer):
+class Ioc(containers.DeclarativeContainer):
     load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
     with open(os.path.join(os.path.dirname(__file__), "config.toml"), "rb") as _f:

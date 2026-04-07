@@ -4,11 +4,11 @@ import sys
 
 from loguru import logger
 
-from container import Container
+from ioc import Ioc
 
 
 def main():
-    container = Container()
+    container = Ioc()
     config = container.config()
 
     logger.remove()
