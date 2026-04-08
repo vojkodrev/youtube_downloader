@@ -91,12 +91,7 @@ func (fw *FixIOSWorker) fix(videoPath string, bitrate int64) error {
 		return err
 	}
 
-	originalDir := filepath.Join(filepath.Dir(videoPath), "original")
-	if err := os.MkdirAll(originalDir, 0755); err != nil {
-		_ = os.Remove(tmpPath)
-		return err
-	}
-	if err := os.Rename(videoPath, filepath.Join(originalDir, filepath.Base(videoPath))); err != nil {
+	if err := os.Remove(videoPath); err != nil {
 		_ = os.Remove(tmpPath)
 		return err
 	}
