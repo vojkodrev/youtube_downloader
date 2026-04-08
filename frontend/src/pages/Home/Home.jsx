@@ -191,6 +191,7 @@ export default function Home() {
                             video={video}
                             isSelected={selectedVideo?.id === video.id || playlist.some(v => v.id === video.id)}
                             videoCountVisible
+                            playlistVideos={playlists.find(p => p.some(pv => pv.id === video.id)) ?? null}
                             onWatchedReset={v => {
                                 const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
                                 pl.forEach(pv => handleWatchedReset(pv, false))

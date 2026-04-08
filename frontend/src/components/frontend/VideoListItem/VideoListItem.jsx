@@ -20,8 +20,15 @@ function saveDownloadInfo(id, filename) {
     localStorage.setItem(`download_${id}`, JSON.stringify({ filename }))
 }
 
-export default function VideoListItem({ video, isSelected, videoCountVisible, onWatchedReset }) {
+export default function VideoListItem({ video, isSelected, videoCountVisible, onWatchedReset, playlistVideos }) {
     const [downloadInfo, setDownloadInfo] = useState(getDownloadInfo(video.id))
+
+    const progressSavedTime = playlistVideos
+        ? playlistVideos.reduce((sum, v) => sum + (parseFloat(v.savedTime) || 0), 0)
+        : parseFloat(video.savedTime) || 0
+    const progressDuration = playlistVideos
+        ? playlistVideos.reduce((sum, v) => sum + (v.duration || 0), 0)
+        : video.duration
 
     return (
         <div className={`flex items-center p-2 hover:bg-gray-100 ${isSelected ? 'bg-gray-200' : ''}`}>
@@ -36,11 +43,11 @@ export default function VideoListItem({ video, isSelected, videoCountVisible, on
                             src={`${API_URL}/thumbnail/${video.id}`}
                             className="w-36 h-20 object-cover rounded bg-gray-300"
                         />
-                        {!!+video.savedTime && video.duration && (
+                        {!!progressSavedTime && !!progressDuration && (
                             <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/30 rounded-bl">
                                 <div
-                                    className={`h-full bg-red-500 rounded-bl${video.savedTime >= video.duration ? ' rounded-br' : ''}`}
-                                    style={{ width: `${Math.min(video.savedTime / video.duration * 100, 100)}%` }}
+                                    className={`h-full bg-red-500 rounded-bl${progressSavedTime >= progressDuration ? ' rounded-br' : ''}`}
+                                    style={{ width: `${Math.min(progressSavedTime / progressDuration * 100, 100)}%` }}
                                 />
                             </div>
                         )}
@@ -90,7 +97,7 @@ export default function VideoListItem({ video, isSelected, videoCountVisible, on
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                        disabled={!video.savedTime}
+                        disabled={!progressSavedTime}
                         onClick={() => onWatchedReset?.(video)}
                     >
                         <RotateCcw className="w-4 h-4 shrink-0" />
