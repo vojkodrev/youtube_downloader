@@ -70,6 +70,30 @@ export default function Home() {
     }, [])
 
     useEffect(() => {
+        function handleArrowSeek(video, e) {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault()
+                video.currentTime += e.key === 'ArrowRight' ? 10 : -10
+            }
+        }
+        function handleKeyDown(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+            handleArrowSeek(videoRef.current, e)
+        }
+        function handleVideoKeyDown(e) {
+            e.stopPropagation()
+            handleArrowSeek(e.currentTarget, e)
+        }
+        document.addEventListener('keydown', handleKeyDown)
+        videoRef.current?.addEventListener('keydown', handleVideoKeyDown, { capture: true })
+        const video = videoRef.current
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown)
+            video?.removeEventListener('keydown', handleVideoKeyDown, { capture: true })
+        }
+    }, [selectedVideo])
+
+    useEffect(() => {
         if (!selectedVideo) return
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
