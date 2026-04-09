@@ -1,7 +1,10 @@
+from injector import inject
 from loguru import logger
 
 
 class YtDlpLogger:
+    @inject
+    def __init__(self): ...
     def debug(self, msg):
         if msg.startswith("[debug] "):
             logger.debug(msg)

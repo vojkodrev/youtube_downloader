@@ -12,8 +12,9 @@ from yt_dlp_logger import YtDlpLogger
 
 class YoutubeLiveDownloader(Downloader):
     @inject
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, yt_dlp_logger: YtDlpLogger):
         self._config = config
+        self._yt_dlp_logger = yt_dlp_logger
 
     async def download(self, url: str) -> None:
         if not url:
@@ -21,7 +22,7 @@ class YoutubeLiveDownloader(Downloader):
 
         def sync():
             ydl_opts = {
-                "logger": YtDlpLogger(),
+                "logger": self._yt_dlp_logger,
                 "format": "bestvideo+bestaudio/best",
                 # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
                 "live_from_start": True,
