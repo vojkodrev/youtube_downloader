@@ -52,9 +52,9 @@ export default function VideoListItem({ video, isSelected, videoCountVisible, on
                                 />
                             </div>
                         )}
-                        {video.duration != null && (
+                        {progressDuration != null && (
                             <span className="absolute bottom-2 right-1 bg-black/60 text-white text-xs px-1 rounded">
-                                {new Date(video.duration * 1000).toISOString().substring(video.duration >= 3600 ? 11 : 14, 19)}
+                                {new Date(progressDuration * 1000).toISOString().substring(progressDuration >= 3600 ? 11 : 14, 19)}
                             </span>
                         )}
                     </div>
