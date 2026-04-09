@@ -36,9 +36,5 @@ func (vs *VideoSplitter) Split(videoPath string, splitDuration float64) error {
 		return fmt.Errorf("%w: %s", err, stderr.String())
 	}
 
-	originalDir := filepath.Join(filepath.Dir(videoPath), "original")
-	if err := os.MkdirAll(originalDir, 0755); err != nil {
-		return err
-	}
-	return os.Rename(videoPath, filepath.Join(originalDir, filepath.Base(videoPath)))
+	return os.Remove(videoPath)
 }
