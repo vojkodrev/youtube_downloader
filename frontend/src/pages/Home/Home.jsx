@@ -1,9 +1,24 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { DownloadIcon } from 'lucide-react'
 import Logo from '@/components/frontend/Logo/Logo'
+import SidebarTrigger from '@/components/frontend/SidebarTrigger/SidebarTrigger'
+import SidebarOverlay from '@/components/frontend/SidebarOverlay/SidebarOverlay'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
 import VideoListItem from '@/components/frontend/VideoListItem/VideoListItem'
+import {
+    SidebarProvider,
+    Sidebar,
+    SidebarHeader,
+    SidebarContent,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarMenu,
+    SidebarMenuItem,
+    SidebarMenuButton,
+    SidebarInset,
+} from '@/components/ui/sidebar'
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -115,98 +130,124 @@ export default function Home() {
     }, [id, videos, playlists])
 
     return (
-        <div className="flex flex-col">
+        <SidebarProvider defaultOpen={false}>
+            <Sidebar collapsible="offcanvas">
+                <SidebarHeader className="flex flex-row items-center gap-3 px-4 py-4">
+                    <SidebarTrigger className="text-black" />
+                    <Logo color="text-black" />
+                </SidebarHeader>
+                <SidebarContent>
+                    <SidebarGroup>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton>
+                                        <DownloadIcon />
+                                        <span>Request Download</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                </SidebarContent>
+            </Sidebar>
+            <SidebarInset>
+                <SidebarOverlay />
+                <div className="flex flex-col">
 
-            {/* Top */}
-            <div className="bg-gray-900 px-6 py-4 flex items-center gap-3">
-                <Logo />
-                <SearchBar videos={videos} />
-            </div>
-
-            {/* Middle */}
-            <div className="flex flex-col md:flex-row flex-1">
-
-                {/* Left: video content + info panel */}
-                <div className="flex flex-col md:flex-1">
-                    <div className="bg-black">
-                        {selectedVideo && (
-                            <video
-                                ref={videoRef}
-                                key={selectedVideo.id}
-                                src={`${API_URL}/video/${selectedVideo.id}`}
-                                controls
-                                autoPlay
-                                playsInline
-                                onTimeUpdate={e => {
-                                    const t = Math.floor(e.target.currentTime)
-                                    if (t % 5 !== 0) return
-                                    if (t === parseInt(searchParams.get('t'))) return
-                                    localStorage.setItem(`time_${selectedVideo.id}`, t)
-                                    setSearchParams({ t }, { replace: true })
-                                    setVideos(prev => {
-                                        const v = prev.find(v => v.id === selectedVideo.id)
-                                        if (v) v.savedTime = t
-                                        return [...prev]
-                                    })
-                                }}
-                                onLoadedMetadata={e => {
-                                    const t = searchParams.get('t')
-                                    if (t) e.target.currentTime = parseFloat(t)
-                                }}
-                                className="w-full"
-                            />
-                        )}
+                    {/* Top */}
+                    <div className="bg-gray-900 px-6 py-4 flex items-center gap-3">
+                        <SidebarTrigger />
+                        <Logo />
+                        <SearchBar videos={videos} />
                     </div>
-                    <div className="bg-gray-100 p-4">
-                        {selectedVideo && (
-                            <>
-                                <p className="font-semibold text-lg">{selectedVideo.name}</p>
-                                {selectedVideo.channel && (
-                                    <p className="text-sm text-gray-500 mt-1">{selectedVideo.channel}</p>
-                                )}
-                                {selectedVideo.date && (
-                                    <p className="text-sm text-gray-500 mt-1" title={format(new Date(selectedVideo.date), 'PPpp')}>
-                                        {formatDistanceToNow(new Date(selectedVideo.date), { addSuffix: true })}
-                                    </p>
-                                )}
-                            </>
-                        )}
-                    </div>
-                </div>
 
-                {/* Sidebar */}
-                <div className="md:w-90 lg:w-[28rem] bg-gray-50">
-                    {playlist.length > 0 && (
-                        <div className="border border-gray-400 rounded-lg m-2 overflow-hidden">
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-2">Playlist</p>
-                            {playlist.map(video => (
+                    {/* Middle */}
+                    <div className="flex flex-col md:flex-row flex-1">
+
+                        {/* Left: video content + info panel */}
+                        <div className="flex flex-col md:flex-1">
+                            <div className="bg-black">
+                                {selectedVideo && (
+                                    <video
+                                        ref={videoRef}
+                                        key={selectedVideo.id}
+                                        src={`${API_URL}/video/${selectedVideo.id}`}
+                                        controls
+                                        autoPlay
+                                        playsInline
+                                        onTimeUpdate={e => {
+                                            const t = Math.floor(e.target.currentTime)
+                                            if (t % 5 !== 0) return
+                                            if (t === parseInt(searchParams.get('t'))) return
+                                            localStorage.setItem(`time_${selectedVideo.id}`, t)
+                                            setSearchParams({ t }, { replace: true })
+                                            setVideos(prev => {
+                                                const v = prev.find(v => v.id === selectedVideo.id)
+                                                if (v) v.savedTime = t
+                                                return [...prev]
+                                            })
+                                        }}
+                                        onLoadedMetadata={e => {
+                                            const t = searchParams.get('t')
+                                            if (t) e.target.currentTime = parseFloat(t)
+                                        }}
+                                        className="w-full"
+                                    />
+                                )}
+                            </div>
+                            <div className="bg-gray-100 p-4">
+                                {selectedVideo && (
+                                    <>
+                                        <p className="font-semibold text-lg">{selectedVideo.name}</p>
+                                        {selectedVideo.channel && (
+                                            <p className="text-sm text-gray-500 mt-1">{selectedVideo.channel}</p>
+                                        )}
+                                        {selectedVideo.date && (
+                                            <p className="text-sm text-gray-500 mt-1" title={format(new Date(selectedVideo.date), 'PPpp')}>
+                                                {formatDistanceToNow(new Date(selectedVideo.date), { addSuffix: true })}
+                                            </p>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Sidebar */}
+                        <div className="md:w-90 lg:w-[28rem] bg-gray-50">
+                            {playlist.length > 0 && (
+                                <div className="border border-gray-400 rounded-lg m-2 overflow-hidden">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-2">Playlist</p>
+                                    {playlist.map(video => (
+                                        <VideoListItem
+                                            key={video.id}
+                                            video={video}
+                                            isSelected={selectedVideo?.id === video.id}
+                                            onWatchedReset={handleWatchedReset}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-2">Videos</p>
+                            {videos.filter(v => v.visible).map(video => (
                                 <VideoListItem
                                     key={video.id}
                                     video={video}
-                                    isSelected={selectedVideo?.id === video.id}
-                                    onWatchedReset={handleWatchedReset}
+                                    isSelected={selectedVideo?.id === video.id || playlist.some(v => v.id === video.id)}
+                                    videoCountVisible
+                                    playlistVideos={playlists.find(p => p.some(pv => pv.id === video.id)) ?? null}
+                                    onWatchedReset={v => {
+                                        const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
+                                        pl.forEach(pv => handleWatchedReset(pv, false))
+                                        setVideos(prev => [...prev])
+                                    }}
                                 />
                             ))}
                         </div>
-                    )}
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-2">Videos</p>
-                    {videos.filter(v => v.visible).map(video => (
-                        <VideoListItem
-                            key={video.id}
-                            video={video}
-                            isSelected={selectedVideo?.id === video.id || playlist.some(v => v.id === video.id)}
-                            videoCountVisible
-                            playlistVideos={playlists.find(p => p.some(pv => pv.id === video.id)) ?? null}
-                            onWatchedReset={v => {
-                                const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
-                                pl.forEach(pv => handleWatchedReset(pv, false))
-                                setVideos(prev => [...prev])
-                            }}
-                        />
-                    ))}
-                </div>
 
-            </div>
-        </div>
+                    </div>
+                </div>
+            </SidebarInset>
+        </SidebarProvider>
     )
 }
