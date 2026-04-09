@@ -3,7 +3,7 @@ from injector import inject
 from loguru import logger
 
 
-DOWNLOAD_PROGRESS_BUFFER_SIZE = 1000
+DOWNLOAD_PROGRESS_BUFFER_SIZE = 2000
 
 
 class YtDlpLogger:
@@ -30,7 +30,9 @@ class YtDlpLogger:
             self._progress_buffer.append(msg)
             if len(self._progress_buffer) >= DOWNLOAD_PROGRESS_BUFFER_SIZE:
                 last = self._progress_buffer[-1]
-                self._log.opt(depth=self._depth()).info(f"{DOWNLOAD_PROGRESS_BUFFER_SIZE} more messages like: {last}")
+                self._log.opt(depth=self._depth()).info(
+                    f"{DOWNLOAD_PROGRESS_BUFFER_SIZE} more messages like: {last}"
+                )
                 self._progress_buffer.clear()
         else:
             self._log.opt(depth=self._depth()).info(msg)
