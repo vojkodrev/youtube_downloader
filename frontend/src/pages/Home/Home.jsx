@@ -160,7 +160,7 @@ export default function Home() {
                     <div className="bg-gray-100 p-4">
                         {selectedVideo && (
                             <>
-                                <p className="font-semibold text-lg" title={selectedVideo.name}>{selectedVideo.name}</p>
+                                <p className="font-semibold text-lg">{selectedVideo.name}</p>
                                 {selectedVideo.channel && (
                                     <p className="text-sm text-gray-500 mt-1">{selectedVideo.channel}</p>
                                 )}
