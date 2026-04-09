@@ -62,7 +62,7 @@ export default function VideoListItem({ video, isSelected, videoCountVisible, on
                         <p className="text-sm font-medium text-gray-900 line-clamp-2">
                             {video.name}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1" title={video.date ? format(new Date(video.date), 'PPpp') : undefined}>
+                        <p className="text-xs text-gray-500 mt-1 truncate" title={video.date ? format(new Date(video.date), 'PPpp') : undefined}>
                             {[video.channel, video.date ? formatDistanceToNow(new Date(video.date), { addSuffix: true }) : null].filter(Boolean).join(' · ')}
                         </p>
                         {video.status !== 'Ready'
