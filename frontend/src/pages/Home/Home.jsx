@@ -4,7 +4,6 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { DownloadIcon } from 'lucide-react'
 import Logo from '@/components/frontend/Logo/Logo'
 import SidebarTrigger from '@/components/frontend/SidebarTrigger/SidebarTrigger'
-import SidebarOverlay from '@/components/frontend/SidebarOverlay/SidebarOverlay'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
 import VideoListItem from '@/components/frontend/VideoListItem/VideoListItem'
 import {
@@ -152,7 +151,6 @@ export default function Home() {
                 </SidebarContent>
             </Sidebar>
             <SidebarInset>
-                <SidebarOverlay />
                 <div className="flex flex-col">
 
                     {/* Top */}
