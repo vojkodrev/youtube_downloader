@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { formatDistanceToNow, format } from 'date-fns'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import Logo from '@/components/frontend/Logo/Logo'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
@@ -163,7 +164,11 @@ export default function Home() {
                                 {selectedVideo.channel && (
                                     <p className="text-sm text-gray-500 mt-1">{selectedVideo.channel}</p>
                                 )}
-                                <p className="text-sm text-gray-500 mt-1">{new Date(selectedVideo.date).toLocaleString()}</p>
+                                {selectedVideo.date && (
+                                    <p className="text-sm text-gray-500 mt-1" title={format(new Date(selectedVideo.date), 'PPpp')}>
+                                        {formatDistanceToNow(new Date(selectedVideo.date), { addSuffix: true })}
+                                    </p>
+                                )}
                             </>
                         )}
                     </div>
