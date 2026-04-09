@@ -4,18 +4,20 @@ from loguru import logger
 
 class YtDlpLogger:
     @inject
-    def __init__(self): ...
+    def __init__(self):
+        self._log = logger.bind(streamer="-")
+
     def debug(self, msg):
         if msg.startswith("[debug] "):
-            logger.debug(msg)
+            self._log.debug(msg)
         else:
             self.info(msg)
 
     def info(self, msg):
-        logger.info(msg)
+        self._log.info(msg)
 
     def warning(self, msg):
-        logger.warning(msg)
+        self._log.warning(msg)
 
     def error(self, msg):
-        logger.error(msg)
+        self._log.error(msg)
