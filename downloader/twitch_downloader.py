@@ -7,6 +7,7 @@ from injector import inject
 
 from config import Config
 from downloader import Downloader
+from yt_dlp_logger import YtDlpLogger
 
 
 class TwitchDownloader(Downloader):
@@ -20,6 +21,7 @@ class TwitchDownloader(Downloader):
 
         def sync():
             ydl_opts = {
+                "logger": YtDlpLogger(),
                 "format": "best",
                 "merge_output_format": "mp4",
                 "overwrites": True,

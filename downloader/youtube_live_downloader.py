@@ -7,6 +7,7 @@ from injector import inject
 
 from config import Config
 from downloader import Downloader
+from yt_dlp_logger import YtDlpLogger
 
 
 class YoutubeLiveDownloader(Downloader):
@@ -20,6 +21,7 @@ class YoutubeLiveDownloader(Downloader):
 
         def sync():
             ydl_opts = {
+                "logger": YtDlpLogger(),
                 "format": "bestvideo+bestaudio/best",
                 # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
                 "live_from_start": True,
