@@ -14,7 +14,7 @@ export default function SidebarTrigger({ className = 'text-white' }) {
     }, [open, setOpen])
 
     return (
-        <button onClick={toggleSidebar} className={className}>
+        <button onClick={toggleSidebar} className={`md:pr-3 ${className}`}>
             <MenuIcon size={24} />
         </button>
     )
