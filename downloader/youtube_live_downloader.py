@@ -38,6 +38,13 @@ class YoutubeLiveDownloader(Downloader):
                 "fragment_retries": 10,  # Video chunk/fragment retries
                 "extractor_retries": 10,  # Website parsing/scraping retries
                 "file_access_retries": 10,  # Local disk/NAS access retries
+                # Sleep between each retry attempt (all retry types)
+                "retry_sleep_functions": {
+                    "http": lambda _: 15,
+                    "fragment": lambda _: 15,
+                    "file_access": lambda _: 15,
+                    "extractor": lambda _: 15,
+                },
                 # --- Precise Timing Control ---
                 "sleep_interval": 15,  # Seconds to wait between download tasks
                 "max_sleep_interval": 15,  # Keep it strictly at 15s (no randomization)
