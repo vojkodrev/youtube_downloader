@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -9,17 +11,18 @@ import (
 )
 
 type GinServer struct {
-	cfg           *Config
-	store         *VideoStore
-	filenames     *Filenames
-	videoDuration *VideoDuration
-	fileServer    *GinSharableFileServer
-	router        *gin.Engine
+	cfg                    *Config
+	store                  *VideoStore
+	filenames              *Filenames
+	videoDuration          *VideoDuration
+	fileServer             *GinSharableFileServer
+	downloadRequestService *DownloadRequestService
+	router                 *gin.Engine
 }
 
-func NewGinServer(cfg *Config, store *VideoStore, filenames *Filenames, videoDuration *VideoDuration, fileServer *GinSharableFileServer) *GinServer {
+func NewGinServer(cfg *Config, store *VideoStore, filenames *Filenames, videoDuration *VideoDuration, fileServer *GinSharableFileServer, downloadRequestService *DownloadRequestService) *GinServer {
 	r := gin.Default()
-	return &GinServer{cfg: cfg, store: store, filenames: filenames, videoDuration: videoDuration, fileServer: fileServer, router: r}
+	return &GinServer{cfg: cfg, store: store, filenames: filenames, videoDuration: videoDuration, fileServer: fileServer, downloadRequestService: downloadRequestService, router: r}
 }
 
 func (s *GinServer) registerRoutes() {
@@ -102,6 +105,37 @@ func (s *GinServer) registerRoutes() {
 			c.Header("Cache-Control", "public, max-age=18000")
 		}
 		c.File(thumbPath)
+	})
+
+	s.router.POST("/request-download", func(c *gin.Context) {
+		var body struct {
+			URL string `json:"url" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "url is required"})
+			return
+		}
+
+		if !s.downloadRequestService.IsSupportedURL(body.URL) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "url must be from a supported service (YouTube, Twitch)"})
+			return
+		}
+
+		videoID, err := s.downloadRequestService.ExtractVideoID(body.URL)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		filename := fmt.Sprintf("video.%s.download", videoID)
+		path := filepath.Join(s.cfg.StreamsDir, filename)
+
+		if err := os.WriteFile(path, []byte(body.URL), 0644); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create download request"})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{"id": videoID})
 	})
 }
 
