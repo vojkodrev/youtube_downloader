@@ -1,4 +1,15 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { formatDistanceToNow, format } from 'date-fns'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { DownloadIcon } from 'lucide-react'
@@ -27,6 +38,8 @@ export default function Home() {
     const navigate = useNavigate()
     const [videos, setVideos] = useState([])
     const [playlists, setPlaylists] = useState([])
+    const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
+    const [downloadUrl, setDownloadUrl] = useState('')
     const videoRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
@@ -140,7 +153,7 @@ export default function Home() {
                         <SidebarGroupContent>
                             <SidebarMenu>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton>
+                                    <SidebarMenuButton onClick={() => setDownloadDialogOpen(true)}>
                                         <DownloadIcon />
                                         <span>Request Download</span>
                                     </SidebarMenuButton>
@@ -246,6 +259,30 @@ export default function Home() {
                     </div>
                 </div>
             </SidebarInset>
+
+            <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Request a Video Download</DialogTitle>
+                        <DialogDescription>
+                            Paste a YouTube (or other supported) URL below and we'll download it to your local library.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-2 py-2">
+                        <Label htmlFor="download-url">Video URL</Label>
+                        <Input
+                            id="download-url"
+                            placeholder="https://www.youtube.com/watch?v=..."
+                            value={downloadUrl}
+                            onChange={e => setDownloadUrl(e.target.value)}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDownloadDialogOpen(false)}>Cancel</Button>
+                        <Button disabled={!downloadUrl.trim()}>Download</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </SidebarProvider>
     )
 }
