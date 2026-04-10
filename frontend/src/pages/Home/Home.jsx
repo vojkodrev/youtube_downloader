@@ -40,6 +40,8 @@ export default function Home() {
     const [playlists, setPlaylists] = useState([])
     const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
     const [downloadUrl, setDownloadUrl] = useState('')
+    const [downloadPending, setDownloadPending] = useState(false)
+    const [downloadError, setDownloadError] = useState(false)
     const videoRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
@@ -260,7 +262,7 @@ export default function Home() {
                 </div>
             </SidebarInset>
 
-            <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
+            <Dialog open={downloadDialogOpen} onOpenChange={open => { if (!open) { setDownloadError(false); setDownloadUrl('') } setDownloadDialogOpen(open) }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Request a Video Download</DialogTitle>
@@ -276,10 +278,34 @@ export default function Home() {
                             value={downloadUrl}
                             onChange={e => setDownloadUrl(e.target.value)}
                         />
+                        {downloadError && <p className="text-sm text-red-500">An error occurred. Please try again.</p>}
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDownloadDialogOpen(false)}>Cancel</Button>
-                        <Button disabled={!downloadUrl.trim()}>Download</Button>
+                        <Button variant="outline" onClick={() => { setDownloadError(false); setDownloadUrl(''); setDownloadDialogOpen(false) }}>Cancel</Button>
+                        <Button
+                            disabled={!downloadUrl.trim() || downloadPending}
+                            onClick={async () => {
+                                setDownloadPending(true)
+                                setDownloadError(false)
+                                try {
+                                    const res = await fetch('/request-download', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ url: downloadUrl }),
+                                    })
+                                    if (!res.ok) {
+                                        setDownloadError(true)
+                                        return
+                                    }
+                                    setDownloadDialogOpen(false)
+                                    setDownloadUrl('')
+                                } catch {
+                                    setDownloadError(true)
+                                } finally {
+                                    setDownloadPending(false)
+                                }
+                            }}
+                        >Download</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
