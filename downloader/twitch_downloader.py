@@ -52,7 +52,8 @@ class TwitchDownloader(Downloader):
                 # --- Safety Buffers ---
                 "socket_timeout": 30,  # Wait 30s before considering a socket "dead"
                 # Suppress FFmpeg's direct stderr output (it bypasses yt-dlp's logger)
-                "postprocessor_args": {"ffmpeg": ["-loglevel", "warning"]},
+                "postprocessor_args": {"ffmpeg": ["-loglevel", "warning", "-stats", "-stats_period", "60"]},
+                "external_downloader_args": {"ffmpeg": ["-loglevel", "warning", "-stats", "-stats_period", "60"]},
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
