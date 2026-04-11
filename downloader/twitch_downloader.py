@@ -20,6 +20,9 @@ class TwitchDownloader(Downloader):
         if not url:
             raise ValueError("url is required")
 
+        def _retry_sleep(n):  # noqa: ARG001
+            return 15
+
         def sync():
             ydl_opts = {
                 "logger": self._yt_dlp_logger,
@@ -37,10 +40,10 @@ class TwitchDownloader(Downloader):
                 "file_access_retries": 10,  # Local disk/NAS access retries
                 # Sleep between each retry attempt (all retry types)
                 "retry_sleep_functions": {
-                    "http": lambda _: 15,
-                    "fragment": lambda _: 15,
-                    "file_access": lambda _: 15,
-                    "extractor": lambda _: 15,
+                    "http": _retry_sleep,
+                    "fragment": _retry_sleep,
+                    "file_access": _retry_sleep,
+                    "extractor": _retry_sleep,
                 },
                 # --- Precise Timing Control ---
                 "sleep_interval": 15,  # Seconds to wait between download tasks

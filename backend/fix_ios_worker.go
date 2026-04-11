@@ -82,7 +82,6 @@ func (fw *FixIOSWorker) fix(videoPath string, bitrate int64) error {
 			"c:a":       "copy",
 			"movflags":  "+faststart",
 		}).
-		OverWriteOutput().
 		Compile()
 
 	cmd.Stderr = os.Stderr
