@@ -117,17 +117,17 @@ func (s *GinServer) registerRoutes() {
 		}
 
 		if !s.downloadRequestService.IsSupportedURL(body.URL) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "url must be from a supported service (YouTube, Twitch)"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Url must be from a supported service (YouTube, Twitch)"})
 			return
 		}
 
-		videoID, err := s.downloadRequestService.ExtractVideoID(body.URL)
+		service, videoID, err := s.downloadRequestService.ExtractVideoID(body.URL)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		filename := fmt.Sprintf("video.%s.download", videoID)
+		filename := fmt.Sprintf("video.%s.%s.download", service, videoID)
 		path := filepath.Join(s.cfg.StreamsDir, filename)
 
 		if err := os.WriteFile(path, []byte(body.URL), 0644); err != nil {
@@ -138,4 +138,3 @@ func (s *GinServer) registerRoutes() {
 		c.JSON(http.StatusCreated, gin.H{"id": videoID})
 	})
 }
-

@@ -24,19 +24,21 @@ func (s *DownloadRequestService) IsSupportedURL(rawURL string) bool {
 		strings.Contains(host, "twitch.tv")
 }
 
-func (s *DownloadRequestService) ExtractVideoID(rawURL string) (string, error) {
-	u, err := url.Parse(rawURL)
-	if err != nil || u.Host == "" {
-		return "", fmt.Errorf("invalid url")
+func (s *DownloadRequestService) ExtractVideoID(rawURL string) (service string, id string, err error) {
+	u, parseErr := url.Parse(rawURL)
+	if parseErr != nil || u.Host == "" {
+		return "", "", fmt.Errorf("invalid url")
 	}
-
-	var id string
 
 	host := strings.ToLower(u.Host)
 	if strings.Contains(host, "youtube.com") {
+		service = "youtube"
 		id = u.Query().Get("v")
 	} else if strings.Contains(host, "youtu.be") {
+		service = "youtube"
 		id = strings.Trim(u.Path, "/")
+	} else if strings.Contains(host, "twitch.tv") {
+		service = "twitch"
 	}
 
 	// Generic fallback: last non-empty path segment
@@ -51,10 +53,10 @@ func (s *DownloadRequestService) ExtractVideoID(rawURL string) (string, error) {
 	}
 
 	if id == "" {
-		return "", fmt.Errorf("could not determine video id from url")
+		return "", "", fmt.Errorf("could not determine video id from url")
 	}
 
 	safeIDRe := regexp.MustCompile(`[^a-zA-Z0-9_\-]`)
 	id = safeIDRe.ReplaceAllString(id, "_")
-	return id, nil
+	return service, id, nil
 }
