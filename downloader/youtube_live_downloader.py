@@ -3,18 +3,21 @@ import os
 
 import yt_dlp
 
+from typing import Callable
 from injector import inject
-
 from config import Config
 from downloader import Downloader
 from yt_dlp_logger import YtDlpLogger
+from yt_dlp_settings import SHARED_YT_DLP_SETTINGS
 
 
 class YoutubeLiveDownloader(Downloader):
     @inject
-    def __init__(self, config: Config, yt_dlp_logger: YtDlpLogger):
+    def __init__(
+        self, config: Config, yt_dlp_logger_factory: Callable[[], YtDlpLogger]
+    ):
         self._config = config
-        self._yt_dlp_logger = yt_dlp_logger
+        self._yt_dlp_logger_factory = yt_dlp_logger_factory
 
     async def download(self, url: str) -> None:
         if not url:
@@ -22,26 +25,16 @@ class YoutubeLiveDownloader(Downloader):
 
         def sync():
             ydl_opts = {
-                "logger": self._yt_dlp_logger,
+                **SHARED_YT_DLP_SETTINGS,
+                "logger": self._yt_dlp_logger_factory(),
                 "format": "bestvideo+bestaudio/best",
                 # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
                 "live_from_start": True,
                 "merge_output_format": "mp4",
-                "overwrites": True,
+                "overwrites": False,
                 "outtmpl": os.path.join(
                     self._config["output_folder"], "[%(uploader)s] %(title)s.%(ext)s"
                 ),
-                # --- The Retry Trio ---
-                "retries": 10,  # Generic network retries
-                "fragment_retries": 10,  # Video chunk/fragment retries
-                "extractor_retries": 10,  # Website parsing/scraping retries
-                "file_access_retries": 10,  # Local disk/NAS access retries
-                # --- Precise Timing Control ---
-                "sleep_interval": 15,  # Seconds to wait between download tasks
-                "max_sleep_interval": 15,  # Keep it strictly at 15s (no randomization)
-                "sleep_requests": 5,  # Wait 5s between finding info for each video
-                # --- Safety Buffers ---
-                "socket_timeout": 30,  # Wait 30s before considering a socket "dead"
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])

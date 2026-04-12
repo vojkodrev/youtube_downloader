@@ -2,6 +2,8 @@ import os
 import tomllib
 
 from dotenv import load_dotenv
+from typing import Callable
+
 from injector import Module, provider, singleton, SingletonScope
 
 from channel_poller import ChannelPoller
@@ -23,7 +25,6 @@ class DownloaderModule(Module):
         load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
         with open(os.path.join(os.path.dirname(__file__), "config.toml"), "rb") as f:
             binder.bind(Config, to=Config(tomllib.load(f)))
-        binder.bind(YtDlpLogger, to=YtDlpLogger, scope=SingletonScope)
         binder.bind(YoutubeMetadataProvider, to=YoutubeMetadataProvider, scope=SingletonScope)
         binder.bind(TwitchMetadataProvider, to=TwitchMetadataProvider, scope=SingletonScope)
         binder.bind(YoutubeLiveDownloader, to=YoutubeLiveDownloader, scope=SingletonScope)
@@ -32,6 +33,11 @@ class DownloaderModule(Module):
         binder.bind(FibonacciSleepFactory, to=FibonacciSleepFactory, scope=SingletonScope)
         binder.bind(ChannelPoller, to=ChannelPoller, scope=SingletonScope)
         binder.bind(MultiChannelPoller, to=MultiChannelPoller, scope=SingletonScope)
+
+    @provider
+    @singleton
+    def yt_dlp_logger_factory(self) -> Callable[[], YtDlpLogger]:
+        return YtDlpLogger
 
     @provider
     @singleton
