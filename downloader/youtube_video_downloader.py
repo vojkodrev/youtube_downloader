@@ -27,7 +27,7 @@ class YoutubeVideoDownloader(Downloader):
             ydl_opts = {
                 **SHARED_YT_DLP_SETTINGS,
                 "logger": self._yt_dlp_logger_factory(),
-                "format": "bestvideo+bestaudio/best",
+                "format": "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/bestvideo[vcodec^=avc1]+bestaudio/bestvideo+bestaudio/best",
                 "merge_output_format": "mp4",
                 "overwrites": False,
                 "outtmpl": os.path.join(
