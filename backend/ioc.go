@@ -26,6 +26,7 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewVideoSplitter),
 		fx.Provide(NewSplitVideosWorker),
 		fx.Provide(NewFixIOSWorker),
+		fx.Provide(NewDownloadRequestService),
 		fx.Provide(NewGinServer),
 	)
 }
