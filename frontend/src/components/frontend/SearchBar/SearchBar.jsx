@@ -5,7 +5,13 @@ import { useNavigate } from 'react-router-dom'
 import Fuse from 'fuse.js'
 
 export default function SearchBar({ videos = [] }) {
-    const [query, setQuery] = useState('')
+    const [query, setQuery] = useState(() => localStorage.getItem('searchQuery') ?? '')
+
+    const updateQuery = (value) => {
+        setQuery(value)
+        if (value) localStorage.setItem('searchQuery', value)
+        else localStorage.removeItem('searchQuery')
+    }
     const [focused, setFocused] = useState(false)
     const navigate = useNavigate()
 
@@ -24,13 +30,13 @@ export default function SearchBar({ videos = [] }) {
                         type="text"
                         placeholder="Search..."
                         value={query}
-                        onChange={e => setQuery(e.target.value)}
+                        onChange={e => updateQuery(e.target.value)}
                         onFocus={() => setFocused(true)}
                         onBlur={() => setFocused(false)}
                         className="bg-transparent text-white placeholder-gray-300 text-sm outline-none w-full"
                     />
                     {query && (
-                        <button onMouseDown={e => { e.preventDefault(); setQuery('') }}>
+                        <button onMouseDown={e => { e.preventDefault(); updateQuery('') }}>
                             <X size={14} className="text-gray-300 hover:text-white" />
                         </button>
                     )}
@@ -41,7 +47,7 @@ export default function SearchBar({ videos = [] }) {
                             ? results.map(video => (
                                 <li
                                     key={video.id}
-                                    onMouseDown={() => { setQuery(''); navigate(`/watch/${video.id}`) }}
+                                    onMouseDown={() => { updateQuery(''); navigate(`/watch/${video.id}`) }}
                                     className="px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 cursor-pointer flex items-center gap-2 min-w-0"
                                     title={video.name}
                                 >
