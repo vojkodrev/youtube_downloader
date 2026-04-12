@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/sidebar'
 
 const API_URL = import.meta.env.VITE_API_URL
-const DEFAULT_DOWNLOAD_ERROR = DEFAULT_DOWNLOAD_ERROR
+const DEFAULT_DOWNLOAD_ERROR = 'An error occurred. Please try again.'
 
 export default function Home() {
     const { id } = useParams()
