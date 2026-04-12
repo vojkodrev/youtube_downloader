@@ -21,7 +21,8 @@ func (s *DownloadRequestService) IsSupportedURL(rawURL string) bool {
 	host := strings.ToLower(u.Host)
 	return strings.Contains(host, "youtube.com") ||
 		strings.Contains(host, "youtu.be") ||
-		strings.Contains(host, "twitch.tv")
+		strings.Contains(host, "twitch.tv") ||
+		strings.Contains(host, "rumble.com")
 }
 
 func (s *DownloadRequestService) ExtractVideoID(rawURL string) (service string, id string, err error) {
@@ -39,6 +40,8 @@ func (s *DownloadRequestService) ExtractVideoID(rawURL string) (service string, 
 		id = strings.Trim(u.Path, "/")
 	} else if strings.Contains(host, "twitch.tv") {
 		service = "twitch"
+	} else if strings.Contains(host, "rumble.com") {
+		service = "rumble"
 	}
 
 	// Generic fallback: last non-empty path segment
