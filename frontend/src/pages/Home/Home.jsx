@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/sidebar'
 
 const API_URL = import.meta.env.VITE_API_URL
+const DEFAULT_DOWNLOAD_ERROR = DEFAULT_DOWNLOAD_ERROR
 
 export default function Home() {
     const { id } = useParams()
@@ -278,7 +279,7 @@ export default function Home() {
                             value={downloadUrl}
                             onChange={e => setDownloadUrl(e.target.value)}
                         />
-                        {downloadError && <p className="text-sm text-red-500">An error occurred. Please try again.</p>}
+                        {downloadError && <p className="text-sm text-red-500">{downloadError}</p>}
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => { setDownloadError(false); setDownloadUrl(''); setDownloadDialogOpen(false) }}>Cancel</Button>
@@ -288,19 +289,20 @@ export default function Home() {
                                 setDownloadPending(true)
                                 setDownloadError(false)
                                 try {
-                                    const res = await fetch('/request-download', {
+                                    const res = await fetch(`${API_URL}/request-download`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ url: downloadUrl }),
                                     })
                                     if (!res.ok) {
-                                        setDownloadError(true)
+                                        const data = await res.json().catch(() => null)
+                                        setDownloadError(data?.error || DEFAULT_DOWNLOAD_ERROR)
                                         return
                                     }
                                     setDownloadDialogOpen(false)
                                     setDownloadUrl('')
                                 } catch {
-                                    setDownloadError(true)
+                                    setDownloadError(DEFAULT_DOWNLOAD_ERROR)
                                 } finally {
                                     setDownloadPending(false)
                                 }
