@@ -16,6 +16,6 @@ class MultiChannelPoller:
         await asyncio.gather(
             *[
                 self._poller.poll(ch["id"], mode=ch["mode"])
-                for ch in self._config["channels"]
+                for ch in self._config.get("channels") or []
             ]
         )

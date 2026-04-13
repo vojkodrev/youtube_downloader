@@ -12,7 +12,7 @@ from downloader_map import DownloaderMap
 SERVICE_TO_DOWNLOADER = {
     "youtube": "youtube_video",
     "twitch": "twitch",
-    "rumble": "twitch",
+    "rumble": "rumble",
 }
 
 DOWNLOAD_FILE_RE = re.compile(r"^video\.([^.]+)\.([^.]+)\.download$")
