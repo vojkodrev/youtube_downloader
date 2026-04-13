@@ -28,7 +28,7 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 	splitPartRe := regexp.MustCompile(`^(.+) part\d{2}\.mp4$`)
 	formatRe := regexp.MustCompile(`f\d{3}\.mp4$`)
 	downloadingPartRe := regexp.MustCompile(`\.f\d{3}\.[^.]+\.part$`)
-	fragmentPartRe := regexp.MustCompile(`\.mp4\.part-.+\.part$`)
+	fragmentPartRe := regexp.MustCompile(`\.mp4\.part-(?:Frag)?\d+\.part$`)
 	channelRe := regexp.MustCompile(`^\[([^\]]+)\] ?`)
 	formatSegmentRe := regexp.MustCompile(`\.f\d{3}$`)
 
