@@ -13,6 +13,7 @@ from downloader_map import DownloaderMap
 from fibonacci_sleep_factory import FibonacciSleepFactory
 from metadata_provider_map import MetadataProviderMap
 from multi_channel_poller import MultiChannelPoller
+from rumble_downloader import RumbleDownloader
 from twitch_downloader import TwitchDownloader
 from twitch_metadata_provider import TwitchMetadataProvider
 from youtube_api_key_pool import YoutubeApiKeyPool
@@ -32,6 +33,7 @@ class DownloaderModule(Module):
         binder.bind(YoutubeLiveDownloader, to=YoutubeLiveDownloader, scope=SingletonScope)
         binder.bind(YoutubeVideoDownloader, to=YoutubeVideoDownloader, scope=SingletonScope)
         binder.bind(TwitchDownloader, to=TwitchDownloader, scope=SingletonScope)
+        binder.bind(RumbleDownloader, to=RumbleDownloader, scope=SingletonScope)
         binder.bind(YoutubeApiKeyPool, to=YoutubeApiKeyPool, scope=SingletonScope)
         binder.bind(FibonacciSleepFactory, to=FibonacciSleepFactory, scope=SingletonScope)
         binder.bind(ChannelPoller, to=ChannelPoller, scope=SingletonScope)
@@ -62,9 +64,11 @@ class DownloaderModule(Module):
         youtube_live: YoutubeLiveDownloader,
         youtube_video: YoutubeVideoDownloader,
         twitch: TwitchDownloader,
+        rumble: RumbleDownloader,
     ) -> DownloaderMap:
         return DownloaderMap({
             "youtube_live": youtube_live,
             "youtube_video": youtube_video,
             "twitch": twitch,
+            "rumble": rumble,
         })

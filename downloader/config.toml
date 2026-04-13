@@ -13,9 +13,9 @@ mode = "youtube_live"
 id = "UCaTznQhurW5AaiYPbhEA-KA"
 mode = "youtube_live"
 
-[[channels]]
-id = "joshstrifehayes"
-mode = "twitch"
+# [[channels]]
+# id = "joshstrifehayes"
+# mode = "twitch"
 
 # [[channels]]
 # id = "UCI_mwTKUhicNzFrhm33MzBQ"

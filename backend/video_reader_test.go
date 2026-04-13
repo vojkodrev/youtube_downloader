@@ -123,6 +123,20 @@ func TestGetVideos_FragmentPartFile_IsSkipped(t *testing.T) {
 	assert.Empty(t, videos)
 }
 
+func TestGetVideos_RumbleDownloadingFiles_ReturnsOnlyMainPartAsDownloading(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"video.mp4.part":              &fstest.MapFile{Data: make([]byte, 500)},
+		"video.mp4.part-Frag154.part": &fstest.MapFile{Data: make([]byte, 100)},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Equal(t, "video.mp4.part", videos[0].Filename)
+	assert.Equal(t, "Downloading", videos[0].Status)
+}
+
 func TestGetVideos_MixedFiles_ReturnsCorrectVideosAndStatuses(t *testing.T) {
 	vr := setupVideoReader(t, fstest.MapFS{
 		// ready
