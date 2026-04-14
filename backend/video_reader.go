@@ -43,6 +43,7 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 			if mc := channelRe.FindStringSubmatch(versionName); mc != nil {
 				versionName = versionName[len(mc[0]):]
 			}
+			versionName = versionName + " " + m[1]
 			lowerQualityVersions[base] = append(lowerQualityVersions[base], VideoVersion{
 				ID:       vr.videoID.FromFilename(versionFilename),
 				Name:     versionName,
