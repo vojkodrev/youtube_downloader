@@ -32,7 +32,6 @@ func (r *Video480pRecoder) Recode(inputPath, outputPath string) error {
 
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		_ = os.Remove(tmpPath)
 		return err
 	}
 

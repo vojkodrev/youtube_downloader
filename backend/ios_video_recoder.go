@@ -37,12 +37,10 @@ func (r *IOSVideoRecoder) Recode(videoPath string, bitrate int64) error {
 
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		_ = os.Remove(tmpPath)
 		return err
 	}
 
 	if err := os.Remove(videoPath); err != nil {
-		_ = os.Remove(tmpPath)
 		return err
 	}
 	return os.Rename(tmpPath, videoPath)
