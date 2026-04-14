@@ -65,13 +65,20 @@ func (s *GinServer) registerRoutes() {
 		id := c.Param("id")
 		s.store.Mutex.RLock()
 		v, ok := s.store.VideosMap[id]
+		vv, versionOk := s.store.VideoVersionsMap[id]
 		s.store.Mutex.RUnlock()
-		if !ok {
+		if !ok && !versionOk {
 			c.Status(404)
 			return
 		}
-		c.Header("Content-Disposition", `attachment; filename="`+v.Filename+`"`)
-		s.fileServer.Serve(c, s.cfg.StreamsDir+"/"+v.Filename, v.Filename)
+		var filename string
+		if versionOk {
+			filename = vv.Filename
+		} else {
+			filename = v.Filename
+		}
+		c.Header("Content-Disposition", `attachment; filename="`+filename+`"`)
+		s.fileServer.Serve(c, s.cfg.StreamsDir+"/"+filename, filename)
 	})
 
 	s.router.GET("/duration/:id", func(c *gin.Context) {

@@ -48,6 +48,7 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 				ID:       vr.videoID.FromFilename(versionFilename),
 				Name:     versionName,
 				Filename: versionFilename,
+				Quality:  m[1],
 			})
 		}
 	}
