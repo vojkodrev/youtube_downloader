@@ -12,6 +12,7 @@ func CoreProviders() fx.Option {
 	return fx.Options(
 		fx.Provide(func() *Config { cfg := loadConfig(); return &cfg }),
 		fx.Provide(func(cfg *Config) StreamsFS { return StreamsFS(os.DirFS(cfg.StreamsDir)) }),
+		fx.Provide(NewVideoID),
 		fx.Provide(NewFilenames),
 		fx.Provide(NewVideoDuration),
 		fx.Provide(NewThumbnailSaver),

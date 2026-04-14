@@ -6,17 +6,16 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 type VideoReader struct {
-	cfg *Config
-	fs  StreamsFS
+	cfg     *Config
+	fs      StreamsFS
+	videoID *VideoID
 }
 
-func NewVideoReader(cfg *Config, fsys StreamsFS) *VideoReader {
-	return &VideoReader{cfg: cfg, fs: fsys}
+func NewVideoReader(cfg *Config, fsys StreamsFS, videoID *VideoID) *VideoReader {
+	return &VideoReader{cfg: cfg, fs: fsys, videoID: videoID}
 }
 
 func (vr *VideoReader) GetVideos() ([]Video, error) {
@@ -34,11 +33,21 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 	formatSegmentRe := regexp.MustCompile(`\.f\d{3}$`)
 
 	// pre-scan: build map of base filename -> available lower quality versions (e.g. "720p")
-	lowerQualityVersions := map[string][]string{}
+	lowerQualityVersions := map[string][]VideoVersion{}
 	for _, entry := range entries {
 		if m := lowerQualityRe.FindStringSubmatch(entry.Name()); m != nil {
 			base := strings.TrimSuffix(entry.Name(), "."+m[1]+".mp4") + ".mp4"
-			lowerQualityVersions[base] = append(lowerQualityVersions[base], m[1])
+			versionFilename := entry.Name()
+			versionName := strings.TrimSuffix(versionFilename, "."+m[1]+".mp4")
+			versionName = formatSegmentRe.ReplaceAllString(versionName, "")
+			if mc := channelRe.FindStringSubmatch(versionName); mc != nil {
+				versionName = versionName[len(mc[0]):]
+			}
+			lowerQualityVersions[base] = append(lowerQualityVersions[base], VideoVersion{
+				ID:       vr.videoID.FromFilename(versionFilename),
+				Name:     versionName,
+				Filename: versionFilename,
+			})
 		}
 	}
 
@@ -140,7 +149,7 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 			name = name[len(m[0]):]
 		}
 		v := Video{
-			ID:       uuid.NewSHA1(uuid.NameSpaceURL, []byte(entry.Name())).String(),
+			ID:       vr.videoID.FromFilename(entry.Name()),
 			Filename: entry.Name(),
 			Name:     name,
 			Channel:  channel,

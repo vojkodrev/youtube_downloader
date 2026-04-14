@@ -37,7 +37,14 @@ func (s *GinServer) registerRoutes() {
 		defer s.store.Mutex.RUnlock()
 		response := make([]VideoResponse, len(s.store.Videos))
 		for i, v := range s.store.Videos {
-			response[i] = VideoResponse{ID: v.ID, Name: v.Name, Channel: v.Channel, Date: v.Date, Status: v.Status}
+			response[i] = VideoResponse{
+				ID:       v.ID,
+				Name:     v.Name,
+				Channel:  v.Channel,
+				Date:     v.Date,
+				Status:   v.Status,
+				Versions: v.Versions,
+			}
 		}
 		c.JSON(200, response)
 	})
