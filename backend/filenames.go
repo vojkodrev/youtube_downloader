@@ -30,3 +30,8 @@ func (f *Filenames) LowerQuality720p(videoPath string) string {
 	base := filepath.Base(videoPath)
 	return strings.TrimSuffix(base, filepath.Ext(base)) + ".720p.mp4"
 }
+
+func (f *Filenames) LowerQuality480p(videoPath string) string {
+	base := filepath.Base(videoPath)
+	return strings.TrimSuffix(base, filepath.Ext(base)) + ".480p.mp4"
+}
