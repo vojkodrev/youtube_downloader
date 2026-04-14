@@ -187,6 +187,48 @@ func TestGetVideos_TwoFormatSegmentsWithTempMp4_ReturnsSingleProcessingVideo(t *
 	assert.Equal(t, "Processing", videos[0].Status)
 }
 
+func TestGetVideos_Mp4With720pAnd480p_ReturnsOriginalWithBothInVersions(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"video.mp4":      &fstest.MapFile{},
+		"video.720p.mp4": &fstest.MapFile{},
+		"video.480p.mp4": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Equal(t, "video.mp4", videos[0].Filename)
+	assert.ElementsMatch(t, []string{"720p", "480p"}, videos[0].Versions)
+}
+
+func TestGetVideos_Mp4With720pTempFile_ReturnsMp4AsProcessingWithNoVersions(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"video.mp4":           &fstest.MapFile{},
+		"video.720p.temp.mp4": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Equal(t, "video.mp4", videos[0].Filename)
+	assert.Equal(t, "Processing", videos[0].Status)
+	assert.Empty(t, videos[0].Versions)
+}
+
+func TestGetVideos_Mp4Without720p_ReturnsEmptyVersions(t *testing.T) {
+	vr := setupVideoReader(t, fstest.MapFS{
+		"video.mp4": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Empty(t, videos[0].Versions)
+}
+
 func TestGetVideos_Mp4File_ReturnsStatusReady(t *testing.T) {
 	vr := setupVideoReader(t, fstest.MapFS{
 		"video.mp4": &fstest.MapFile{},

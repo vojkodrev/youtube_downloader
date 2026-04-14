@@ -30,6 +30,7 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 	downloadingPartRe := regexp.MustCompile(`\.f\d{3}\.[^.]+\.part$`)
 	fragmentPartRe := regexp.MustCompile(`\.mp4\.part-(?:Frag)?\d+\.part$`)
 	lowerQualityRe := regexp.MustCompile(`\.(720p|480p)\.mp4$`)
+	lowerQualityTempRe := regexp.MustCompile(`\.(720p|480p)\.temp\.mp4$`)
 	channelRe := regexp.MustCompile(`^\[([^\]]+)\] ?`)
 	formatSegmentRe := regexp.MustCompile(`\.f\d{3}$`)
 
@@ -39,6 +40,15 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 		if m := lowerQualityRe.FindStringSubmatch(entry.Name()); m != nil {
 			base := strings.TrimSuffix(entry.Name(), "."+m[1]+".mp4") + ".mp4"
 			lowerQualityVersions[base] = append(lowerQualityVersions[base], m[1])
+		}
+	}
+
+	// pre-scan: find videos being actively recoded to a lower quality
+	recodingInProgress := map[string]bool{}
+	for _, entry := range entries {
+		if m := lowerQualityTempRe.FindStringSubmatch(entry.Name()); m != nil {
+			base := strings.TrimSuffix(entry.Name(), "."+m[1]+".temp.mp4") + ".mp4"
+			recodingInProgress[base] = true
 		}
 	}
 
@@ -74,6 +84,10 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 		if lowerQualityRe.MatchString(entry.Name()) {
 			continue
 		}
+		// skip lower quality temp files, e.g. "video.720p.temp.mp4" — recode in progress
+		if lowerQualityTempRe.MatchString(entry.Name()) {
+			continue
+		}
 		status := "Ready"
 		if ext == ".part" {
 			// only include the largest part file per base (skip smaller format segments)
@@ -102,6 +116,10 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 			// if a temp file exists alongside the final mp4, mark as Processing
 			base, _ := strings.CutSuffix(entry.Name(), ".mp4")
 			if _, err := fs.Stat(vr.fs, base+".temp.mp4"); err == nil {
+				status = "Processing"
+			}
+			// if a lower quality recode is in progress, mark as Processing
+			if recodingInProgress[entry.Name()] {
 				status = "Processing"
 			}
 		}
