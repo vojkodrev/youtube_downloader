@@ -29,8 +29,18 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 	formatRe := regexp.MustCompile(`f\d{3}\.mp4$`)
 	downloadingPartRe := regexp.MustCompile(`\.f\d{3}\.[^.]+\.part$`)
 	fragmentPartRe := regexp.MustCompile(`\.mp4\.part-(?:Frag)?\d+\.part$`)
+	lowerQualityRe := regexp.MustCompile(`\.(720p|480p)\.mp4$`)
 	channelRe := regexp.MustCompile(`^\[([^\]]+)\] ?`)
 	formatSegmentRe := regexp.MustCompile(`\.f\d{3}$`)
+
+	// pre-scan: build map of base filename -> available lower quality versions (e.g. "720p")
+	lowerQualityVersions := map[string][]string{}
+	for _, entry := range entries {
+		if m := lowerQualityRe.FindStringSubmatch(entry.Name()); m != nil {
+			base := strings.TrimSuffix(entry.Name(), "."+m[1]+".mp4") + ".mp4"
+			lowerQualityVersions[base] = append(lowerQualityVersions[base], m[1])
+		}
+	}
 
 	// pre-scan: for each base name, find the largest part file
 	largestDownloadingPart := map[string]string{} // base -> filename of largest .part file
@@ -58,6 +68,10 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 		// skip non-mp4/part files, e.g. "video.jpg", "video.mp4.duration.txt"
 		ext := strings.ToLower(filepath.Ext(entry.Name()))
 		if ext != ".mp4" && ext != ".part" {
+			continue
+		}
+		// skip lower quality versions, e.g. "video.720p.mp4" — exposed via Versions on the original
+		if lowerQualityRe.MatchString(entry.Name()) {
 			continue
 		}
 		status := "Ready"
@@ -128,6 +142,7 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 			Channel:  channel,
 			Date:     info.ModTime(),
 			Status:   status,
+			Versions: lowerQualityVersions[entry.Name()],
 		}
 		// log.Printf("video: id=%s name=%s date=%s", v.ID, v.Name, v.Date.Format("2006-01-02 15:04:05"))
 		videos = append(videos, v)

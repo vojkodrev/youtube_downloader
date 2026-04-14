@@ -27,6 +27,8 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewVideoSplitter),
 		fx.Provide(NewSplitVideosWorker),
 		fx.Provide(NewFixIOSWorker),
+		fx.Provide(NewLowerQualityVideoRecoder),
+		fx.Provide(NewLowerQualityRecoderWorker),
 		fx.Provide(NewDownloadRequestService),
 		fx.Provide(NewGinServer),
 	)
@@ -43,6 +45,7 @@ func NewIOC() *fx.App {
 			durationsWorker *DurationsWorker,
 			splitVideosWorker *SplitVideosWorker,
 			fixIOSWorker *FixIOSWorker,
+			lowerQualityRecoderWorker *LowerQualityRecoderWorker,
 			cleanupWorker *CleanupWorker) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
@@ -53,6 +56,7 @@ func NewIOC() *fx.App {
 						go durationsWorker.Start()
 						go splitVideosWorker.Start()
 						go fixIOSWorker.Start()
+						go lowerQualityRecoderWorker.Start()
 						go cleanupWorker.Start()
 					}()
 					return nil

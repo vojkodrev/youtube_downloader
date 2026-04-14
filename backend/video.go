@@ -9,4 +9,5 @@ type Video struct {
 	Channel  string    `json:"channel"`
 	Date     time.Time `json:"date"`
 	Status   string    `json:"status"`
+	Versions []string  `json:"versions"`
 }
