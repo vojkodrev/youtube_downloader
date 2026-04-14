@@ -35,8 +35,8 @@ func (w *LowerQualityRecoderWorker) Start() {
 				continue
 			}
 			outputPath := filepath.Join(w.cfg.StreamsDir, w.filenames.LowerQuality720p(v.Filename))
-			// don't recode if 720p already exists
-			// recode if original is newer than 720p
+			// run if original is newer than 720p
+			// don't run if 720p exists and is up-to-date
 			if outInfo, err := os.Stat(outputPath); err == nil {
 				if vInfo, err := os.Stat(videoPath); err != nil || !vInfo.ModTime().After(outInfo.ModTime()) {
 					continue
