@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -14,16 +13,18 @@ func NewLowerQualityVideoRecoder() *LowerQualityVideoRecoder {
 	return &LowerQualityVideoRecoder{}
 }
 
-func (r *LowerQualityVideoRecoder) Recode(inputPath, outputPath string, bitrate int64) error {
+func (r *LowerQualityVideoRecoder) Recode(inputPath, outputPath string) error {
 	tmpPath := strings.TrimSuffix(outputPath, ".mp4") + ".720p.temp.mp4"
 
 	cmd := ffmpeg.Input(inputPath).
 		Output(tmpPath, ffmpeg.KwArgs{
 			"c:v":       "libx264",
-			"profile:v": "main",
+			"profile:v": "high",
 			"level":     "4.0",
-			"vf":        "scale=-2:720",
-			"b:v":       fmt.Sprintf("%d", bitrate),
+			"vf":        "scale=-2:min(720\\,ih)",
+			"crf":       "20",
+			"maxrate":   "5000000",
+			"bufsize":   "10000000",
 			"c:a":       "copy",
 			"movflags":  "+faststart",
 		}).

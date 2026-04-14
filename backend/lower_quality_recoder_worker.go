@@ -8,15 +8,14 @@ import (
 )
 
 type LowerQualityRecoderWorker struct {
-	cfg               *Config
-	store             *VideoStore
-	filenames         *Filenames
-	videoIOSValidator *VideoIOSValidator
-	recoder           *LowerQualityVideoRecoder
+	cfg       *Config
+	store     *VideoStore
+	filenames *Filenames
+	recoder   *LowerQualityVideoRecoder
 }
 
-func NewLowerQualityRecoderWorker(cfg *Config, store *VideoStore, filenames *Filenames, videoIOSValidator *VideoIOSValidator, recoder *LowerQualityVideoRecoder) *LowerQualityRecoderWorker {
-	return &LowerQualityRecoderWorker{cfg: cfg, store: store, filenames: filenames, videoIOSValidator: videoIOSValidator, recoder: recoder}
+func NewLowerQualityRecoderWorker(cfg *Config, store *VideoStore, filenames *Filenames, recoder *LowerQualityVideoRecoder) *LowerQualityRecoderWorker {
+	return &LowerQualityRecoderWorker{cfg: cfg, store: store, filenames: filenames, recoder: recoder}
 }
 
 func (w *LowerQualityRecoderWorker) Start() {
@@ -43,13 +42,8 @@ func (w *LowerQualityRecoderWorker) Start() {
 					continue
 				}
 			}
-			validation, err := w.videoIOSValidator.Validate(videoPath)
-			if err != nil {
-				log.Println("error probing", v.Filename, ":", err)
-				continue
-			}
 			log.Println("recoding to 720p:", v.Filename)
-			if err := w.recoder.Recode(videoPath, outputPath, validation.Bitrate); err != nil {
+			if err := w.recoder.Recode(videoPath, outputPath); err != nil {
 				log.Println("error recoding to 720p", v.Filename, ":", err)
 				continue
 			}
