@@ -14,7 +14,7 @@ func NewLowerQualityVideoRecoder() *LowerQualityVideoRecoder {
 }
 
 func (r *LowerQualityVideoRecoder) Recode(inputPath, outputPath string) error {
-	tmpPath := strings.TrimSuffix(outputPath, ".mp4") + ".720p.temp.mp4"
+	tmpPath := strings.TrimSuffix(outputPath, ".mp4") + ".temp.mp4"
 
 	cmd := ffmpeg.Input(inputPath).
 		Output(tmpPath, ffmpeg.KwArgs{
@@ -36,9 +36,5 @@ func (r *LowerQualityVideoRecoder) Recode(inputPath, outputPath string) error {
 		return err
 	}
 
-	if err := os.Remove(outputPath); err != nil && !os.IsNotExist(err) {
-		_ = os.Remove(tmpPath)
-		return err
-	}
 	return os.Rename(tmpPath, outputPath)
 }
