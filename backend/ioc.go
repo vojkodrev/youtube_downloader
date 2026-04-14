@@ -28,7 +28,14 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewVideoSplitter),
 		fx.Provide(NewSplitVideosWorker),
 		fx.Provide(NewFixIOSWorker),
-		fx.Provide(NewLowerQualityVideoRecoder),
+		fx.Provide(NewVideo720pRecoder),
+		fx.Provide(NewVideo480pRecoder),
+		fx.Provide(func(r720 *Video720pRecoder, r480 *Video480pRecoder) map[string]LowerQualityVideoRecoder {
+			return map[string]LowerQualityVideoRecoder{
+				"720p": r720,
+				"480p": r480,
+			}
+		}),
 		fx.Provide(NewLowerQualityRecoderWorker),
 		fx.Provide(NewDownloadRequestService),
 		fx.Provide(NewGinServer),

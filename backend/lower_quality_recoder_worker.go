@@ -8,14 +8,14 @@ import (
 )
 
 type LowerQualityRecoderWorker struct {
-	cfg       *Config
-	store     *VideoStore
+	cfg      *Config
+	store    *VideoStore
 	filenames *Filenames
-	recoder   *LowerQualityVideoRecoder
+	recoders map[string]LowerQualityVideoRecoder
 }
 
-func NewLowerQualityRecoderWorker(cfg *Config, store *VideoStore, filenames *Filenames, recoder *LowerQualityVideoRecoder) *LowerQualityRecoderWorker {
-	return &LowerQualityRecoderWorker{cfg: cfg, store: store, filenames: filenames, recoder: recoder}
+func NewLowerQualityRecoderWorker(cfg *Config, store *VideoStore, filenames *Filenames, recoders map[string]LowerQualityVideoRecoder) *LowerQualityRecoderWorker {
+	return &LowerQualityRecoderWorker{cfg: cfg, store: store, filenames: filenames, recoders: recoders}
 }
 
 func (w *LowerQualityRecoderWorker) Start() {
@@ -43,7 +43,7 @@ func (w *LowerQualityRecoderWorker) Start() {
 				}
 			}
 			log.Println("recoding to 720p:", v.Filename)
-			if err := w.recoder.Recode(videoPath, outputPath); err != nil {
+			if err := w.recoders["720p"].Recode(videoPath, outputPath); err != nil {
 				log.Println("error recoding to 720p", v.Filename, ":", err)
 				continue
 			}
