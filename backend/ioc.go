@@ -23,6 +23,7 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewVideoReader),
 		fx.Provide(NewPollVideosWorker),
 		fx.Provide(NewVideoIOSValidator),
+		fx.Provide(NewIOSVideoRecoder),
 		fx.Provide(NewVideoSplitter),
 		fx.Provide(NewSplitVideosWorker),
 		fx.Provide(NewFixIOSWorker),
