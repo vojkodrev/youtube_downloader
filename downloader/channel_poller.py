@@ -45,7 +45,7 @@ class ChannelPoller:
                     sleep_offline.reset()
                     url = meta.get_video_url(video_id)
                     log.info(f"Downloading from: {url}")
-                    await downloader.download(url)
+                    await downloader.download(url, channel_title)
                     sleep_err.reset()
                     log.info(
                         f"Download finished. Resuming poll in {sleep_offline.peek()} minutes..."

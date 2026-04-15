@@ -19,14 +19,16 @@ class YoutubeLiveDownloader(Downloader):
         self._config = config
         self._yt_dlp_logger_factory = yt_dlp_logger_factory
 
-    async def download(self, url: str) -> None:
+    async def download(self, url: str, streamer: str = "-") -> None:
         if not url:
             raise ValueError("url is required")
 
         def sync():
+            yt_dlp_logger = self._yt_dlp_logger_factory()
+            yt_dlp_logger.set_streamer(streamer)
             ydl_opts = {
                 **SHARED_YT_DLP_SETTINGS,
-                "logger": self._yt_dlp_logger_factory(),
+                "logger": yt_dlp_logger,
                 "format": "bestvideo+bestaudio/best",
                 # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
                 "live_from_start": True,

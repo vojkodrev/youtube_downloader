@@ -3,6 +3,7 @@ import os
 
 import yt_dlp
 
+from typing import Callable
 from injector import inject
 
 from config import Config
@@ -13,18 +14,20 @@ from yt_dlp_settings import SHARED_YT_DLP_SETTINGS
 
 class TwitchDownloader(Downloader):
     @inject
-    def __init__(self, config: Config, yt_dlp_logger: YtDlpLogger):
+    def __init__(self, config: Config, yt_dlp_logger_factory: Callable[[], YtDlpLogger]):
         self._config = config
-        self._yt_dlp_logger = yt_dlp_logger
+        self._yt_dlp_logger_factory = yt_dlp_logger_factory
 
-    async def download(self, url: str) -> None:
+    async def download(self, url: str, streamer: str = "-") -> None:
         if not url:
             raise ValueError("url is required")
 
         def sync():
+            yt_dlp_logger = self._yt_dlp_logger_factory()
+            yt_dlp_logger.set_streamer(streamer)
             ydl_opts = {
                 **SHARED_YT_DLP_SETTINGS,
-                "logger": self._yt_dlp_logger,
+                "logger": yt_dlp_logger,
                 "format": "best",
                 "merge_output_format": "mp4",
                 "overwrites": True,
