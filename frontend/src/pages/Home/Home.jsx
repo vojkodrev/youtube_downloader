@@ -117,6 +117,7 @@ export default function Home() {
 
     useEffect(() => {
         if (!selectedVideo) return
+        document.title = selectedVideo.name
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: selectedVideo.name,
