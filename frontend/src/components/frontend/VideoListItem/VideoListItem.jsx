@@ -87,14 +87,14 @@ export default function VideoListItem({ video, isSelected, videoCountVisible, on
                     ))}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                        disabled={!progressDuration}
+                        disabled={video.status !== 'Ready'}
                         onClick={() => onWatchedMark?.(video)}
                     >
                         <CheckCheck className="w-4 h-4 shrink-0" />
                         Mark as Watched
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                        disabled={!progressSavedTime}
+                        disabled={video.status !== 'Ready'}
                         onClick={() => onWatchedReset?.(video)}
                     >
                         <RotateCcw className="w-4 h-4 shrink-0" />
