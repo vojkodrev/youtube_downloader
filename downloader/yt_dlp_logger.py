@@ -10,6 +10,9 @@ class YtDlpLogger:
     @inject
     def __init__(self):
         self._log = logger.bind(streamer="-")
+
+    def set_streamer(self, streamer: str):
+        self._log = logger.bind(streamer=streamer)
         self._progress_buffer: list[str] = []
 
     # Stack when called directly (no _buffer_or_log layer):

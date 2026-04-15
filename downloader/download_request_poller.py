@@ -56,7 +56,7 @@ class DownloadRequestPoller:
 
                 log.info(f"Downloading {url}")
                 try:
-                    await self._downloaders[downloader_key].download(url)
+                    await self._downloaders[downloader_key].download(url, f"{service}/{video_id}")
                     log.info("Download finished")
                 except Exception as e:
                     log.error(f"Download failed: {e}")

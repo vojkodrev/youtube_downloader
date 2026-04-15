@@ -19,14 +19,16 @@ class YoutubeVideoDownloader(Downloader):
         self._config = config
         self._yt_dlp_logger_factory = yt_dlp_logger_factory
 
-    async def download(self, url: str) -> None:
+    async def download(self, url: str, streamer: str = "-") -> None:
         if not url:
             raise ValueError("url is required")
 
         def sync():
+            yt_dlp_logger = self._yt_dlp_logger_factory()
+            yt_dlp_logger.set_streamer(streamer)
             ydl_opts = {
                 **SHARED_YT_DLP_SETTINGS,
-                "logger": self._yt_dlp_logger_factory(),
+                "logger": yt_dlp_logger,
                 "format": "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/bestvideo[vcodec^=avc1]+bestaudio/bestvideo+bestaudio/best",
                 "merge_output_format": "mp4",
                 "overwrites": False,
