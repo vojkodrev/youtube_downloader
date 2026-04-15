@@ -43,25 +43,19 @@ func (w *LowerQualityRecoderWorker) processNext() bool {
 		if _, err := os.Stat(fixPath); err != nil {
 			continue
 		}
-		qualities := []struct {
-			key        string
-			outputPath string
-		}{
-			{"720p", filepath.Join(w.cfg.StreamsDir, w.filenames.LowerQuality720p(v.Filename))},
-			{"480p", filepath.Join(w.cfg.StreamsDir, w.filenames.LowerQuality480p(v.Filename))},
-		}
-		for _, q := range qualities {
+		for _, quality := range w.cfg.RecodeQualities {
+			outputPath := filepath.Join(w.cfg.StreamsDir, w.filenames.LowerQuality(v.Filename, quality))
 			// run if original is newer than output, skip if up-to-date
-			if outInfo, err := os.Stat(q.outputPath); err == nil {
+			if outInfo, err := os.Stat(outputPath); err == nil {
 				if vInfo, err := os.Stat(videoPath); err != nil || !vInfo.ModTime().After(outInfo.ModTime()) {
 					continue
 				}
 			}
-			log.Println("recoding to "+q.key+":", v.Filename)
-			if err := w.recoders[q.key].Recode(videoPath, q.outputPath); err != nil {
-				log.Println("error recoding to "+q.key, v.Filename, ":", err)
+			log.Println("recoding to "+quality+":", v.Filename)
+			if err := w.recoders[quality].Recode(videoPath, outputPath); err != nil {
+				log.Println("error recoding to "+quality, v.Filename, ":", err)
 			} else {
-				log.Println(q.key+" recode done for", v.Filename)
+				log.Println(quality+" recode done for", v.Filename)
 			}
 			return true
 		}
