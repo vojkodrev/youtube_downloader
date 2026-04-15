@@ -8,14 +8,15 @@ import (
 )
 
 type LowerQualityRecoderWorker struct {
-	cfg      *Config
-	store    *VideoStore
-	filenames *Filenames
-	recoders map[string]LowerQualityVideoRecoder
+	cfg           *Config
+	store         *VideoStore
+	filenames     *Filenames
+	recoders      map[string]LowerQualityVideoRecoder
+	videoDuration *VideoDuration
 }
 
-func NewLowerQualityRecoderWorker(cfg *Config, store *VideoStore, filenames *Filenames, recoders map[string]LowerQualityVideoRecoder) *LowerQualityRecoderWorker {
-	return &LowerQualityRecoderWorker{cfg: cfg, store: store, filenames: filenames, recoders: recoders}
+func NewLowerQualityRecoderWorker(cfg *Config, store *VideoStore, filenames *Filenames, recoders map[string]LowerQualityVideoRecoder, videoDuration *VideoDuration) *LowerQualityRecoderWorker {
+	return &LowerQualityRecoderWorker{cfg: cfg, store: store, filenames: filenames, recoders: recoders, videoDuration: videoDuration}
 }
 
 func (w *LowerQualityRecoderWorker) Start() {
@@ -42,6 +43,13 @@ func (w *LowerQualityRecoderWorker) processNext() bool {
 		// don't process if iOS fix marker is missing
 		if _, err := os.Stat(fixPath); err != nil {
 			continue
+		}
+		// skip long videos that haven't been split into parts yet — recode the parts instead
+		if !splitPartRe.MatchString(v.Filename) && w.cfg.SplitDuration > 0 {
+			dur, err := w.videoDuration.Get(videoPath)
+			if err == nil && dur > w.cfg.SplitDuration {
+				continue
+			}
 		}
 		for _, quality := range w.cfg.RecodeQualities {
 			outputPath := filepath.Join(w.cfg.StreamsDir, w.filenames.LowerQuality(v.Filename, quality))
