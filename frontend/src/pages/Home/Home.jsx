@@ -47,6 +47,16 @@ export default function Home() {
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
 
+    function saveWatchedTime(t) {
+        localStorage.setItem(`time_${selectedVideo.id}`, t)
+        setSearchParams({ t }, { replace: true })
+        setVideos(prev => {
+            const v = prev.find(v => v.id === selectedVideo.id)
+            if (v) v.savedTime = t
+            return [...prev]
+        })
+    }
+
     function handleWatchedReset(video, updateVideos = true) {
         localStorage.removeItem(`time_${video.id}`)
         video.savedTime = null
@@ -191,16 +201,15 @@ export default function Home() {
                                         autoPlay
                                         playsInline
                                         onTimeUpdate={e => {
-                                            const t = Math.floor(e.target.currentTime)
+                                            const t = Math.round(e.target.currentTime)
                                             if (t % 5 !== 0) return
                                             if (t === parseInt(searchParams.get('t'))) return
-                                            localStorage.setItem(`time_${selectedVideo.id}`, t)
-                                            setSearchParams({ t }, { replace: true })
-                                            setVideos(prev => {
-                                                const v = prev.find(v => v.id === selectedVideo.id)
-                                                if (v) v.savedTime = t
-                                                return [...prev]
-                                            })
+                                            saveWatchedTime(t)
+                                        }}
+                                        onSeeked={e => {
+                                            const t = Math.round(e.target.currentTime)
+                                            if (t === parseInt(searchParams.get('t'))) return
+                                            saveWatchedTime(t)
                                         }}
                                         onLoadedMetadata={e => {
                                             const t = searchParams.get('t')
