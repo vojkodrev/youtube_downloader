@@ -29,6 +29,7 @@ class YoutubeVideoDownloader(Downloader):
             ydl_opts = {
                 **SHARED_YT_DLP_SETTINGS,
                 "logger": yt_dlp_logger,
+                "js_runtimes": {"node": {}},
                 "format": "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/bestvideo[vcodec^=avc1]+bestaudio/bestvideo+bestaudio/best",
                 "merge_output_format": "mp4",
                 "overwrites": False,
