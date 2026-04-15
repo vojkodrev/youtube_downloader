@@ -30,7 +30,7 @@ class YoutubeLiveDownloader(Downloader):
                 **SHARED_YT_DLP_SETTINGS,
                 "logger": yt_dlp_logger,
                 "js_runtimes": {"node": {}},
-                "remote_components": "ejs:github",
+                "remote_components": ["ejs:github"],
                 "format": "bestvideo+bestaudio/best",
                 # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
                 "live_from_start": True,
