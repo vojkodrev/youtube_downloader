@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { EllipsisVertical, Download, RotateCcw } from 'lucide-react'
+import { EllipsisVertical, Download, RotateCcw, CheckCheck } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import {
     DropdownMenu,
@@ -11,7 +11,7 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL
 
-export default function VideoListItem({ video, isSelected, videoCountVisible, onWatchedReset, playlistVideos }) {
+export default function VideoListItem({ video, isSelected, videoCountVisible, onWatchedReset, onWatchedMark, playlistVideos }) {
 
     const progressSavedTime = playlistVideos
         ? playlistVideos.reduce((sum, v) => sum + (parseFloat(v.savedTime) || 0), 0)
@@ -86,6 +86,13 @@ export default function VideoListItem({ video, isSelected, videoCountVisible, on
                         </DropdownMenuItem>
                     ))}
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        disabled={!progressDuration}
+                        onClick={() => onWatchedMark?.(video)}
+                    >
+                        <CheckCheck className="w-4 h-4 shrink-0" />
+                        Mark as Watched
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                         disabled={!progressSavedTime}
                         onClick={() => onWatchedReset?.(video)}
