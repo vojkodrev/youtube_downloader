@@ -201,29 +201,15 @@ func TestGetVideos_Mp4With720pAnd480p_ReturnsOriginalWithBothInVersions(t *testi
 	require.Len(t, videos, 1)
 	assert.Equal(t, "video.mp4", videos[0].Filename)
 	assert.ElementsMatch(t, []VideoVersion{
-		{ID: vid.FromFilename("video.720p.mp4"), Name: "video 720p", Filename: "video.720p.mp4"},
-		{ID: vid.FromFilename("video.480p.mp4"), Name: "video 480p", Filename: "video.480p.mp4"},
+		{ID: vid.FromFilename("video.720p.mp4"), Name: "video 720p", Filename: "video.720p.mp4", Quality: "720p"},
+		{ID: vid.FromFilename("video.480p.mp4"), Name: "video 480p", Filename: "video.480p.mp4", Quality: "480p"},
 	}, videos[0].Versions)
 }
 
-func TestGetVideos_Mp4With720pTempFile_ReturnsMp4AsReadyWithNoVersions(t *testing.T) {
+func TestGetVideos_Mp4WithQualityTempFile_ReturnsMp4AsReadyWithNoVersions(t *testing.T) {
 	vr, _ := setupVideoReader(t, fstest.MapFS{
 		"video.mp4":           &fstest.MapFile{},
 		"video.720p.temp.mp4": &fstest.MapFile{},
-	})
-
-	videos, err := vr.GetVideos()
-
-	require.NoError(t, err)
-	require.Len(t, videos, 1)
-	assert.Equal(t, "video.mp4", videos[0].Filename)
-	assert.Equal(t, "Ready", videos[0].Status)
-	assert.Empty(t, videos[0].Versions)
-}
-
-func TestGetVideos_Mp4With480pTempFile_ReturnsMp4AsReadyWithNoVersions(t *testing.T) {
-	vr, _ := setupVideoReader(t, fstest.MapFS{
-		"video.mp4":           &fstest.MapFile{},
 		"video.480p.temp.mp4": &fstest.MapFile{},
 	})
 
