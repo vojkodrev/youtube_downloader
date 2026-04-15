@@ -193,7 +193,7 @@ export default function Home() {
                 <div className="flex flex-col">
 
                     {/* Top */}
-                    <div className="bg-gray-900 px-3 py-4 md:px-3 md:py-2 lg:px-6 lg:py-4 flex items-center gap-3">
+                    <div className="bg-gray-900 px-3 py-4 md:px-6 md:py-2 lg:py-4 flex items-center gap-3">
                         <SidebarTrigger />
                         <Logo />
                         <SearchBar videos={videos} />
