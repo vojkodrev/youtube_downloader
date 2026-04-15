@@ -2,21 +2,22 @@ package main
 
 import (
 	"log"
+	"os"
 	"path/filepath"
 	"regexp"
 	"time"
 )
 
 type SplitVideosWorker struct {
-	cfg              *Config
-	store            *VideoStore
-	videoDuration    *VideoDuration
-	videoSplitter    *VideoSplitter
-	videoIOSValidator *VideoIOSValidator
+	cfg           *Config
+	store         *VideoStore
+	filenames     *Filenames
+	videoDuration *VideoDuration
+	videoSplitter *VideoSplitter
 }
 
-func NewSplitVideosWorker(cfg *Config, store *VideoStore, videoDuration *VideoDuration, videoSplitter *VideoSplitter, videoIOSValidator *VideoIOSValidator) *SplitVideosWorker {
-	return &SplitVideosWorker{cfg: cfg, store: store, videoDuration: videoDuration, videoSplitter: videoSplitter, videoIOSValidator: videoIOSValidator}
+func NewSplitVideosWorker(cfg *Config, store *VideoStore, filenames *Filenames, videoDuration *VideoDuration, videoSplitter *VideoSplitter) *SplitVideosWorker {
+	return &SplitVideosWorker{cfg: cfg, store: store, filenames: filenames, videoDuration: videoDuration, videoSplitter: videoSplitter}
 }
 
 var splitPartRe = regexp.MustCompile(` part\d{2}\.mp4$`)
@@ -52,13 +53,9 @@ func (sw *SplitVideosWorker) processNext() bool {
 		if dur <= sw.cfg.SplitDuration {
 			continue
 		}
-		validation, err := sw.videoIOSValidator.Validate(videoPath)
-		if err != nil {
-			log.Println("error validating ios compatibility for", v.Filename, ":", err)
-			continue
-		}
-		if validation.NeedsIOSFix {
-			log.Println("skipping split for", v.Filename, "— ios fix pending")
+		fixPath := filepath.Join(sw.cfg.StreamsDir, sw.filenames.IOSFix(v.Filename))
+		if _, err := os.Stat(fixPath); err != nil {
+			log.Println("skipping split for", v.Filename, "— ios fix not done yet")
 			continue
 		}
 		if err := sw.videoSplitter.Split(videoPath, sw.cfg.SplitDuration); err != nil {
