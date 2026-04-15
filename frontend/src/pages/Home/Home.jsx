@@ -58,7 +58,7 @@ export default function Home() {
     }
 
     function handleWatchedMark(video, updateVideos = true) {
-        const t = Math.round(video.duration)
+        const t = video.duration
         if (!t) return
         localStorage.setItem(`time_${video.id}`, t)
         video.savedTime = t
