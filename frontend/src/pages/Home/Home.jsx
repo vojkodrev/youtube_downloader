@@ -57,6 +57,18 @@ export default function Home() {
         })
     }
 
+    function handleWatchedMark(video, updateVideos = true) {
+        const t = video.duration
+        if (!t) return
+        localStorage.setItem(`time_${video.id}`, t)
+        video.savedTime = t
+        if (updateVideos) setVideos(prev => [...prev])
+        if (video.id === id) {
+            videoRef.current.currentTime = t
+            setSearchParams({ t }, { replace: true })
+        }
+    }
+
     function handleWatchedReset(video, updateVideos = true) {
         localStorage.removeItem(`time_${video.id}`)
         video.savedTime = null
@@ -248,6 +260,7 @@ export default function Home() {
                                             video={video}
                                             isSelected={selectedVideo?.id === video.id}
                                             onWatchedReset={handleWatchedReset}
+                                            onWatchedMark={handleWatchedMark}
                                         />
                                     ))}
                                 </div>
@@ -260,6 +273,11 @@ export default function Home() {
                                     isSelected={selectedVideo?.id === video.id || playlist.some(v => v.id === video.id)}
                                     videoCountVisible
                                     playlistVideos={playlists.find(p => p.some(pv => pv.id === video.id)) ?? null}
+                                    onWatchedMark={v => {
+                                        const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
+                                        pl.forEach(pv => handleWatchedMark(pv, false))
+                                        setVideos(prev => [...prev])
+                                    }}
                                     onWatchedReset={v => {
                                         const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
                                         pl.forEach(pv => handleWatchedReset(pv, false))
