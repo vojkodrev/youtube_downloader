@@ -12,6 +12,7 @@ func CoreProviders() fx.Option {
 	return fx.Options(
 		fx.Provide(func() *Config { cfg := loadConfig(); return &cfg }),
 		fx.Provide(func(cfg *Config) StreamsFS { return StreamsFS(os.DirFS(cfg.StreamsDir)) }),
+		fx.Provide(NewVideoID),
 		fx.Provide(NewFilenames),
 		fx.Provide(NewVideoDuration),
 		fx.Provide(NewThumbnailSaver),
@@ -23,9 +24,19 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewVideoReader),
 		fx.Provide(NewPollVideosWorker),
 		fx.Provide(NewVideoIOSValidator),
+		fx.Provide(NewIOSVideoRecoder),
 		fx.Provide(NewVideoSplitter),
 		fx.Provide(NewSplitVideosWorker),
 		fx.Provide(NewFixIOSWorker),
+		fx.Provide(NewVideo720pRecoder),
+		fx.Provide(NewVideo480pRecoder),
+		fx.Provide(func(r720 *Video720pRecoder, r480 *Video480pRecoder) map[string]LowerQualityVideoRecoder {
+			return map[string]LowerQualityVideoRecoder{
+				"720p": r720,
+				"480p": r480,
+			}
+		}),
+		fx.Provide(NewLowerQualityRecoderWorker),
 		fx.Provide(NewDownloadRequestService),
 		fx.Provide(NewGinServer),
 	)
@@ -42,6 +53,7 @@ func NewIOC() *fx.App {
 			durationsWorker *DurationsWorker,
 			splitVideosWorker *SplitVideosWorker,
 			fixIOSWorker *FixIOSWorker,
+			lowerQualityRecoderWorker *LowerQualityRecoderWorker,
 			cleanupWorker *CleanupWorker) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
@@ -52,6 +64,7 @@ func NewIOC() *fx.App {
 						go durationsWorker.Start()
 						go splitVideosWorker.Start()
 						go fixIOSWorker.Start()
+						go lowerQualityRecoderWorker.Start()
 						go cleanupWorker.Start()
 					}()
 					return nil

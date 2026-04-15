@@ -10,20 +10,21 @@ import (
 	"go.uber.org/fx/fxtest"
 )
 
-func setupVideoReader(t *testing.T, fsys fstest.MapFS) *VideoReader {
+func setupVideoReader(t *testing.T, fsys fstest.MapFS) (*VideoReader, *VideoID) {
 	var vr *VideoReader
+	var vid *VideoID
 	app := fxtest.New(t,
 		CoreProviders(),
 		fx.Decorate(func() StreamsFS { return StreamsFS(fsys) }),
-		fx.Populate(&vr),
+		fx.Populate(&vr, &vid),
 	)
 	app.RequireStart()
 	t.Cleanup(func() { app.RequireStop() })
-	return vr
+	return vr, vid
 }
 
 func TestGetVideos_PartFile_ReturnsStatusDownloading(t *testing.T) {
-	vr := setupVideoReader(t, fstest.MapFS{
+	vr, _ := setupVideoReader(t, fstest.MapFS{
 		"video2026-04-04 17_55.mp4.part": &fstest.MapFile{},
 	})
 
@@ -35,7 +36,7 @@ func TestGetVideos_PartFile_ReturnsStatusDownloading(t *testing.T) {
 }
 
 func TestGetVideos_TwoPartFiles_ReturnsOnlyLargerWithStatusDownloading(t *testing.T) {
-	vr := setupVideoReader(t, fstest.MapFS{
+	vr, _ := setupVideoReader(t, fstest.MapFS{
 		"video2026-04-04 17_55.f140.webm.part": &fstest.MapFile{Data: make([]byte, 100)},
 		"video2026-04-04 17_55.f251.webm.part": &fstest.MapFile{Data: make([]byte, 200)},
 	})
@@ -49,7 +50,7 @@ func TestGetVideos_TwoPartFiles_ReturnsOnlyLargerWithStatusDownloading(t *testin
 }
 
 func TestGetVideos_FormatSegmentMp4_IsSkipped(t *testing.T) {
-	vr := setupVideoReader(t, fstest.MapFS{
+	vr, _ := setupVideoReader(t, fstest.MapFS{
 		"video.f140.mp4": &fstest.MapFile{},
 	})
 
@@ -60,7 +61,7 @@ func TestGetVideos_FormatSegmentMp4_IsSkipped(t *testing.T) {
 }
 
 func TestGetVideos_TempMp4WithFinalMp4_TempIsSkipped(t *testing.T) {
-	vr := setupVideoReader(t, fstest.MapFS{
+	vr, _ := setupVideoReader(t, fstest.MapFS{
 		"video.mp4":      &fstest.MapFile{},
 		"video.temp.mp4": &fstest.MapFile{},
 	})
@@ -73,7 +74,7 @@ func TestGetVideos_TempMp4WithFinalMp4_TempIsSkipped(t *testing.T) {
 }
 
 func TestGetVideos_Mp4WithTempMp4_ReturnsStatusProcessing(t *testing.T) {
-	vr := setupVideoReader(t, fstest.MapFS{
+	vr, _ := setupVideoReader(t, fstest.MapFS{
 		"video.mp4":      &fstest.MapFile{},
 		"video.temp.mp4": &fstest.MapFile{},
 	})
@@ -87,7 +88,7 @@ func TestGetVideos_Mp4WithTempMp4_ReturnsStatusProcessing(t *testing.T) {
 }
 
 func TestGetVideos_PartXxFileWithSourceMp4_PartIsSkipped(t *testing.T) {
-	vr := setupVideoReader(t, fstest.MapFS{
+	vr, _ := setupVideoReader(t, fstest.MapFS{
 		"video.mp4":         &fstest.MapFile{},
 		"video part01.mp4":  &fstest.MapFile{},
 	})
@@ -100,7 +101,7 @@ func TestGetVideos_PartXxFileWithSourceMp4_PartIsSkipped(t *testing.T) {
 }
 
 func TestGetVideos_Mp4WithPartXxFiles_ReturnsStatusProcessing(t *testing.T) {
-	vr := setupVideoReader(t, fstest.MapFS{
+	vr, _ := setupVideoReader(t, fstest.MapFS{
 		"video.mp4":        &fstest.MapFile{},
 		"video part01.mp4": &fstest.MapFile{},
 	})
@@ -113,7 +114,7 @@ func TestGetVideos_Mp4WithPartXxFiles_ReturnsStatusProcessing(t *testing.T) {
 }
 
 func TestGetVideos_FragmentPartFile_IsSkipped(t *testing.T) {
-	vr := setupVideoReader(t, fstest.MapFS{
+	vr, _ := setupVideoReader(t, fstest.MapFS{
 		"[Channel] Video Title.f140.mp4.part-Frag12899.part": &fstest.MapFile{},
 	})
 
@@ -124,7 +125,7 @@ func TestGetVideos_FragmentPartFile_IsSkipped(t *testing.T) {
 }
 
 func TestGetVideos_RumbleDownloadingFiles_ReturnsOnlyMainPartAsDownloading(t *testing.T) {
-	vr := setupVideoReader(t, fstest.MapFS{
+	vr, _ := setupVideoReader(t, fstest.MapFS{
 		"video.mp4.part":              &fstest.MapFile{Data: make([]byte, 500)},
 		"video.mp4.part-Frag154.part": &fstest.MapFile{Data: make([]byte, 100)},
 	})
@@ -138,7 +139,7 @@ func TestGetVideos_RumbleDownloadingFiles_ReturnsOnlyMainPartAsDownloading(t *te
 }
 
 func TestGetVideos_MixedFiles_ReturnsCorrectVideosAndStatuses(t *testing.T) {
-	vr := setupVideoReader(t, fstest.MapFS{
+	vr, _ := setupVideoReader(t, fstest.MapFS{
 		// ready
 		"ready.mp4": &fstest.MapFile{},
 		// downloading — two format parts, only larger returned
@@ -173,7 +174,7 @@ func TestGetVideos_MixedFiles_ReturnsCorrectVideosAndStatuses(t *testing.T) {
 }
 
 func TestGetVideos_TwoFormatSegmentsWithTempMp4_ReturnsSingleProcessingVideo(t *testing.T) {
-	vr := setupVideoReader(t, fstest.MapFS{
+	vr, _ := setupVideoReader(t, fstest.MapFS{
 		"video.f140.mp4": &fstest.MapFile{},
 		"video.f251.mp4": &fstest.MapFile{},
 		"video.temp.mp4": &fstest.MapFile{},
@@ -187,8 +188,54 @@ func TestGetVideos_TwoFormatSegmentsWithTempMp4_ReturnsSingleProcessingVideo(t *
 	assert.Equal(t, "Processing", videos[0].Status)
 }
 
+func TestGetVideos_Mp4With720pAnd480p_ReturnsOriginalWithBothInVersions(t *testing.T) {
+	vr, vid := setupVideoReader(t, fstest.MapFS{
+		"video.mp4":      &fstest.MapFile{},
+		"video.720p.mp4": &fstest.MapFile{},
+		"video.480p.mp4": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Equal(t, "video.mp4", videos[0].Filename)
+	assert.ElementsMatch(t, []VideoVersion{
+		{ID: vid.FromFilename("video.720p.mp4"), Name: "video 720p", Filename: "video.720p.mp4", Quality: "720p"},
+		{ID: vid.FromFilename("video.480p.mp4"), Name: "video 480p", Filename: "video.480p.mp4", Quality: "480p"},
+	}, videos[0].Versions)
+}
+
+func TestGetVideos_Mp4WithQualityTempFile_ReturnsMp4AsReadyWithNoVersions(t *testing.T) {
+	vr, _ := setupVideoReader(t, fstest.MapFS{
+		"video.mp4":           &fstest.MapFile{},
+		"video.720p.temp.mp4": &fstest.MapFile{},
+		"video.480p.temp.mp4": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Equal(t, "video.mp4", videos[0].Filename)
+	assert.Equal(t, "Ready", videos[0].Status)
+	assert.Empty(t, videos[0].Versions)
+}
+
+func TestGetVideos_Mp4Without720p_ReturnsEmptyVersions(t *testing.T) {
+	vr, _ := setupVideoReader(t, fstest.MapFS{
+		"video.mp4": &fstest.MapFile{},
+	})
+
+	videos, err := vr.GetVideos()
+
+	require.NoError(t, err)
+	require.Len(t, videos, 1)
+	assert.Empty(t, videos[0].Versions)
+}
+
 func TestGetVideos_Mp4File_ReturnsStatusReady(t *testing.T) {
-	vr := setupVideoReader(t, fstest.MapFS{
+	vr, _ := setupVideoReader(t, fstest.MapFS{
 		"video.mp4": &fstest.MapFile{},
 	})
 

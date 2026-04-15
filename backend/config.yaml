@@ -1,2 +1,5 @@
 streams_dir: "D:/streams"
 split_duration: 10800
+recode_qualities:
+  # - 720p
+  - 480p

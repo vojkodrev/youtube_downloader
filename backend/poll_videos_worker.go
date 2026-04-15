@@ -21,12 +21,17 @@ func (pw *PollVideosWorker) Start() {
 			log.Println("error fetching videos:", err)
 		} else {
 			m := make(map[string]Video, len(fetched))
+			vm := make(map[string]VideoVersion)
 			for _, v := range fetched {
 				m[v.ID] = v
+				for _, vv := range v.Versions {
+					vm[vv.ID] = vv
+				}
 			}
 			pw.store.Mutex.Lock()
 			pw.store.Videos = fetched
 			pw.store.VideosMap = m
+			pw.store.VideoVersionsMap = vm
 			pw.store.Mutex.Unlock()
 			log.Println("loaded", len(fetched), "videos")
 		}

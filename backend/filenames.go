@@ -25,3 +25,8 @@ func (f *Filenames) IOSFix(videoPath string) string {
 	base := filepath.Base(videoPath)
 	return strings.TrimSuffix(base, filepath.Ext(base)) + ".ios_fix.txt"
 }
+
+func (f *Filenames) LowerQuality(videoPath, quality string) string {
+	base := filepath.Base(videoPath)
+	return strings.TrimSuffix(base, filepath.Ext(base)) + "." + quality + ".mp4"
+}

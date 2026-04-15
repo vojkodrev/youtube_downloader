@@ -37,7 +37,14 @@ func (s *GinServer) registerRoutes() {
 		defer s.store.Mutex.RUnlock()
 		response := make([]VideoResponse, len(s.store.Videos))
 		for i, v := range s.store.Videos {
-			response[i] = VideoResponse{ID: v.ID, Name: v.Name, Channel: v.Channel, Date: v.Date, Status: v.Status}
+			response[i] = VideoResponse{
+				ID:       v.ID,
+				Name:     v.Name,
+				Channel:  v.Channel,
+				Date:     v.Date,
+				Status:   v.Status,
+				Versions: v.Versions,
+			}
 		}
 		c.JSON(200, response)
 	})
@@ -58,13 +65,20 @@ func (s *GinServer) registerRoutes() {
 		id := c.Param("id")
 		s.store.Mutex.RLock()
 		v, ok := s.store.VideosMap[id]
+		vv, versionOk := s.store.VideoVersionsMap[id]
 		s.store.Mutex.RUnlock()
-		if !ok {
+		if !ok && !versionOk {
 			c.Status(404)
 			return
 		}
-		c.Header("Content-Disposition", `attachment; filename="`+v.Filename+`"`)
-		s.fileServer.Serve(c, s.cfg.StreamsDir+"/"+v.Filename, v.Filename)
+		var filename string
+		if versionOk {
+			filename = vv.Filename
+		} else {
+			filename = v.Filename
+		}
+		c.Header("Content-Disposition", `attachment; filename="`+filename+`"`)
+		s.fileServer.Serve(c, s.cfg.StreamsDir+"/"+filename, filename)
 	})
 
 	s.router.GET("/duration/:id", func(c *gin.Context) {

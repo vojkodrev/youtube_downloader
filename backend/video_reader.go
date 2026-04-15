@@ -6,17 +6,16 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 type VideoReader struct {
-	cfg *Config
-	fs  StreamsFS
+	cfg     *Config
+	fs      StreamsFS
+	videoID *VideoID
 }
 
-func NewVideoReader(cfg *Config, fsys StreamsFS) *VideoReader {
-	return &VideoReader{cfg: cfg, fs: fsys}
+func NewVideoReader(cfg *Config, fsys StreamsFS, videoID *VideoID) *VideoReader {
+	return &VideoReader{cfg: cfg, fs: fsys, videoID: videoID}
 }
 
 func (vr *VideoReader) GetVideos() ([]Video, error) {
@@ -29,8 +28,30 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 	formatRe := regexp.MustCompile(`f\d{3}\.mp4$`)
 	downloadingPartRe := regexp.MustCompile(`\.f\d{3}\.[^.]+\.part$`)
 	fragmentPartRe := regexp.MustCompile(`\.mp4\.part-(?:Frag)?\d+\.part$`)
+	lowerQualityRe := regexp.MustCompile(`\.(720p|480p)\.mp4$`)
 	channelRe := regexp.MustCompile(`^\[([^\]]+)\] ?`)
 	formatSegmentRe := regexp.MustCompile(`\.f\d{3}$`)
+
+	// pre-scan: build map of base filename -> available lower quality versions (e.g. "720p")
+	lowerQualityVersions := map[string][]VideoVersion{}
+	for _, entry := range entries {
+		if m := lowerQualityRe.FindStringSubmatch(entry.Name()); m != nil {
+			base := strings.TrimSuffix(entry.Name(), "."+m[1]+".mp4") + ".mp4"
+			versionFilename := entry.Name()
+			versionName := strings.TrimSuffix(versionFilename, "."+m[1]+".mp4")
+			versionName = formatSegmentRe.ReplaceAllString(versionName, "")
+			if mc := channelRe.FindStringSubmatch(versionName); mc != nil {
+				versionName = versionName[len(mc[0]):]
+			}
+			versionName = versionName + " " + m[1]
+			lowerQualityVersions[base] = append(lowerQualityVersions[base], VideoVersion{
+				ID:       vr.videoID.FromFilename(versionFilename),
+				Name:     versionName,
+				Filename: versionFilename,
+				Quality:  m[1],
+			})
+		}
+	}
 
 	// pre-scan: for each base name, find the largest part file
 	largestDownloadingPart := map[string]string{} // base -> filename of largest .part file
@@ -58,6 +79,14 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 		// skip non-mp4/part files, e.g. "video.jpg", "video.mp4.duration.txt"
 		ext := strings.ToLower(filepath.Ext(entry.Name()))
 		if ext != ".mp4" && ext != ".part" {
+			continue
+		}
+		// skip lower quality versions, e.g. "video.720p.mp4" — exposed via Versions on the original
+		if lowerQualityRe.MatchString(entry.Name()) {
+			continue
+		}
+		// skip lower quality temp files, e.g. "video.720p.temp.mp4" — recode in progress
+		if strings.Contains(entry.Name(), ".720p.temp.mp4") || strings.Contains(entry.Name(), ".480p.temp.mp4") {
 			continue
 		}
 		status := "Ready"
@@ -122,12 +151,13 @@ func (vr *VideoReader) GetVideos() ([]Video, error) {
 			name = name[len(m[0]):]
 		}
 		v := Video{
-			ID:       uuid.NewSHA1(uuid.NameSpaceURL, []byte(entry.Name())).String(),
+			ID:       vr.videoID.FromFilename(entry.Name()),
 			Filename: entry.Name(),
 			Name:     name,
 			Channel:  channel,
 			Date:     info.ModTime(),
 			Status:   status,
+			Versions: lowerQualityVersions[entry.Name()],
 		}
 		// log.Printf("video: id=%s name=%s date=%s", v.ID, v.Name, v.Date.Format("2006-01-02 15:04:05"))
 		videos = append(videos, v)

@@ -7,5 +7,6 @@ type VideoResponse struct {
 	Name    string    `json:"name"`
 	Channel string    `json:"channel"`
 	Date    time.Time `json:"date"`
-	Status  string    `json:"status"`
+	Status   string    `json:"status"`
+	Versions []VideoVersion `json:"versions"`
 }

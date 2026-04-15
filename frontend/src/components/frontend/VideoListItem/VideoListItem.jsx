@@ -1,6 +1,5 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { EllipsisVertical, Download, X, RotateCcw } from 'lucide-react'
+import { EllipsisVertical, Download, RotateCcw } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import {
     DropdownMenu,
@@ -12,17 +11,7 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL
 
-function getDownloadInfo(id) {
-    const raw = localStorage.getItem(`download_${id}`)
-    return raw ? JSON.parse(raw) : null
-}
-
-function saveDownloadInfo(id, filename) {
-    localStorage.setItem(`download_${id}`, JSON.stringify({ filename }))
-}
-
 export default function VideoListItem({ video, isSelected, videoCountVisible, onWatchedReset, playlistVideos }) {
-    const [downloadInfo, setDownloadInfo] = useState(getDownloadInfo(video.id))
 
     const progressSavedTime = playlistVideos
         ? playlistVideos.reduce((sum, v) => sum + (parseFloat(v.savedTime) || 0), 0)
@@ -77,25 +66,25 @@ export default function VideoListItem({ video, isSelected, videoCountVisible, on
                 <DropdownMenuTrigger className="rounded hover:bg-gray-200 flex-shrink-0 cursor-pointer">
                     <EllipsisVertical className="w-4 h-4 text-gray-500" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-56">
+                <DropdownMenuContent align="end" className="min-w-45">
                     <DropdownMenuItem disabled={video.status !== 'Ready'}>
                         <a
                             href={`${API_URL}/download/${video.id}`}
                             download={`${video.name}.mp4`}
-                            onClick={() => { saveDownloadInfo(video.id, `${video.name}.mp4`); setDownloadInfo(getDownloadInfo(video.id)) }}
-                            className="contents"
+                            className="w-full flex items-center gap-2"
                         >
                             <Download className="w-4 h-4 shrink-0" />
-                            {downloadInfo ? 'Download again' : 'Download'}
+                            Download Max
                         </a>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                        disabled={!downloadInfo}
-                        onClick={() => { localStorage.removeItem(`download_${video.id}`); setDownloadInfo(null) }}
-                    >
-                        <X className="w-4 h-4 shrink-0" />
-                        Reset Download Info
-                    </DropdownMenuItem>
+                    {[...(video.versions ?? [])].sort((a, b) => (parseInt(b.quality) || 0) - (parseInt(a.quality) || 0)).map(v => (
+                        <DropdownMenuItem key={v.id}>
+                            <a href={`${API_URL}/download/${v.id}`} download={v.filename} className="w-full flex items-center gap-2">
+                                <Download className="w-4 h-4 shrink-0" />
+                                Download {v.quality}
+                            </a>
+                        </DropdownMenuItem>
+                    ))}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                         disabled={!progressSavedTime}
