@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import RequestDownloadDialog from '@/components/frontend/RequestDownloadDialog/RequestDownloadDialog'
 import DeleteVideoDialog from '@/components/frontend/DeleteVideoDialog/DeleteVideoDialog'
-import { DownloadIcon } from 'lucide-react'
+import AppSidebar from '@/components/frontend/AppSidebar/AppSidebar'
 import Logo from '@/components/frontend/Logo/Logo'
 import SidebarTrigger from '@/components/frontend/SidebarTrigger/SidebarTrigger'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
@@ -12,14 +12,6 @@ import PlaylistPanel from '@/components/frontend/PlaylistPanel/PlaylistPanel'
 import VideoList from '@/components/frontend/VideoList/VideoList'
 import {
     SidebarProvider,
-    Sidebar,
-    SidebarHeader,
-    SidebarContent,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarMenu,
-    SidebarMenuItem,
-    SidebarMenuButton,
     SidebarInset,
 } from '@/components/ui/sidebar'
 
@@ -179,26 +171,7 @@ export default function Home() {
 
     return (
         <SidebarProvider defaultOpen={false}>
-            <Sidebar collapsible="offcanvas">
-                <SidebarHeader className="flex flex-row items-center gap-3 px-3 py-4">
-                    <SidebarTrigger className="text-black md:ml-3" />
-                    <Logo color="text-black" />
-                </SidebarHeader>
-                <SidebarContent>
-                    <SidebarGroup>
-                        <SidebarGroupContent>
-                            <SidebarMenu>
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton onClick={() => requestDownloadDialogRef.current.open()}>
-                                        <DownloadIcon />
-                                        <span>Request Download</span>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
-                </SidebarContent>
-            </Sidebar>
+            <AppSidebar onRequestDownload={() => requestDownloadDialogRef.current.open()} />
             <SidebarInset>
                 <div className="flex flex-col">
 
