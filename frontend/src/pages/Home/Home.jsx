@@ -10,7 +10,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { formatDistanceToNow, format } from 'date-fns'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { DownloadIcon } from 'lucide-react'
 import Logo from '@/components/frontend/Logo/Logo'
@@ -18,6 +17,7 @@ import SidebarTrigger from '@/components/frontend/SidebarTrigger/SidebarTrigger'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
 import VideoListItem from '@/components/frontend/VideoListItem/VideoListItem'
 import VideoPlayer from '@/components/frontend/VideoPlayer/VideoPlayer'
+import VideoInfo from '@/components/frontend/VideoInfo/VideoInfo'
 import {
     SidebarProvider,
     Sidebar,
@@ -226,19 +226,7 @@ export default function Home() {
                                 )}
                             </div>
                             <div className="bg-gray-100 p-4">
-                                {selectedVideo && (
-                                    <>
-                                        <p className="font-semibold text-lg">{selectedVideo.name}</p>
-                                        {selectedVideo.channel && (
-                                            <p className="text-sm text-gray-500 mt-1">{selectedVideo.channel}</p>
-                                        )}
-                                        {selectedVideo.date && (
-                                            <p className="text-sm text-gray-500 mt-1" title={format(new Date(selectedVideo.date), 'PPpp')}>
-                                                {formatDistanceToNow(new Date(selectedVideo.date), { addSuffix: true })}
-                                            </p>
-                                        )}
-                                    </>
-                                )}
+                                {selectedVideo && <VideoInfo video={selectedVideo} />}
                             </div>
                         </div>
 
