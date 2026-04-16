@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 
-export function useWatchedTime(id, videoRef, setVideos) {
+export function useWatchedTime(id, videoRef, setVideos, playlists) {
     const [, setSearchParams] = useSearchParams()
 
     function handleWatchedMark(video, updateVideos = true) {
@@ -25,5 +25,17 @@ export function useWatchedTime(id, videoRef, setVideos) {
         }
     }
 
-    return { handleWatchedMark, handleWatchedReset }
+    function handleWatchedMarkPlaylist(v) {
+        const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
+        pl.forEach(pv => handleWatchedMark(pv, false))
+        setVideos(prev => [...prev])
+    }
+
+    function handleWatchedResetPlaylist(v) {
+        const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
+        pl.forEach(pv => handleWatchedReset(pv, false))
+        setVideos(prev => [...prev])
+    }
+
+    return { handleWatchedMark, handleWatchedReset, handleWatchedMarkPlaylist, handleWatchedResetPlaylist }
 }

@@ -4,6 +4,7 @@ import { useVideoKeyboard } from '@/hooks/frontend/useVideoKeyboard'
 import { useVideoMetadata } from '@/hooks/frontend/useVideoMetadata'
 import { useVideoNavigation } from '@/hooks/frontend/useVideoNavigation'
 import { useWatchedTime } from '@/hooks/frontend/useWatchedTime'
+import { useDeleteVideo } from '@/hooks/frontend/useDeleteVideo'
 import { useParams } from 'react-router-dom'
 import RequestDownloadDialog from '@/components/frontend/RequestDownloadDialog/RequestDownloadDialog'
 import DeleteVideoDialog from '@/components/frontend/DeleteVideoDialog/DeleteVideoDialog'
@@ -20,50 +21,17 @@ import {
     SidebarInset,
 } from '@/components/ui/sidebar'
 
-const API_URL = import.meta.env.VITE_API_URL
-
 export default function Home() {
     const { id } = useParams()
     const { videos, setVideos, playlists } = useVideos()
     const videoRef = useRef(null)
     const requestDownloadDialogRef = useRef(null)
-    const deleteVideoDialogRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
     const currentPlaylist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
-    const { handleWatchedMark, handleWatchedReset } = useWatchedTime(id, videoRef, setVideos)
-
-    function handleDeleteSingle(video) {
-        deleteVideoDialogRef.current.open([video])
-    }
-
-    function handleWatchedMarkPlaylist(v) {
-        const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
-        pl.forEach(pv => handleWatchedMark(pv, false))
-        setVideos(prev => [...prev])
-    }
-
-    function handleWatchedResetPlaylist(v) {
-        const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
-        pl.forEach(pv => handleWatchedReset(pv, false))
-        setVideos(prev => [...prev])
-    }
-
-    function handleDeletePlaylist(video) {
-        const pl = playlists.find(p => p.some(pv => pv.id === video.id)) ?? [video]
-        deleteVideoDialogRef.current.open(pl)
-    }
-
-    async function confirmDelete(videos) {
-        await Promise.allSettled(videos.map(v => fetch(`${API_URL}/delete-video`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: v.id }),
-        })))
-        setVideos(prev => prev.filter(v => !videos.some(pv => pv.id === v.id)))
-    }
-
+    const { handleWatchedMark, handleWatchedReset, handleWatchedMarkPlaylist, handleWatchedResetPlaylist } = useWatchedTime(id, videoRef, setVideos, playlists)
+    const { deleteVideoDialogRef, handleDeleteSingle, handleDeletePlaylist, confirmDelete } = useDeleteVideo(playlists, setVideos)
 
     useVideoKeyboard(videoRef)
     useVideoMetadata(selectedVideo)
