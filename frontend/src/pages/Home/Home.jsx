@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useVideos } from '@/hooks/frontend/useVideos'
 import { useVideoKeyboard } from '@/hooks/frontend/useVideoKeyboard'
 import { useVideoMetadata } from '@/hooks/frontend/useVideoMetadata'
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useVideoNavigation } from '@/hooks/frontend/useVideoNavigation'
+import { useParams, useSearchParams } from 'react-router-dom'
 import RequestDownloadDialog from '@/components/frontend/RequestDownloadDialog/RequestDownloadDialog'
 import DeleteVideoDialog from '@/components/frontend/DeleteVideoDialog/DeleteVideoDialog'
 import AppSidebar from '@/components/frontend/AppSidebar/AppSidebar'
@@ -22,8 +23,7 @@ const API_URL = import.meta.env.VITE_API_URL
 
 export default function Home() {
     const { id } = useParams()
-    const [searchParams, setSearchParams] = useSearchParams()
-    const navigate = useNavigate()
+    const [, setSearchParams] = useSearchParams()
     const { videos, setVideos, playlists } = useVideos()
     const videoRef = useRef(null)
     const requestDownloadDialogRef = useRef(null)
@@ -87,24 +87,7 @@ export default function Home() {
     useVideoKeyboard(videoRef)
     useVideoMetadata(selectedVideo)
 
-    useEffect(() => {
-        if (!id || (videos.length > 0 && !videos.find(v => v.id === id))) {
-            const firstVideo = videos[0]
-            if (firstVideo) {
-                const playlist = playlists.find(p => p.some(v => v.id === firstVideo.id))
-                const firstId = playlist ? playlist[0].id : firstVideo.id
-                navigate(`/watch/${firstId}`, { replace: true })
-            }
-            return
-        }
-        if (!searchParams.get('t')) {
-            const savedTime = Math.floor(parseFloat(localStorage.getItem(`time_${id}`)))
-            if (savedTime && savedTime > 10) {
-                navigate(`/watch/${id}?t=${savedTime}`, { replace: true })
-                return
-            }
-        }
-    }, [id, videos, playlists])
+    useVideoNavigation(id, videos, playlists)
 
     return (
         <SidebarProvider defaultOpen={false}>
