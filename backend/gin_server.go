@@ -158,6 +158,19 @@ func (s *GinServer) registerRoutes() {
 			os.Rename(src, filepath.Join(deletedDir, filepath.Base(v.Filename)))
 		}
 
+		s.store.Mutex.Lock()
+		delete(s.store.VideosMap, body.ID)
+		for _, version := range v.Versions {
+			delete(s.store.VideoVersionsMap, version.ID)
+		}
+		for i, sv := range s.store.Videos {
+			if sv.ID == body.ID {
+				s.store.Videos = append(s.store.Videos[:i], s.store.Videos[i+1:]...)
+				break
+			}
+		}
+		s.store.Mutex.Unlock()
+
 		c.Status(http.StatusNoContent)
 	})
 
