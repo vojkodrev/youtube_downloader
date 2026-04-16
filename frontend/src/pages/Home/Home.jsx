@@ -219,10 +219,8 @@ export default function Home() {
                             <div className="bg-black">
                                 {selectedVideo && (
                                     <VideoPlayer
-                                        videoRef={videoRef}
+                                        ref={videoRef}
                                         video={selectedVideo}
-                                        searchParams={searchParams}
-                                        setSearchParams={setSearchParams}
                                         setVideos={setVideos}
                                     />
                                 )}

@@ -1,9 +1,8 @@
-export default function VideoPlayer({
-    videoRef,
-    video,
-    searchParams,
-    setSearchParams,
-    setVideos }) {
+import { forwardRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
+
+const VideoPlayer = forwardRef(function VideoPlayer({ video, setVideos }, ref) {
+    const [searchParams, setSearchParams] = useSearchParams()
 
     function saveWatchedTime(t) {
         localStorage.setItem(`time_${video.id}`, t)
@@ -17,7 +16,7 @@ export default function VideoPlayer({
 
     return (
         <video
-            ref={videoRef}
+            ref={ref}
             key={video.id}
             src={`${import.meta.env.VITE_API_URL}/video/${video.id}`}
             controls
@@ -41,4 +40,6 @@ export default function VideoPlayer({
             className="w-full"
         />
     )
-}
+})
+
+export default VideoPlayer
