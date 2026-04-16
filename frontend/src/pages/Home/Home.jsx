@@ -8,9 +8,8 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import RequestDownloadDialog from '@/components/frontend/RequestDownloadDialog/RequestDownloadDialog'
 import { DownloadIcon } from 'lucide-react'
 import Logo from '@/components/frontend/Logo/Logo'
 import SidebarTrigger from '@/components/frontend/SidebarTrigger/SidebarTrigger'
@@ -33,7 +32,6 @@ import {
 } from '@/components/ui/sidebar'
 
 const API_URL = import.meta.env.VITE_API_URL
-const DEFAULT_DOWNLOAD_ERROR = 'An error occurred. Please try again.'
 
 export default function Home() {
     const { id } = useParams()
@@ -41,12 +39,9 @@ export default function Home() {
     const navigate = useNavigate()
     const [videos, setVideos] = useState([])
     const [playlists, setPlaylists] = useState([])
-    const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
-    const [downloadUrl, setDownloadUrl] = useState('')
-    const [downloadPending, setDownloadPending] = useState(false)
-    const [downloadError, setDownloadError] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState(null)
     const videoRef = useRef(null)
+    const downloadDialogRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
 
@@ -59,29 +54,6 @@ export default function Home() {
         if (video.id === id) {
             videoRef.current.currentTime = t
             setSearchParams({ t }, { replace: true })
-        }
-    }
-
-    async function handleDownload() {
-        setDownloadPending(true)
-        setDownloadError(false)
-        try {
-            const res = await fetch(`${API_URL}/request-download`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: downloadUrl }),
-            })
-            if (!res.ok) {
-                const data = await res.json().catch(() => null)
-                setDownloadError(data?.error || DEFAULT_DOWNLOAD_ERROR)
-                return
-            }
-            setDownloadDialogOpen(false)
-            setDownloadUrl('')
-        } catch {
-            setDownloadError(DEFAULT_DOWNLOAD_ERROR)
-        } finally {
-            setDownloadPending(false)
         }
     }
 
@@ -227,7 +199,7 @@ export default function Home() {
                         <SidebarGroupContent>
                             <SidebarMenu>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton onClick={() => setDownloadDialogOpen(true)}>
+                                    <SidebarMenuButton onClick={() => downloadDialogRef.current.open()}>
                                         <DownloadIcon />
                                         <span>Request Download</span>
                                     </SidebarMenuButton>
@@ -292,33 +264,7 @@ export default function Home() {
                 </div>
             </SidebarInset>
 
-            <Dialog open={downloadDialogOpen} onOpenChange={open => { if (!open) { setDownloadError(false); setDownloadUrl('') } setDownloadDialogOpen(open) }}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Request a Video Download</DialogTitle>
-                        <DialogDescription>
-                            Paste a YouTube (or other supported) URL below and we'll download it to your local library.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex flex-col gap-2 py-2">
-                        <Label htmlFor="download-url">Video URL</Label>
-                        <Input
-                            id="download-url"
-                            placeholder="https://www.youtube.com/watch?v=..."
-                            value={downloadUrl}
-                            onChange={e => setDownloadUrl(e.target.value)}
-                        />
-                        {downloadError && <p className="text-sm text-red-500">{downloadError}</p>}
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => { setDownloadError(false); setDownloadUrl(''); setDownloadDialogOpen(false) }}>Cancel</Button>
-                        <Button
-                            disabled={!downloadUrl.trim() || downloadPending}
-                            onClick={handleDownload}
-                        >Download</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <RequestDownloadDialog ref={downloadDialogRef} />
             <Dialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null) }}>
                 <DialogContent>
                     <DialogHeader>
