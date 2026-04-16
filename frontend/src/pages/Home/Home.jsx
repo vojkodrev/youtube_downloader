@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useVideos } from '@/hooks/frontend/useVideos'
+import { useVideoKeyboard } from '@/hooks/frontend/useVideoKeyboard'
+import { useVideoMetadata } from '@/hooks/frontend/useVideoMetadata'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import RequestDownloadDialog from '@/components/frontend/RequestDownloadDialog/RequestDownloadDialog'
 import DeleteVideoDialog from '@/components/frontend/DeleteVideoDialog/DeleteVideoDialog'
@@ -82,31 +84,8 @@ export default function Home() {
     }
     const currentPlaylist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
-    useEffect(() => {
-        function handleKeyDown(e) {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
-            if (!videoRef.current) return
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                e.preventDefault()
-                videoRef.current.currentTime += e.key === 'ArrowRight' ? 10 : -10
-            }
-        }
-        document.addEventListener('keydown', handleKeyDown, { capture: true })
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown, { capture: true })
-        }
-    }, [])
-
-    useEffect(() => {
-        if (!selectedVideo) return
-        document.title = selectedVideo.name
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: selectedVideo.name,
-                artwork: [{ src: `${API_URL}/thumbnail/${selectedVideo.id}`, sizes: '512x512', type: 'image/jpeg' }]
-            })
-        }
-    }, [selectedVideo])
+    useVideoKeyboard(videoRef)
+    useVideoMetadata(selectedVideo)
 
     useEffect(() => {
         if (!id || (videos.length > 0 && !videos.find(v => v.id === id))) {
