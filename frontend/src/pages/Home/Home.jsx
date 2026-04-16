@@ -32,7 +32,7 @@ export default function Home() {
     const [videos, setVideos] = useState([])
     const [playlists, setPlaylists] = useState([])
     const videoRef = useRef(null)
-    const downloadDialogRef = useRef(null)
+    const requestDownloadDialogRef = useRef(null)
     const deleteVideoDialogRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
@@ -189,7 +189,7 @@ export default function Home() {
                         <SidebarGroupContent>
                             <SidebarMenu>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton onClick={() => downloadDialogRef.current.open()}>
+                                    <SidebarMenuButton onClick={() => requestDownloadDialogRef.current.open()}>
                                         <DownloadIcon />
                                         <span>Request Download</span>
                                     </SidebarMenuButton>
@@ -254,7 +254,7 @@ export default function Home() {
                 </div>
             </SidebarInset>
 
-            <RequestDownloadDialog ref={downloadDialogRef} />
+            <RequestDownloadDialog ref={requestDownloadDialogRef} />
             <DeleteVideoDialog ref={deleteVideoDialogRef} onConfirm={confirmDelete} />
         </SidebarProvider>
     )
