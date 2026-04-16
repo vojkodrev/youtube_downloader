@@ -69,6 +69,25 @@ export default function Home() {
         }
     }
 
+    async function handleDeleteSingle(video) {
+        await fetch(`${API_URL}/delete-video`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: video.id }),
+        })
+        setVideos(prev => prev.filter(v => v.id !== video.id))
+    }
+
+    async function handleDeletePlaylist(video) {
+        const pl = playlists.find(p => p.some(pv => pv.id === video.id)) ?? [video]
+        await Promise.allSettled(pl.map(v => fetch(`${API_URL}/delete-video`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: v.id }),
+        })))
+        setVideos(prev => prev.filter(v => !pl.some(pv => pv.id === v.id)))
+    }
+
     function handleWatchedReset(video, updateVideos = true) {
         localStorage.removeItem(`time_${video.id}`)
         video.savedTime = null
@@ -261,6 +280,7 @@ export default function Home() {
                                             isSelected={selectedVideo?.id === video.id}
                                             onWatchedReset={handleWatchedReset}
                                             onWatchedMark={handleWatchedMark}
+                                            onDelete={handleDeleteSingle}
                                         />
                                     ))}
                                 </div>
@@ -283,6 +303,7 @@ export default function Home() {
                                         pl.forEach(pv => handleWatchedReset(pv, false))
                                         setVideos(prev => [...prev])
                                     }}
+                                    onDelete={handleDeletePlaylist}
                                 />
                             ))}
                         </div>
