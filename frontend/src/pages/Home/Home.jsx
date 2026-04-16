@@ -30,6 +30,7 @@ export default function Home() {
     const deleteVideoDialogRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
+    const currentPlaylist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
     function handleWatchedMark(video, updateVideos = true) {
         const t = video.duration
@@ -82,7 +83,6 @@ export default function Home() {
             setSearchParams({ t: 0 }, { replace: true })
         }
     }
-    const currentPlaylist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
     useVideoKeyboard(videoRef)
     useVideoMetadata(selectedVideo)
