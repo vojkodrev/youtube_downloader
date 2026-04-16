@@ -15,10 +15,10 @@ import { DownloadIcon } from 'lucide-react'
 import Logo from '@/components/frontend/Logo/Logo'
 import SidebarTrigger from '@/components/frontend/SidebarTrigger/SidebarTrigger'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
-import VideoListItem from '@/components/frontend/VideoListItem/VideoListItem'
 import VideoPlayer from '@/components/frontend/VideoPlayer/VideoPlayer'
 import VideoInfo from '@/components/frontend/VideoInfo/VideoInfo'
 import PlaylistPanel from '@/components/frontend/PlaylistPanel/PlaylistPanel'
+import VideoList from '@/components/frontend/VideoList/VideoList'
 import {
     SidebarProvider,
     Sidebar,
@@ -64,6 +64,18 @@ export default function Home() {
 
     function handleDeleteSingle(video) {
         setDeleteTarget({ videos: [video] })
+    }
+
+    function handleWatchedMarkPlaylist(v) {
+        const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
+        pl.forEach(pv => handleWatchedMark(pv, false))
+        setVideos(prev => [...prev])
+    }
+
+    function handleWatchedResetPlaylist(v) {
+        const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
+        pl.forEach(pv => handleWatchedReset(pv, false))
+        setVideos(prev => [...prev])
     }
 
     function handleDeletePlaylist(video) {
@@ -242,27 +254,15 @@ export default function Home() {
                                     onDelete={handleDeleteSingle}
                                 />
                             )}
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-2">Videos</p>
-                            {videos.filter(v => v.visible).map(video => (
-                                <VideoListItem
-                                    key={video.id}
-                                    video={video}
-                                    isSelected={selectedVideo?.id === video.id || playlist.some(v => v.id === video.id)}
-                                    videoCountVisible
-                                    playlistVideos={playlists.find(p => p.some(pv => pv.id === video.id)) ?? null}
-                                    onWatchedMark={v => {
-                                        const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
-                                        pl.forEach(pv => handleWatchedMark(pv, false))
-                                        setVideos(prev => [...prev])
-                                    }}
-                                    onWatchedReset={v => {
-                                        const pl = playlists.find(p => p.some(pv => pv.id === v.id)) ?? [v]
-                                        pl.forEach(pv => handleWatchedReset(pv, false))
-                                        setVideos(prev => [...prev])
-                                    }}
-                                    onDelete={handleDeletePlaylist}
-                                />
-                            ))}
+                            <VideoList
+                                videos={videos}
+                                playlists={playlists}
+                                selectedVideo={selectedVideo}
+                                playlist={playlist}
+                                onWatchedMark={handleWatchedMarkPlaylist}
+                                onWatchedReset={handleWatchedResetPlaylist}
+                                onDelete={handleDeletePlaylist}
+                            />
                         </div>
 
                     </div>
