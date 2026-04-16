@@ -1,15 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import RequestDownloadDialog from '@/components/frontend/RequestDownloadDialog/RequestDownloadDialog'
+import DeleteVideoDialog from '@/components/frontend/DeleteVideoDialog/DeleteVideoDialog'
 import { DownloadIcon } from 'lucide-react'
 import Logo from '@/components/frontend/Logo/Logo'
 import SidebarTrigger from '@/components/frontend/SidebarTrigger/SidebarTrigger'
@@ -39,9 +31,9 @@ export default function Home() {
     const navigate = useNavigate()
     const [videos, setVideos] = useState([])
     const [playlists, setPlaylists] = useState([])
-    const [deleteTarget, setDeleteTarget] = useState(null)
     const videoRef = useRef(null)
     const downloadDialogRef = useRef(null)
+    const deleteVideoDialogRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
 
@@ -58,7 +50,7 @@ export default function Home() {
     }
 
     function handleDeleteSingle(video) {
-        setDeleteTarget({ videos: [video] })
+        deleteVideoDialogRef.current.open([video])
     }
 
     function handleWatchedMarkPlaylist(v) {
@@ -75,18 +67,16 @@ export default function Home() {
 
     function handleDeletePlaylist(video) {
         const pl = playlists.find(p => p.some(pv => pv.id === video.id)) ?? [video]
-        setDeleteTarget({ videos: pl })
+        deleteVideoDialogRef.current.open(pl)
     }
 
-    async function confirmDelete() {
-        const pl = deleteTarget.videos
-        setDeleteTarget(null)
-        await Promise.allSettled(pl.map(v => fetch(`${API_URL}/delete-video`, {
+    async function confirmDelete(videos) {
+        await Promise.allSettled(videos.map(v => fetch(`${API_URL}/delete-video`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: v.id }),
         })))
-        setVideos(prev => prev.filter(v => !pl.some(pv => pv.id === v.id)))
+        setVideos(prev => prev.filter(v => !videos.some(pv => pv.id === v.id)))
     }
 
     function handleWatchedReset(video, updateVideos = true) {
@@ -265,23 +255,7 @@ export default function Home() {
             </SidebarInset>
 
             <RequestDownloadDialog ref={downloadDialogRef} />
-            <Dialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null) }}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete Video</DialogTitle>
-                        <DialogDescription>
-                            {deleteTarget?.videos.length > 1
-                                ? `Are you sure you want to delete all ${deleteTarget.videos.length} videos in this playlist? This cannot be undone.`
-                                : 'Are you sure you want to delete this video? This cannot be undone.'
-                            }
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
-                        <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <DeleteVideoDialog ref={deleteVideoDialogRef} onConfirm={confirmDelete} />
         </SidebarProvider>
     )
 }
