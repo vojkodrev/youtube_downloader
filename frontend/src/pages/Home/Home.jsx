@@ -62,6 +62,29 @@ export default function Home() {
         }
     }
 
+    async function handleDownload() {
+        setDownloadPending(true)
+        setDownloadError(false)
+        try {
+            const res = await fetch(`${API_URL}/request-download`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: downloadUrl }),
+            })
+            if (!res.ok) {
+                const data = await res.json().catch(() => null)
+                setDownloadError(data?.error || DEFAULT_DOWNLOAD_ERROR)
+                return
+            }
+            setDownloadDialogOpen(false)
+            setDownloadUrl('')
+        } catch {
+            setDownloadError(DEFAULT_DOWNLOAD_ERROR)
+        } finally {
+            setDownloadPending(false)
+        }
+    }
+
     function handleDeleteSingle(video) {
         setDeleteTarget({ videos: [video] })
     }
@@ -291,28 +314,7 @@ export default function Home() {
                         <Button variant="outline" onClick={() => { setDownloadError(false); setDownloadUrl(''); setDownloadDialogOpen(false) }}>Cancel</Button>
                         <Button
                             disabled={!downloadUrl.trim() || downloadPending}
-                            onClick={async () => {
-                                setDownloadPending(true)
-                                setDownloadError(false)
-                                try {
-                                    const res = await fetch(`${API_URL}/request-download`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ url: downloadUrl }),
-                                    })
-                                    if (!res.ok) {
-                                        const data = await res.json().catch(() => null)
-                                        setDownloadError(data?.error || DEFAULT_DOWNLOAD_ERROR)
-                                        return
-                                    }
-                                    setDownloadDialogOpen(false)
-                                    setDownloadUrl('')
-                                } catch {
-                                    setDownloadError(DEFAULT_DOWNLOAD_ERROR)
-                                } finally {
-                                    setDownloadPending(false)
-                                }
-                            }}
+                            onClick={handleDownload}
                         >Download</Button>
                     </DialogFooter>
                 </DialogContent>
