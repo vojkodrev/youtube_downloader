@@ -103,7 +103,7 @@ export default function Home() {
             setSearchParams({ t: 0 }, { replace: true })
         }
     }
-    const playlist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
+    const currentPlaylist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
     useEffect(() => {
         (async () => {
@@ -245,9 +245,9 @@ export default function Home() {
 
                         {/* Sidebar */}
                         <div className="md:w-90 lg:w-[28rem] bg-gray-50">
-                            {playlist.length > 0 && (
+                            {currentPlaylist.length > 0 && (
                                 <PlaylistPanel
-                                    playlist={playlist}
+                                    currentPlaylist={currentPlaylist}
                                     selectedVideoId={selectedVideo?.id}
                                     onWatchedReset={handleWatchedReset}
                                     onWatchedMark={handleWatchedMark}
@@ -258,7 +258,7 @@ export default function Home() {
                                 videos={videos}
                                 playlists={playlists}
                                 selectedVideo={selectedVideo}
-                                playlist={playlist}
+                                currentPlaylist={currentPlaylist}
                                 onWatchedMark={handleWatchedMarkPlaylist}
                                 onWatchedReset={handleWatchedResetPlaylist}
                                 onDelete={handleDeletePlaylist}

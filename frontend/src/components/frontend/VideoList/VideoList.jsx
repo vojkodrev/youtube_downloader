@@ -4,7 +4,7 @@ export default function VideoList({
     videos,
     playlists, // all playlists
     selectedVideo,
-    playlist, // selected playlist / currently playing playlist
+    currentPlaylist, // selected playlist / currently playing playlist
     onWatchedMark,
     onWatchedReset,
     onDelete }) {
@@ -16,7 +16,7 @@ export default function VideoList({
                 <VideoListItem
                     key={video.id}
                     video={video}
-                    isSelected={selectedVideo?.id === video.id || playlist.some(v => v.id === video.id)}
+                    isSelected={selectedVideo?.id === video.id || currentPlaylist.some(v => v.id === video.id)}
                     videoCountVisible
                     playlistVideos={playlists.find(p => p.some(pv => pv.id === video.id)) ?? null}
                     onWatchedMark={onWatchedMark}
