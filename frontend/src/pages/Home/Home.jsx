@@ -170,8 +170,8 @@ export default function Home() {
     return (
         <SidebarProvider defaultOpen={false}>
             <Sidebar collapsible="offcanvas">
-                <SidebarHeader className="flex flex-row items-center gap-3 px-4 py-4">
-                    <SidebarTrigger className="text-black" />
+                <SidebarHeader className="flex flex-row items-center gap-3 px-3 py-4">
+                    <SidebarTrigger className="text-black md:ml-3" />
                     <Logo color="text-black" />
                 </SidebarHeader>
                 <SidebarContent>
