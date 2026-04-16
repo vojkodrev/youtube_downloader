@@ -43,6 +43,7 @@ export default function Home() {
     const [downloadUrl, setDownloadUrl] = useState('')
     const [downloadPending, setDownloadPending] = useState(false)
     const [downloadError, setDownloadError] = useState(false)
+    const [deleteTarget, setDeleteTarget] = useState(null)
     const videoRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
@@ -69,17 +70,18 @@ export default function Home() {
         }
     }
 
-    async function handleDeleteSingle(video) {
-        await fetch(`${API_URL}/delete-video`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: video.id }),
-        })
-        setVideos(prev => prev.filter(v => v.id !== video.id))
+    function handleDeleteSingle(video) {
+        setDeleteTarget({ videos: [video] })
     }
 
-    async function handleDeletePlaylist(video) {
+    function handleDeletePlaylist(video) {
         const pl = playlists.find(p => p.some(pv => pv.id === video.id)) ?? [video]
+        setDeleteTarget({ videos: pl })
+    }
+
+    async function confirmDelete() {
+        const pl = deleteTarget.videos
+        setDeleteTarget(null)
         await Promise.allSettled(pl.map(v => fetch(`${API_URL}/delete-video`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -357,6 +359,23 @@ export default function Home() {
                                 }
                             }}
                         >Download</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null) }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Video</DialogTitle>
+                        <DialogDescription>
+                            {deleteTarget?.videos.length > 1
+                                ? `Are you sure you want to delete all ${deleteTarget.videos.length} videos in this playlist? This cannot be undone.`
+                                : 'Are you sure you want to delete this video? This cannot be undone.'
+                            }
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+                        <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
