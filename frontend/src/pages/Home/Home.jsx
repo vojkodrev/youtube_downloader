@@ -17,6 +17,7 @@ import Logo from '@/components/frontend/Logo/Logo'
 import SidebarTrigger from '@/components/frontend/SidebarTrigger/SidebarTrigger'
 import SearchBar from '@/components/frontend/SearchBar/SearchBar'
 import VideoListItem from '@/components/frontend/VideoListItem/VideoListItem'
+import VideoPlayer from '@/components/frontend/VideoPlayer/VideoPlayer'
 import {
     SidebarProvider,
     Sidebar,
@@ -47,16 +48,6 @@ export default function Home() {
     const videoRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
-
-    function saveWatchedTime(t) {
-        localStorage.setItem(`time_${selectedVideo.id}`, t)
-        setSearchParams({ t }, { replace: true })
-        setVideos(prev => {
-            const v = prev.find(v => v.id === selectedVideo.id)
-            if (v) v.savedTime = t
-            return [...prev]
-        })
-    }
 
     function handleWatchedMark(video, updateVideos = true) {
         const t = video.duration
@@ -227,29 +218,12 @@ export default function Home() {
                         <div className="flex flex-col md:flex-1">
                             <div className="bg-black">
                                 {selectedVideo && (
-                                    <video
-                                        ref={videoRef}
-                                        key={selectedVideo.id}
-                                        src={`${API_URL}/video/${selectedVideo.id}`}
-                                        controls
-                                        autoPlay
-                                        playsInline
-                                        onTimeUpdate={e => {
-                                            const t = Math.round(e.target.currentTime)
-                                            if (t % 5 !== 0) return
-                                            if (t === parseInt(searchParams.get('t'))) return
-                                            saveWatchedTime(t)
-                                        }}
-                                        onSeeked={e => {
-                                            const t = Math.round(e.target.currentTime)
-                                            if (t === parseInt(searchParams.get('t'))) return
-                                            saveWatchedTime(t)
-                                        }}
-                                        onLoadedMetadata={e => {
-                                            const t = searchParams.get('t')
-                                            if (t) e.target.currentTime = parseFloat(t)
-                                        }}
-                                        className="w-full"
+                                    <VideoPlayer
+                                        videoRef={videoRef}
+                                        video={selectedVideo}
+                                        searchParams={searchParams}
+                                        setSearchParams={setSearchParams}
+                                        setVideos={setVideos}
                                     />
                                 )}
                             </div>
