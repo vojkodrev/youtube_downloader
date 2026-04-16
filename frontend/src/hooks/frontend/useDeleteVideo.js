@@ -1,10 +1,6 @@
-import { useRef } from 'react'
-
 const API_URL = import.meta.env.VITE_API_URL
 
-export function useDeleteVideo(playlists, setVideos) {
-    const deleteVideoDialogRef = useRef(null)
-
+export function useDeleteVideo(deleteVideoDialogRef, playlists, setVideos) {
     function handleDeleteSingle(video) {
         deleteVideoDialogRef.current.open([video])
     }
@@ -23,5 +19,5 @@ export function useDeleteVideo(playlists, setVideos) {
         setVideos(prev => prev.filter(v => !videos.some(pv => pv.id === v.id)))
     }
 
-    return { deleteVideoDialogRef, handleDeleteSingle, handleDeletePlaylist, confirmDelete }
+    return { handleDeleteSingle, handleDeletePlaylist, confirmDelete }
 }

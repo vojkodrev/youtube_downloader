@@ -26,12 +26,23 @@ export default function Home() {
     const { videos, setVideos, playlists } = useVideos()
     const videoRef = useRef(null)
     const requestDownloadDialogRef = useRef(null)
+    const deleteVideoDialogRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
     const currentPlaylist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
-    const { handleWatchedMark, handleWatchedReset, handleWatchedMarkPlaylist, handleWatchedResetPlaylist } = useWatchedTime(id, videoRef, setVideos, playlists)
-    const { deleteVideoDialogRef, handleDeleteSingle, handleDeletePlaylist, confirmDelete } = useDeleteVideo(playlists, setVideos)
+    const {
+        handleWatchedMark,
+        handleWatchedReset,
+        handleWatchedMarkPlaylist,
+        handleWatchedResetPlaylist
+    } = useWatchedTime(id, videoRef, setVideos, playlists)
+
+    const {
+        handleDeleteSingle,
+        handleDeletePlaylist,
+        confirmDelete
+    } = useDeleteVideo(deleteVideoDialogRef, playlists, setVideos)
 
     useVideoKeyboard(videoRef)
     useVideoMetadata(selectedVideo)
