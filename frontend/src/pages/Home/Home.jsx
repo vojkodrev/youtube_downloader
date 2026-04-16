@@ -3,7 +3,8 @@ import { useVideos } from '@/hooks/frontend/useVideos'
 import { useVideoKeyboard } from '@/hooks/frontend/useVideoKeyboard'
 import { useVideoMetadata } from '@/hooks/frontend/useVideoMetadata'
 import { useVideoNavigation } from '@/hooks/frontend/useVideoNavigation'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useWatchedTime } from '@/hooks/frontend/useWatchedTime'
+import { useParams } from 'react-router-dom'
 import RequestDownloadDialog from '@/components/frontend/RequestDownloadDialog/RequestDownloadDialog'
 import DeleteVideoDialog from '@/components/frontend/DeleteVideoDialog/DeleteVideoDialog'
 import AppSidebar from '@/components/frontend/AppSidebar/AppSidebar'
@@ -23,7 +24,6 @@ const API_URL = import.meta.env.VITE_API_URL
 
 export default function Home() {
     const { id } = useParams()
-    const [, setSearchParams] = useSearchParams()
     const { videos, setVideos, playlists } = useVideos()
     const videoRef = useRef(null)
     const requestDownloadDialogRef = useRef(null)
@@ -32,17 +32,7 @@ export default function Home() {
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
     const currentPlaylist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
-    function handleWatchedMark(video, updateVideos = true) {
-        const t = video.duration
-        if (!t) return
-        localStorage.setItem(`time_${video.id}`, t)
-        video.savedTime = t
-        if (updateVideos) setVideos(prev => [...prev])
-        if (video.id === id) {
-            videoRef.current.currentTime = t
-            setSearchParams({ t }, { replace: true })
-        }
-    }
+    const { handleWatchedMark, handleWatchedReset } = useWatchedTime(id, videoRef, setVideos)
 
     function handleDeleteSingle(video) {
         deleteVideoDialogRef.current.open([video])
@@ -74,15 +64,6 @@ export default function Home() {
         setVideos(prev => prev.filter(v => !videos.some(pv => pv.id === v.id)))
     }
 
-    function handleWatchedReset(video, updateVideos = true) {
-        localStorage.removeItem(`time_${video.id}`)
-        video.savedTime = null
-        if (updateVideos) setVideos(prev => [...prev])
-        if (video.id === id) {
-            videoRef.current.currentTime = 0
-            setSearchParams({ t: 0 }, { replace: true })
-        }
-    }
 
     useVideoKeyboard(videoRef)
     useVideoMetadata(selectedVideo)
