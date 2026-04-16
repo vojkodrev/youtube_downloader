@@ -1,17 +1,14 @@
 import { forwardRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
-const VideoPlayer = forwardRef(function VideoPlayer({ video, setVideos }, ref) {
+const VideoPlayer = forwardRef(function VideoPlayer({ video, onVideoUpdated }, ref) {
     const [searchParams, setSearchParams] = useSearchParams()
 
     function saveWatchedTime(t) {
         localStorage.setItem(`time_${video.id}`, t)
         setSearchParams({ t }, { replace: true })
-        setVideos(prev => {
-            const v = prev.find(v => v.id === video.id)
-            if (v) v.savedTime = t
-            return [...prev]
-        })
+        video.savedTime = t
+        onVideoUpdated(video)
     }
 
     return (

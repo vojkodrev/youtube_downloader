@@ -221,7 +221,7 @@ export default function Home() {
                                     <VideoPlayer
                                         ref={videoRef}
                                         video={selectedVideo}
-                                        setVideos={setVideos}
+                                        onVideoUpdated={() => setVideos(prev => [...prev])}
                                     />
                                 )}
                             </div>
