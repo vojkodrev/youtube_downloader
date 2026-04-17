@@ -25,6 +25,27 @@ func (s *DownloadRequestService) IsSupportedURL(rawURL string) bool {
 		strings.Contains(host, "rumble.com")
 }
 
+func (s *DownloadRequestService) ExtractPlaylistID(rawURL string) (service string, id string, err error) {
+	u, parseErr := url.Parse(rawURL)
+	if parseErr != nil || u.Host == "" {
+		return "", "", fmt.Errorf("invalid url")
+	}
+
+	host := strings.ToLower(u.Host)
+	if !strings.Contains(host, "youtube.com") {
+		return "", "", fmt.Errorf("only YouTube playlists are supported")
+	}
+
+	id = u.Query().Get("list")
+	if id == "" {
+		return "", "", fmt.Errorf("could not determine playlist id from url")
+	}
+
+	safeIDRe := regexp.MustCompile(`[^a-zA-Z0-9_\-]`)
+	id = safeIDRe.ReplaceAllString(id, "_")
+	return "youtube", id, nil
+}
+
 func (s *DownloadRequestService) ExtractVideoID(rawURL string) (service string, id string, err error) {
 	u, parseErr := url.Parse(rawURL)
 	if parseErr != nil || u.Host == "" {
