@@ -12,3 +12,6 @@ class TwitchMetadataProvider(MetadataProvider):
 
     def get_video_url(self, video_id: str) -> str:
         return f"https://www.twitch.tv/{video_id}"
+
+    async def get_playlist_videos(self, playlist_id: str) -> list[dict]:
+        raise NotImplementedError("Twitch playlists are not supported")

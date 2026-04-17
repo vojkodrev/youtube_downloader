@@ -10,3 +10,6 @@ class MetadataProvider(ABC):
 
     @abstractmethod
     def get_video_url(self, video_id: str) -> str: ...
+
+    @abstractmethod
+    async def get_playlist_videos(self, playlist_id: str) -> list[dict]: ...

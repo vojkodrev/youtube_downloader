@@ -7,6 +7,7 @@ from injector import Injector
 
 from config import Config
 from download_video_request_poller import DownloadVideoRequestPoller
+from download_playlist_request_poller import DownloadPlaylistRequestPoller
 from downloader_module import DownloaderModule
 from multi_channel_poller import MultiChannelPoller
 
@@ -26,11 +27,13 @@ def main():
 
     multi_poller = container.get(MultiChannelPoller)
     download_video_request_poller = container.get(DownloadVideoRequestPoller)
+    download_playlist_request_poller = container.get(DownloadPlaylistRequestPoller)
 
     async def run():
         await asyncio.gather(
             multi_poller.poll_all(),
             download_video_request_poller.poll(),
+            download_playlist_request_poller.poll(),
         )
 
     asyncio.run(run())
