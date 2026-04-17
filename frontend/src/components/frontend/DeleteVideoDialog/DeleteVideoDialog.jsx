@@ -9,12 +9,13 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 
-const DeleteVideoDialog = forwardRef(function DeleteVideoDialog({ onConfirm }, ref) {
+const DeleteVideoDialog = forwardRef(function DeleteVideoDialog(_, ref) {
     const [open, setOpen] = useState(false)
     const [videos, setVideos] = useState([])
+    const [onConfirm, setOnConfirm] = useState(null)
 
     useImperativeHandle(ref, () => ({
-        open(videos) { setVideos(videos); setOpen(true) }
+        open(videos, confirmDelete) { setVideos(videos); setOnConfirm(() => confirmDelete); setOpen(true) }
     }))
 
     function handleClose() {

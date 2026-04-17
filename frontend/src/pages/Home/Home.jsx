@@ -38,8 +38,7 @@ export default function Home() {
 
     const {
         handleDeleteSingle,
-        handleDeletePlaylist,
-        confirmDelete
+        handleDeletePlaylist
     } = useDeleteVideo(videoDialogsRef, playlists, setVideos)
 
     useVideoKeyboard(videoRef)
@@ -108,7 +107,7 @@ export default function Home() {
                 </div>
             </SidebarInset>
 
-            <VideoDialogs ref={videoDialogsRef} onConfirmDelete={confirmDelete} />
+            <VideoDialogs ref={videoDialogsRef} />
         </SidebarProvider>
     )
 }

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useRequestDownload } from '@/hooks/frontend/useRequestDownload'
 
-const VideoDialogs = forwardRef(function VideoDialogs({ onConfirmDelete }, ref) {
+const VideoDialogs = forwardRef(function VideoDialogs(_, ref) {
     const requestVideoDownloadDialogRef = useRef(null)
     const requestPlaylistDownloadDialogRef = useRef(null)
     const deleteVideoDialogRef = useRef(null)
@@ -15,7 +15,7 @@ const VideoDialogs = forwardRef(function VideoDialogs({ onConfirmDelete }, ref) 
     useImperativeHandle(ref, () => ({
         openVideoDownload: () => requestVideoDownloadDialogRef.current.open(),
         openPlaylistDownload: () => requestPlaylistDownloadDialogRef.current.open(),
-        openDeleteVideo: (videos) => deleteVideoDialogRef.current.open(videos),
+        openDeleteVideo: (videos, confirmDelete) => deleteVideoDialogRef.current.open(videos, confirmDelete),
     }))
 
     return (
@@ -50,7 +50,7 @@ const VideoDialogs = forwardRef(function VideoDialogs({ onConfirmDelete }, ref) 
                 />
             </FormDialog>
 
-            <DeleteVideoDialog ref={deleteVideoDialogRef} onConfirm={onConfirmDelete} />
+            <DeleteVideoDialog ref={deleteVideoDialogRef} />
         </>
     )
 })
