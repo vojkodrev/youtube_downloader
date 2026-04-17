@@ -34,7 +34,7 @@ const RequestVideoDownloadDialog = forwardRef(function RequestVideoDownloadDialo
         setDownloadPending(true)
         setDownloadError(false)
         try {
-            const res = await fetch(`${API_URL}/request-download`, {
+            const res = await fetch(`${API_URL}/request-video-download`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: downloadUrl }),

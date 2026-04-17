@@ -174,7 +174,7 @@ func (s *GinServer) registerRoutes() {
 		c.Status(http.StatusNoContent)
 	})
 
-	s.router.POST("/request-download", func(c *gin.Context) {
+	s.router.POST("/request-video-download", func(c *gin.Context) {
 		var body struct {
 			URL string `json:"url" binding:"required"`
 		}
