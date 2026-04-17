@@ -20,7 +20,12 @@ DOWNLOAD_FILE_RE = re.compile(r"^playlist\.([^.]+)\.([^.]+)\.download$")
 
 class DownloadPlaylistRequestPoller:
     @inject
-    def __init__(self, config: Config, downloaders: DownloaderMap, metadata_providers: MetadataProviderMap):
+    def __init__(
+        self,
+        config: Config,
+        downloaders: DownloaderMap,
+        metadata_providers: MetadataProviderMap,
+    ):
         self._config = config
         self._downloaders = downloaders
         self._metadata_providers = metadata_providers
@@ -44,36 +49,37 @@ class DownloadPlaylistRequestPoller:
                 path = os.path.join(folder, name)
                 log = logger.bind(streamer=service)
 
-                downloader_key = SERVICE_TO_DOWNLOADER.get(service)
-                if downloader_key is None:
-                    log.warning(f"Unknown service '{service}', skipping {name}")
-                    continue
-
                 try:
+                    downloader_key = SERVICE_TO_DOWNLOADER.get(service)
+                    if downloader_key is None:
+                        log.warning(f"Unknown service '{service}', skipping {name}")
+                        continue
+
                     url = open(path).read().strip()
-                except Exception as e:
-                    log.error(f"Failed to read {name}: {e}")
-                    continue
-
-                playlist_id = parse_qs(urlparse(url).query).get("list", [None])[0]
-                if not playlist_id:
-                    log.error(f"Could not extract playlist id from {url}")
-                    os.remove(path)
-                    continue
-
-                log.info(f"Fetching playlist {url}")
-                try:
-                    metadata_provider = self._metadata_providers[downloader_key]
-                    videos = await metadata_provider.get_playlist_videos(playlist_id)
-                    for video in videos:
-                        video_url = metadata_provider.get_video_url(video["video_id"])
-                        video_log = log.bind(streamer=f"{service}/{video['video_id']}")
-                        video_log.info(f"Downloading {video_url}")
-                        try:
-                            await self._downloaders[downloader_key].download(video_url, f"{service}/{video['video_id']}")
-                            video_log.info("Download finished")
-                        except Exception as e:
-                            video_log.error(f"Download failed: {e}")
+                    playlist_id = parse_qs(urlparse(url).query).get("list", [None])[0]
+                    if not playlist_id:
+                        log.error(f"Could not extract playlist id from {url}")
+                    else:
+                        log.info(f"Fetching playlist {url}")
+                        metadata_provider = self._metadata_providers[downloader_key]
+                        videos = await metadata_provider.get_playlist_videos(
+                            playlist_id
+                        )
+                        for video in videos:
+                            video_url = metadata_provider.get_video_url(
+                                video["video_id"]
+                            )
+                            video_log = log.bind(
+                                streamer=f"{service}/{video['video_id']}"
+                            )
+                            video_log.info(f"Downloading {video_url}")
+                            try:
+                                await self._downloaders[downloader_key].download(
+                                    video_url, f"{service}/{video['video_id']}"
+                                )
+                                video_log.info("Download finished")
+                            except Exception as e:
+                                video_log.error(f"Download failed: {e}")
                 except Exception as e:
                     log.error(f"Failed to process playlist: {e}")
                 finally:
