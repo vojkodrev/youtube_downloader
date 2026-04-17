@@ -1,6 +1,7 @@
 import asyncio
 import os
 import re
+from urllib.parse import urlparse, parse_qs
 
 from loguru import logger
 
@@ -39,9 +40,9 @@ class DownloadPlaylistRequestPoller:
                 if not m:
                     continue
 
-                service, playlist_id = m.group(1), m.group(2)
+                service = m.group(1)
                 path = os.path.join(folder, name)
-                log = logger.bind(streamer=f"{service}/{playlist_id}")
+                log = logger.bind(streamer=service)
 
                 downloader_key = SERVICE_TO_DOWNLOADER.get(service)
                 if downloader_key is None:
@@ -52,6 +53,12 @@ class DownloadPlaylistRequestPoller:
                     url = open(path).read().strip()
                 except Exception as e:
                     log.error(f"Failed to read {name}: {e}")
+                    continue
+
+                playlist_id = parse_qs(urlparse(url).query).get("list", [None])[0]
+                if not playlist_id:
+                    log.error(f"Could not extract playlist id from {url}")
+                    os.remove(path)
                     continue
 
                 log.info(f"Fetching playlist {url}")
