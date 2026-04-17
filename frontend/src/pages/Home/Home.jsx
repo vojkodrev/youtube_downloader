@@ -5,10 +5,8 @@ import { useVideoMetadata } from '@/hooks/frontend/useVideoMetadata'
 import { useVideoNavigation } from '@/hooks/frontend/useVideoNavigation'
 import { useWatchedTime } from '@/hooks/frontend/useWatchedTime'
 import { useDeleteVideo } from '@/hooks/frontend/useDeleteVideo'
-import { useRequestDownload } from '@/hooks/frontend/useRequestDownload'
 import { useParams } from 'react-router-dom'
-import FormDialog from '@/components/frontend/FormDialog/FormDialog'
-import DeleteVideoDialog from '@/components/frontend/DeleteVideoDialog/DeleteVideoDialog'
+import VideoDialogs from '@/components/frontend/VideoDialogs/VideoDialogs'
 import AppSidebar from '@/components/frontend/AppSidebar/AppSidebar'
 import Logo from '@/components/frontend/Logo/Logo'
 import SidebarTrigger from '@/components/frontend/SidebarTrigger/SidebarTrigger'
@@ -17,8 +15,6 @@ import VideoPlayer from '@/components/frontend/VideoPlayer/VideoPlayer'
 import VideoInfo from '@/components/frontend/VideoInfo/VideoInfo'
 import PlaylistPanel from '@/components/frontend/PlaylistPanel/PlaylistPanel'
 import VideoList from '@/components/frontend/VideoList/VideoList'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
     SidebarProvider,
     SidebarInset,
@@ -28,9 +24,7 @@ export default function Home() {
     const { id } = useParams()
     const { videos, setVideos, playlists } = useVideos()
     const videoRef = useRef(null)
-    const requestVideoDownloadDialogRef = useRef(null)
-    const requestPlaylistDownloadDialogRef = useRef(null)
-    const deleteVideoDialogRef = useRef(null)
+    const videoDialogsRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
     const currentPlaylist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
@@ -46,9 +40,7 @@ export default function Home() {
         handleDeleteSingle,
         handleDeletePlaylist,
         confirmDelete
-    } = useDeleteVideo(deleteVideoDialogRef, playlists, setVideos)
-
-    const { requestVideoDownload, requestPlaylistDownload } = useRequestDownload()
+    } = useDeleteVideo(videoDialogsRef, playlists, setVideos)
 
     useVideoKeyboard(videoRef)
     useVideoMetadata(selectedVideo)
@@ -58,8 +50,8 @@ export default function Home() {
     return (
         <SidebarProvider defaultOpen={false}>
             <AppSidebar
-                onRequestVideoDownload={() => requestVideoDownloadDialogRef.current.open()}
-                onRequestPlaylistDownload={() => requestPlaylistDownloadDialogRef.current.open()}
+                onRequestVideoDownload={() => videoDialogsRef.current.openVideoDownload()}
+                onRequestPlaylistDownload={() => videoDialogsRef.current.openPlaylistDownload()}
             />
             <SidebarInset>
                 <div className="flex flex-col">
@@ -116,37 +108,7 @@ export default function Home() {
                 </div>
             </SidebarInset>
 
-            <FormDialog
-                ref={requestVideoDownloadDialogRef}
-                title="Request a Video Download"
-                description="Paste a YouTube (or other supported) URL below and we'll download it to your local library."
-                submitLabel="Download"
-                onSubmit={requestVideoDownload}
-            >
-                <Label htmlFor="video-url">Video URL</Label>
-                <Input
-                    id="video-url"
-                    name="url"
-                    placeholder="https://www.youtube.com/watch?v=..."
-                />
-            </FormDialog>
-
-            <FormDialog
-                ref={requestPlaylistDownloadDialogRef}
-                title="Request a Playlist Download"
-                description="Paste a YouTube playlist URL below and we'll download it to your local library."
-                submitLabel="Download"
-                onSubmit={requestPlaylistDownload}
-            >
-                <Label htmlFor="playlist-url">Playlist URL</Label>
-                <Input
-                    id="playlist-url"
-                    name="url"
-                    placeholder="https://www.youtube.com/playlist?list=..."
-                />
-            </FormDialog>
-
-            <DeleteVideoDialog ref={deleteVideoDialogRef} onConfirm={confirmDelete} />
+            <VideoDialogs ref={videoDialogsRef} onConfirmDelete={confirmDelete} />
         </SidebarProvider>
     )
 }

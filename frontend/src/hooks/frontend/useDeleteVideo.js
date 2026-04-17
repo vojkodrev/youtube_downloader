@@ -1,13 +1,13 @@
 const API_URL = import.meta.env.VITE_API_URL
 
-export function useDeleteVideo(deleteVideoDialogRef, playlists, setVideos) {
+export function useDeleteVideo(videoDialogsRef, playlists, setVideos) {
     function handleDeleteSingle(video) {
-        deleteVideoDialogRef.current.open([video])
+        videoDialogsRef.current.openDeleteVideo([video])
     }
 
     function handleDeletePlaylist(video) {
         const pl = playlists.find(p => p.some(pv => pv.id === video.id)) ?? [video]
-        deleteVideoDialogRef.current.open(pl)
+        videoDialogsRef.current.openDeleteVideo(pl)
     }
 
     async function confirmDelete(videos) {
