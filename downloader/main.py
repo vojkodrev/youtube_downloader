@@ -6,7 +6,7 @@ from loguru import logger
 from injector import Injector
 
 from config import Config
-from download_request_poller import DownloadRequestPoller
+from download_video_request_poller import DownloadVideoRequestPoller
 from downloader_module import DownloaderModule
 from multi_channel_poller import MultiChannelPoller
 
@@ -25,12 +25,12 @@ def main():
         exit(1)
 
     multi_poller = container.get(MultiChannelPoller)
-    download_request_poller = container.get(DownloadRequestPoller)
+    download_video_request_poller = container.get(DownloadVideoRequestPoller)
 
     async def run():
         await asyncio.gather(
             multi_poller.poll_all(),
-            download_request_poller.poll(),
+            download_video_request_poller.poll(),
         )
 
     asyncio.run(run())

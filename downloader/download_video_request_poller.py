@@ -18,7 +18,7 @@ SERVICE_TO_DOWNLOADER = {
 DOWNLOAD_FILE_RE = re.compile(r"^video\.([^.]+)\.([^.]+)\.download$")
 
 
-class DownloadRequestPoller:
+class DownloadVideoRequestPoller:
     @inject
     def __init__(self, config: Config, downloaders: DownloaderMap):
         self._config = config
