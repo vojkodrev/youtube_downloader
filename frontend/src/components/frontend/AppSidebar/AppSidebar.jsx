@@ -1,4 +1,5 @@
-import { DownloadIcon } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronDownIcon, DownloadIcon } from 'lucide-react'
 import Logo from '@/components/frontend/Logo/Logo'
 import SidebarTrigger from '@/components/frontend/SidebarTrigger/SidebarTrigger'
 import {
@@ -7,12 +8,18 @@ import {
     SidebarContent,
     SidebarGroup,
     SidebarGroupContent,
+    SidebarGroupLabel,
     SidebarMenu,
     SidebarMenuItem,
     SidebarMenuButton,
+    SidebarMenuSub,
+    SidebarMenuSubItem,
+    SidebarMenuSubButton,
 } from '@/components/ui/sidebar'
 
 export default function AppSidebar({ onRequestDownload }) {
+    const [open, setOpen] = useState(false)
+
     return (
         <Sidebar collapsible="offcanvas">
             <SidebarHeader className="flex flex-row items-center gap-3 px-3 py-4">
@@ -21,13 +28,29 @@ export default function AppSidebar({ onRequestDownload }) {
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
+                    <SidebarGroupLabel>Videos</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton onClick={onRequestDownload}>
+                                <SidebarMenuButton onClick={() => setOpen(o => !o)}>
                                     <DownloadIcon />
                                     <span>Request Download</span>
+                                    <ChevronDownIcon className={`ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
                                 </SidebarMenuButton>
+                                {open && (
+                                    <SidebarMenuSub>
+                                        <SidebarMenuSubItem>
+                                            <SidebarMenuSubButton onClick={() => onRequestDownload('video')}>
+                                                <span>Video</span>
+                                            </SidebarMenuSubButton>
+                                        </SidebarMenuSubItem>
+                                        <SidebarMenuSubItem>
+                                            <SidebarMenuSubButton onClick={() => onRequestDownload('playlist')}>
+                                                <span>Playlist</span>
+                                            </SidebarMenuSubButton>
+                                        </SidebarMenuSubItem>
+                                    </SidebarMenuSub>
+                                )}
                             </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroupContent>
