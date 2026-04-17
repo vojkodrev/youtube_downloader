@@ -5,9 +5,9 @@ import { useVideoMetadata } from '@/hooks/frontend/useVideoMetadata'
 import { useVideoNavigation } from '@/hooks/frontend/useVideoNavigation'
 import { useWatchedTime } from '@/hooks/frontend/useWatchedTime'
 import { useDeleteVideo } from '@/hooks/frontend/useDeleteVideo'
+import { useRequestDownload } from '@/hooks/frontend/useRequestDownload'
 import { useParams } from 'react-router-dom'
-import RequestVideoDownloadDialog from '@/components/frontend/RequestVideoDownloadDialog/RequestVideoDownloadDialog'
-import RequestPlaylistDownloadDialog from '@/components/frontend/RequestPlaylistDownloadDialog/RequestPlaylistDownloadDialog'
+import FormDialog from '@/components/frontend/FormDialog/FormDialog'
 import DeleteVideoDialog from '@/components/frontend/DeleteVideoDialog/DeleteVideoDialog'
 import AppSidebar from '@/components/frontend/AppSidebar/AppSidebar'
 import Logo from '@/components/frontend/Logo/Logo'
@@ -17,6 +17,8 @@ import VideoPlayer from '@/components/frontend/VideoPlayer/VideoPlayer'
 import VideoInfo from '@/components/frontend/VideoInfo/VideoInfo'
 import PlaylistPanel from '@/components/frontend/PlaylistPanel/PlaylistPanel'
 import VideoList from '@/components/frontend/VideoList/VideoList'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
     SidebarProvider,
     SidebarInset,
@@ -45,6 +47,8 @@ export default function Home() {
         handleDeletePlaylist,
         confirmDelete
     } = useDeleteVideo(deleteVideoDialogRef, playlists, setVideos)
+
+    const { requestVideoDownload, requestPlaylistDownload } = useRequestDownload()
 
     useVideoKeyboard(videoRef)
     useVideoMetadata(selectedVideo)
@@ -112,8 +116,36 @@ export default function Home() {
                 </div>
             </SidebarInset>
 
-            <RequestVideoDownloadDialog ref={requestVideoDownloadDialogRef} />
-            <RequestPlaylistDownloadDialog ref={requestPlaylistDownloadDialogRef} />
+            <FormDialog
+                ref={requestVideoDownloadDialogRef}
+                title="Request a Video Download"
+                description="Paste a YouTube (or other supported) URL below and we'll download it to your local library."
+                submitLabel="Download"
+                onSubmit={requestVideoDownload}
+            >
+                <Label htmlFor="video-url">Video URL</Label>
+                <Input
+                    id="video-url"
+                    name="url"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                />
+            </FormDialog>
+
+            <FormDialog
+                ref={requestPlaylistDownloadDialogRef}
+                title="Request a Playlist Download"
+                description="Paste a YouTube playlist URL below and we'll download it to your local library."
+                submitLabel="Download"
+                onSubmit={requestPlaylistDownload}
+            >
+                <Label htmlFor="playlist-url">Playlist URL</Label>
+                <Input
+                    id="playlist-url"
+                    name="url"
+                    placeholder="https://www.youtube.com/playlist?list=..."
+                />
+            </FormDialog>
+
             <DeleteVideoDialog ref={deleteVideoDialogRef} onConfirm={confirmDelete} />
         </SidebarProvider>
     )
