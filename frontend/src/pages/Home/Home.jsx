@@ -6,7 +6,7 @@ import { useVideoNavigation } from '@/hooks/frontend/useVideoNavigation'
 import { useWatchedTime } from '@/hooks/frontend/useWatchedTime'
 import { useDeleteVideo } from '@/hooks/frontend/useDeleteVideo'
 import { useParams } from 'react-router-dom'
-import RequestDownloadDialog from '@/components/frontend/RequestDownloadDialog/RequestDownloadDialog'
+import RequestVideoDownloadDialog from '@/components/frontend/RequestVideoDownloadDialog/RequestVideoDownloadDialog'
 import DeleteVideoDialog from '@/components/frontend/DeleteVideoDialog/DeleteVideoDialog'
 import AppSidebar from '@/components/frontend/AppSidebar/AppSidebar'
 import Logo from '@/components/frontend/Logo/Logo'
@@ -25,7 +25,7 @@ export default function Home() {
     const { id } = useParams()
     const { videos, setVideos, playlists } = useVideos()
     const videoRef = useRef(null)
-    const requestDownloadDialogRef = useRef(null)
+    const requestVideoDownloadDialogRef = useRef(null)
     const deleteVideoDialogRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
@@ -51,7 +51,10 @@ export default function Home() {
 
     return (
         <SidebarProvider defaultOpen={false}>
-            <AppSidebar onRequestDownload={() => requestDownloadDialogRef.current.open()} />
+            <AppSidebar
+                onRequestVideoDownload={() => requestVideoDownloadDialogRef.current.open()}
+                onRequestPlaylistDownload={() => { }}
+            />
             <SidebarInset>
                 <div className="flex flex-col">
 
@@ -107,7 +110,7 @@ export default function Home() {
                 </div>
             </SidebarInset>
 
-            <RequestDownloadDialog ref={requestDownloadDialogRef} />
+            <RequestVideoDownloadDialog ref={requestVideoDownloadDialogRef} />
             <DeleteVideoDialog ref={deleteVideoDialogRef} onConfirm={confirmDelete} />
         </SidebarProvider>
     )

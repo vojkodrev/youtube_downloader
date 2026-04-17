@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label'
 const API_URL = import.meta.env.VITE_API_URL
 const DEFAULT_DOWNLOAD_ERROR = 'An error occurred. Please try again.'
 
-const RequestDownloadDialog = forwardRef(function RequestDownloadDialog(_, ref) {
+const RequestVideoDownloadDialog = forwardRef(function RequestVideoDownloadDialog(_, ref) {
     const [open, setOpen] = useState(false)
     const [downloadUrl, setDownloadUrl] = useState('')
     const [downloadError, setDownloadError] = useState(false)
@@ -82,4 +82,4 @@ const RequestDownloadDialog = forwardRef(function RequestDownloadDialog(_, ref) 
     )
 })
 
-export default RequestDownloadDialog
+export default RequestVideoDownloadDialog

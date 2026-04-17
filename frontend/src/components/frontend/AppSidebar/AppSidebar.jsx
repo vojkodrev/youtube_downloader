@@ -17,7 +17,7 @@ import {
     SidebarMenuSubButton,
 } from '@/components/ui/sidebar'
 
-export default function AppSidebar({ onRequestDownload }) {
+export default function AppSidebar({ onRequestVideoDownload, onRequestPlaylistDownload }) {
     const [open, setOpen] = useState(false)
 
     return (
@@ -40,12 +40,12 @@ export default function AppSidebar({ onRequestDownload }) {
                                 {open && (
                                     <SidebarMenuSub>
                                         <SidebarMenuSubItem>
-                                            <SidebarMenuSubButton onClick={() => onRequestDownload('video')}>
+                                            <SidebarMenuSubButton onClick={() => onRequestVideoDownload()}>
                                                 <span>Video</span>
                                             </SidebarMenuSubButton>
                                         </SidebarMenuSubItem>
                                         <SidebarMenuSubItem>
-                                            <SidebarMenuSubButton onClick={() => onRequestDownload('playlist')}>
+                                            <SidebarMenuSubButton onClick={() => onRequestPlaylistDownload()}>
                                                 <span>Playlist</span>
                                             </SidebarMenuSubButton>
                                         </SidebarMenuSubItem>
