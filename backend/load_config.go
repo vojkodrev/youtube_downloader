@@ -30,5 +30,11 @@ func loadConfig() Config {
 		log.Fatal("streams directory does not exist: ", cfg.StreamsDir)
 	}
 
+	cfg.GoogleClientID = os.Getenv("GOOGLE_CLIENT_ID")
+	cfg.GoogleClientSecret = os.Getenv("GOOGLE_CLIENT_SECRET")
+	cfg.JWTSecret = os.Getenv("JWT_SECRET")
+	cfg.BackendURL = os.Getenv("BACKEND_URL")
+	cfg.FrontendURL = os.Getenv("FRONTEND_URL")
+
 	return cfg
 }

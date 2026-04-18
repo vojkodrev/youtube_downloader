@@ -2,3 +2,5 @@ split_duration: 10800
 recode_qualities:
   # - 720p
   - 480p
+allowed_emails:
+  - vojkodrev@gmail.com
