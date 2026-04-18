@@ -38,6 +38,7 @@ func CoreProviders() fx.Option {
 		}),
 		fx.Provide(NewLowerQualityRecoderWorker),
 		fx.Provide(NewDownloadRequestService),
+		fx.Provide(NewVideosHandler),
 		fx.Provide(NewGinServer),
 	)
 }

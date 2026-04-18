@@ -17,12 +17,13 @@ type GinServer struct {
 	videoDuration          *VideoDuration
 	fileServer             *GinSharableFileServer
 	downloadRequestService *DownloadRequestService
+	videosHandler          *VideosHandler
 	router                 *gin.Engine
 }
 
-func NewGinServer(cfg *Config, store *VideoStore, filenames *Filenames, videoDuration *VideoDuration, fileServer *GinSharableFileServer, downloadRequestService *DownloadRequestService) *GinServer {
+func NewGinServer(cfg *Config, store *VideoStore, filenames *Filenames, videoDuration *VideoDuration, fileServer *GinSharableFileServer, downloadRequestService *DownloadRequestService, videosHandler *VideosHandler) *GinServer {
 	r := gin.Default()
-	return &GinServer{cfg: cfg, store: store, filenames: filenames, videoDuration: videoDuration, fileServer: fileServer, downloadRequestService: downloadRequestService, router: r}
+	return &GinServer{cfg: cfg, store: store, filenames: filenames, videoDuration: videoDuration, fileServer: fileServer, downloadRequestService: downloadRequestService, videosHandler: videosHandler, router: r}
 }
 
 func (s *GinServer) registerRoutes() {
@@ -32,22 +33,7 @@ func (s *GinServer) registerRoutes() {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
 
-	s.router.GET("/videos", func(c *gin.Context) {
-		s.store.Mutex.RLock()
-		defer s.store.Mutex.RUnlock()
-		response := make([]VideoResponse, len(s.store.Videos))
-		for i, v := range s.store.Videos {
-			response[i] = VideoResponse{
-				ID:       v.ID,
-				Name:     v.Name,
-				Channel:  v.Channel,
-				Date:     v.Date,
-				Status:   v.Status,
-				Versions: v.Versions,
-			}
-		}
-		c.JSON(200, response)
-	})
+	s.router.GET("/videos", s.videosHandler.GetVideos)
 
 	s.router.GET("/video/:id", func(c *gin.Context) {
 		id := c.Param("id")
