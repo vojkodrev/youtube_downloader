@@ -40,6 +40,7 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewDownloadRequestService),
 		fx.Provide(NewVideosHandler),
 		fx.Provide(NewPingHandler),
+		fx.Provide(NewVideoHandler),
 		fx.Provide(NewGinServer),
 	)
 }
