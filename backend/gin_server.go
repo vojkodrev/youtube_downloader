@@ -12,6 +12,7 @@ type GinServer struct {
 	videoDuration          *VideoDuration
 	downloadRequestService *DownloadRequestService
 	authHandler            *AuthHandler
+	authMiddleware         *AuthMiddleware
 	videosHandler          *VideosHandler
 	pingHandler            *PingHandler
 	videoHandler           *VideoHandler
@@ -31,6 +32,7 @@ func NewGinServer(
 	videoDuration *VideoDuration,
 	downloadRequestService *DownloadRequestService,
 	authHandler *AuthHandler,
+	authMiddleware *AuthMiddleware,
 	videosHandler *VideosHandler,
 	pingHandler *PingHandler,
 	videoHandler *VideoHandler,
@@ -49,6 +51,7 @@ func NewGinServer(
 		videoDuration:                  videoDuration,
 		downloadRequestService:         downloadRequestService,
 		authHandler:                    authHandler,
+		authMiddleware:                 authMiddleware,
 		videosHandler:                  videosHandler,
 		pingHandler:                    pingHandler,
 		videoHandler:                   videoHandler,
@@ -69,7 +72,7 @@ func (s *GinServer) registerRoutes() {
 	s.router.GET("/auth/login", s.authHandler.Login)
 	s.router.GET("/auth/callback", s.authHandler.Callback)
 
-	protected := s.router.Group("/", AuthMiddleware(s.cfg))
+	protected := s.router.Group("/", s.authMiddleware.Handle)
 
 	protected.GET("/videos", s.videosHandler.GetVideos)
 
