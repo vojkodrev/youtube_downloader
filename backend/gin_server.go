@@ -21,6 +21,7 @@ type GinServer struct {
 	pingHandler            *PingHandler
 	videoHandler           *VideoHandler
 	downloadHandler        *DownloadHandler
+	durationHandler        *DurationHandler
 	router                 *gin.Engine
 }
 
@@ -35,6 +36,7 @@ func NewGinServer(
 	pingHandler *PingHandler,
 	videoHandler *VideoHandler,
 	downloadHandler *DownloadHandler,
+	durationHandler *DurationHandler,
 ) *GinServer {
 	r := gin.Default()
 	return &GinServer{
@@ -48,6 +50,7 @@ func NewGinServer(
 		pingHandler:            pingHandler,
 		videoHandler:           videoHandler,
 		downloadHandler:        downloadHandler,
+		durationHandler:        durationHandler,
 		router:                 r,
 	}
 }
@@ -63,25 +66,7 @@ func (s *GinServer) registerRoutes() {
 
 	s.router.GET("/download/:id", s.downloadHandler.Download)
 
-	s.router.GET("/duration/:id", func(c *gin.Context) {
-		id := c.Param("id")
-		s.store.Mutex.RLock()
-		v, ok := s.store.VideosMap[id]
-		s.store.Mutex.RUnlock()
-		if !ok {
-			c.Status(404)
-			return
-		}
-		duration, err := s.videoDuration.Get(s.cfg.StreamsDir + "/" + v.Filename)
-		if err != nil {
-			c.Status(500)
-			return
-		}
-		if v.Status == "Ready" {
-			c.Header("Cache-Control", "public, max-age=18000")
-		}
-		c.JSON(200, gin.H{"duration": duration})
-	})
+	s.router.GET("/duration/:id", s.durationHandler.GetDuration)
 
 	s.router.GET("/thumbnail/:id", func(c *gin.Context) {
 		id := c.Param("id")

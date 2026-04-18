@@ -42,6 +42,7 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewPingHandler),
 		fx.Provide(NewVideoHandler),
 		fx.Provide(NewDownloadHandler),
+		fx.Provide(NewDurationHandler),
 		fx.Provide(NewGinServer),
 	)
 }
