@@ -18,7 +18,7 @@ SERVICE_TO_DOWNLOADER = {
 DOWNLOAD_FILE_RE = re.compile(r"^video\.([^.]+)\.([^.]+)\.download$")
 
 
-class DownloadRequestPoller:
+class DownloadVideoRequestPoller:
     @inject
     def __init__(self, config: Config, downloaders: DownloaderMap):
         self._config = config
@@ -43,23 +43,17 @@ class DownloadRequestPoller:
                 path = os.path.join(folder, name)
                 log = logger.bind(streamer=f"{service}/{video_id}")
 
-                downloader_key = SERVICE_TO_DOWNLOADER.get(service)
-                if downloader_key is None:
-                    log.warning(f"Unknown service '{service}', skipping {name}")
-                    continue
-
                 try:
-                    url = open(path).read().strip()
+                    downloader_key = SERVICE_TO_DOWNLOADER.get(service)
+                    if downloader_key is None:
+                        log.warning(f"Unknown service '{service}', skipping {name}")
+                    else:
+                        url = open(path).read().strip()
+                        log.info(f"Downloading {url}")
+                        await self._downloaders[downloader_key].download(url, f"{service}/{video_id}")
+                        log.info("Download finished")
                 except Exception as e:
-                    log.error(f"Failed to read {name}: {e}")
-                    continue
-
-                log.info(f"Downloading {url}")
-                try:
-                    await self._downloaders[downloader_key].download(url, f"{service}/{video_id}")
-                    log.info("Download finished")
-                except Exception as e:
-                    log.error(f"Download failed: {e}")
+                    log.error(f"Failed to process video: {e}")
                 finally:
                     os.remove(path)
                     log.info("Request file removed")

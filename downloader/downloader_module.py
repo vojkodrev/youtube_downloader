@@ -7,7 +7,8 @@ from typing import Callable
 from injector import Module, provider, singleton, SingletonScope
 
 from channel_poller import ChannelPoller
-from download_request_poller import DownloadRequestPoller
+from download_video_request_poller import DownloadVideoRequestPoller
+from download_playlist_request_poller import DownloadPlaylistRequestPoller
 from config import Config
 from downloader_map import DownloaderMap
 from fibonacci_sleep_factory import FibonacciSleepFactory
@@ -38,7 +39,8 @@ class DownloaderModule(Module):
         binder.bind(FibonacciSleepFactory, to=FibonacciSleepFactory, scope=SingletonScope)
         binder.bind(ChannelPoller, to=ChannelPoller, scope=SingletonScope)
         binder.bind(MultiChannelPoller, to=MultiChannelPoller, scope=SingletonScope)
-        binder.bind(DownloadRequestPoller, to=DownloadRequestPoller, scope=SingletonScope)
+        binder.bind(DownloadVideoRequestPoller, to=DownloadVideoRequestPoller, scope=SingletonScope)
+        binder.bind(DownloadPlaylistRequestPoller, to=DownloadPlaylistRequestPoller, scope=SingletonScope)
 
     @provider
     @singleton
@@ -54,6 +56,7 @@ class DownloaderModule(Module):
     ) -> MetadataProviderMap:
         return MetadataProviderMap({
             "youtube_live": youtube,
+            "youtube_video": youtube,
             "twitch": twitch,
         })
 

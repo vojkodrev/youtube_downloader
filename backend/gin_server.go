@@ -174,7 +174,7 @@ func (s *GinServer) registerRoutes() {
 		c.Status(http.StatusNoContent)
 	})
 
-	s.router.POST("/request-download", func(c *gin.Context) {
+	s.router.POST("/request-video-download", func(c *gin.Context) {
 		var body struct {
 			URL string `json:"url" binding:"required"`
 		}
@@ -203,5 +203,31 @@ func (s *GinServer) registerRoutes() {
 		}
 
 		c.JSON(http.StatusCreated, gin.H{"id": videoID})
+	})
+
+	s.router.POST("/request-playlist-download", func(c *gin.Context) {
+		var body struct {
+			URL string `json:"url" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "url is required"})
+			return
+		}
+
+		service, playlistID, err := s.downloadRequestService.ExtractPlaylistID(body.URL)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		filename := fmt.Sprintf("playlist.%s.%s.download", service, playlistID)
+		path := filepath.Join(s.cfg.StreamsDir, filename)
+
+		if err := os.WriteFile(path, []byte(body.URL), 0644); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create download request"})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{"id": playlistID})
 	})
 }

@@ -52,6 +52,38 @@ class YoutubeMetadataProvider(MetadataProvider):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, get_channel_title_sync)
 
+    async def get_playlist_videos(self, playlist_id: str) -> list[dict]:
+        if not playlist_id:
+            raise ValueError("playlist_id is required")
+
+        def get_playlist_videos_sync():
+            youtube = build("youtube", "v3", developerKey=self._api_keys.next())
+            videos = []
+            next_page_token = None
+
+            while True:
+                response = youtube.playlistItems().list(
+                    part="snippet",
+                    playlistId=playlist_id,
+                    maxResults=50,
+                    pageToken=next_page_token,
+                ).execute()
+
+                for item in response.get("items", []):
+                    videos.append({
+                        "video_id": item["snippet"]["resourceId"]["videoId"],
+                        "title": item["snippet"]["title"],
+                    })
+
+                next_page_token = response.get("nextPageToken")
+                if not next_page_token:
+                    break
+
+            return videos
+
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, get_playlist_videos_sync)
+
     def get_video_url(self, video_id: str) -> str:
         if not video_id:
             raise ValueError("video_id is required")
