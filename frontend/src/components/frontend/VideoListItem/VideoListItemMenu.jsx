@@ -6,8 +6,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-
-const API_URL = import.meta.env.VITE_API_URL
+import { mediaUrl } from '../../../api'
 
 export default function VideoListItemMenu({ video, onWatchedMark, onWatchedReset, onDelete }) {
     return (
@@ -18,7 +17,7 @@ export default function VideoListItemMenu({ video, onWatchedMark, onWatchedReset
             <DropdownMenuContent align="end" className="min-w-50">
                 <DropdownMenuItem disabled={video.status !== 'Ready'}>
                     <a
-                        href={`${API_URL}/download/${video.id}`}
+                        href={mediaUrl(`/download/${video.id}`)}
                         download={`${video.name}.mp4`}
                         className="w-full flex items-center gap-2"
                     >
@@ -28,7 +27,7 @@ export default function VideoListItemMenu({ video, onWatchedMark, onWatchedReset
                 </DropdownMenuItem>
                 {[...(video.versions ?? [])].sort((a, b) => (parseInt(b.quality) || 0) - (parseInt(a.quality) || 0)).map(v => (
                     <DropdownMenuItem key={v.id}>
-                        <a href={`${API_URL}/download/${v.id}`} download={v.filename} className="w-full flex items-center gap-2">
+                        <a href={mediaUrl(`/download/${v.id}`)} download={v.filename} className="w-full flex items-center gap-2">
                             <Download className="w-4 h-4 shrink-0" />
                             Download {v.quality}
                         </a>
