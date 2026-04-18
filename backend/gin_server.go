@@ -22,6 +22,7 @@ type GinServer struct {
 	videoHandler           *VideoHandler
 	downloadHandler        *DownloadHandler
 	durationHandler        *DurationHandler
+	thumbnailHandler       *ThumbnailHandler
 	router                 *gin.Engine
 }
 
@@ -37,6 +38,7 @@ func NewGinServer(
 	videoHandler *VideoHandler,
 	downloadHandler *DownloadHandler,
 	durationHandler *DurationHandler,
+	thumbnailHandler *ThumbnailHandler,
 ) *GinServer {
 	r := gin.Default()
 	return &GinServer{
@@ -51,6 +53,7 @@ func NewGinServer(
 		videoHandler:           videoHandler,
 		downloadHandler:        downloadHandler,
 		durationHandler:        durationHandler,
+		thumbnailHandler:       thumbnailHandler,
 		router:                 r,
 	}
 }
@@ -68,25 +71,7 @@ func (s *GinServer) registerRoutes() {
 
 	s.router.GET("/duration/:id", s.durationHandler.GetDuration)
 
-	s.router.GET("/thumbnail/:id", func(c *gin.Context) {
-		id := c.Param("id")
-		s.store.Mutex.RLock()
-		v, ok := s.store.VideosMap[id]
-		s.store.Mutex.RUnlock()
-		if !ok {
-			c.Status(404)
-			return
-		}
-		thumbPath := filepath.Join(s.cfg.StreamsDir, s.filenames.Thumbnail(v.Filename))
-		if _, err := os.Stat(thumbPath); err != nil {
-			c.Status(404)
-			return
-		}
-		if v.Status == "Ready" {
-			c.Header("Cache-Control", "public, max-age=18000")
-		}
-		c.File(thumbPath)
-	})
+	s.router.GET("/thumbnail/:id", s.thumbnailHandler.GetThumbnail)
 
 	s.router.POST("/delete-video", func(c *gin.Context) {
 		var body struct {
