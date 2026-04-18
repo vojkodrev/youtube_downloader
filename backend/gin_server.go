@@ -23,8 +23,9 @@ type GinServer struct {
 	downloadHandler        *DownloadHandler
 	durationHandler        *DurationHandler
 	thumbnailHandler       *ThumbnailHandler
-	deleteVideoHandler     *DeleteVideoHandler
-	router                 *gin.Engine
+	deleteVideoHandler              *DeleteVideoHandler
+	requestVideoDownloadHandler     *RequestVideoDownloadHandler
+	router                          *gin.Engine
 }
 
 func NewGinServer(
@@ -41,23 +42,25 @@ func NewGinServer(
 	durationHandler *DurationHandler,
 	thumbnailHandler *ThumbnailHandler,
 	deleteVideoHandler *DeleteVideoHandler,
+	requestVideoDownloadHandler *RequestVideoDownloadHandler,
 ) *GinServer {
 	r := gin.Default()
 	return &GinServer{
-		cfg:                    cfg,
-		store:                  store,
-		filenames:              filenames,
-		videoDuration:          videoDuration,
-		fileServer:             fileServer,
-		downloadRequestService: downloadRequestService,
-		videosHandler:          videosHandler,
-		pingHandler:            pingHandler,
-		videoHandler:           videoHandler,
-		downloadHandler:        downloadHandler,
-		durationHandler:        durationHandler,
-		thumbnailHandler:       thumbnailHandler,
-		deleteVideoHandler:     deleteVideoHandler,
-		router:                 r,
+		cfg:                         cfg,
+		store:                       store,
+		filenames:                   filenames,
+		videoDuration:               videoDuration,
+		fileServer:                  fileServer,
+		downloadRequestService:      downloadRequestService,
+		videosHandler:               videosHandler,
+		pingHandler:                 pingHandler,
+		videoHandler:                videoHandler,
+		downloadHandler:             downloadHandler,
+		durationHandler:             durationHandler,
+		thumbnailHandler:            thumbnailHandler,
+		deleteVideoHandler:          deleteVideoHandler,
+		requestVideoDownloadHandler: requestVideoDownloadHandler,
+		router:                      r,
 	}
 }
 
@@ -78,36 +81,7 @@ func (s *GinServer) registerRoutes() {
 
 	s.router.POST("/delete-video", s.deleteVideoHandler.DeleteVideo)
 
-	s.router.POST("/request-video-download", func(c *gin.Context) {
-		var body struct {
-			URL string `json:"url" binding:"required"`
-		}
-		if err := c.ShouldBindJSON(&body); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "url is required"})
-			return
-		}
-
-		if !s.downloadRequestService.IsSupportedURL(body.URL) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Url must be from a supported service (YouTube, Twitch)"})
-			return
-		}
-
-		service, videoID, err := s.downloadRequestService.ExtractVideoID(body.URL)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		filename := fmt.Sprintf("video.%s.%s.download", service, videoID)
-		path := filepath.Join(s.cfg.StreamsDir, filename)
-
-		if err := os.WriteFile(path, []byte(body.URL), 0644); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create download request"})
-			return
-		}
-
-		c.JSON(http.StatusCreated, gin.H{"id": videoID})
-	})
+	s.router.POST("/request-video-download", s.requestVideoDownloadHandler.RequestVideoDownload)
 
 	s.router.POST("/request-playlist-download", func(c *gin.Context) {
 		var body struct {
