@@ -1,11 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-	"os"
-	"path/filepath"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -24,8 +19,9 @@ type GinServer struct {
 	durationHandler        *DurationHandler
 	thumbnailHandler       *ThumbnailHandler
 	deleteVideoHandler              *DeleteVideoHandler
-	requestVideoDownloadHandler     *RequestVideoDownloadHandler
-	router                          *gin.Engine
+	requestVideoDownloadHandler    *RequestVideoDownloadHandler
+	requestPlaylistDownloadHandler *RequestPlaylistDownloadHandler
+	router                         *gin.Engine
 }
 
 func NewGinServer(
@@ -43,24 +39,26 @@ func NewGinServer(
 	thumbnailHandler *ThumbnailHandler,
 	deleteVideoHandler *DeleteVideoHandler,
 	requestVideoDownloadHandler *RequestVideoDownloadHandler,
+	requestPlaylistDownloadHandler *RequestPlaylistDownloadHandler,
 ) *GinServer {
 	r := gin.Default()
 	return &GinServer{
-		cfg:                         cfg,
-		store:                       store,
-		filenames:                   filenames,
-		videoDuration:               videoDuration,
-		fileServer:                  fileServer,
-		downloadRequestService:      downloadRequestService,
-		videosHandler:               videosHandler,
-		pingHandler:                 pingHandler,
-		videoHandler:                videoHandler,
-		downloadHandler:             downloadHandler,
-		durationHandler:             durationHandler,
-		thumbnailHandler:            thumbnailHandler,
-		deleteVideoHandler:          deleteVideoHandler,
-		requestVideoDownloadHandler: requestVideoDownloadHandler,
-		router:                      r,
+		cfg:                            cfg,
+		store:                          store,
+		filenames:                      filenames,
+		videoDuration:                  videoDuration,
+		fileServer:                     fileServer,
+		downloadRequestService:         downloadRequestService,
+		videosHandler:                  videosHandler,
+		pingHandler:                    pingHandler,
+		videoHandler:                   videoHandler,
+		downloadHandler:                downloadHandler,
+		durationHandler:                durationHandler,
+		thumbnailHandler:               thumbnailHandler,
+		deleteVideoHandler:             deleteVideoHandler,
+		requestVideoDownloadHandler:    requestVideoDownloadHandler,
+		requestPlaylistDownloadHandler: requestPlaylistDownloadHandler,
+		router:                         r,
 	}
 }
 
@@ -83,29 +81,5 @@ func (s *GinServer) registerRoutes() {
 
 	s.router.POST("/request-video-download", s.requestVideoDownloadHandler.RequestVideoDownload)
 
-	s.router.POST("/request-playlist-download", func(c *gin.Context) {
-		var body struct {
-			URL string `json:"url" binding:"required"`
-		}
-		if err := c.ShouldBindJSON(&body); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "url is required"})
-			return
-		}
-
-		service, playlistID, err := s.downloadRequestService.ExtractPlaylistID(body.URL)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		filename := fmt.Sprintf("playlist.%s.%s.download", service, playlistID)
-		path := filepath.Join(s.cfg.StreamsDir, filename)
-
-		if err := os.WriteFile(path, []byte(body.URL), 0644); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create download request"})
-			return
-		}
-
-		c.JSON(http.StatusCreated, gin.H{"id": playlistID})
-	})
+	s.router.POST("/request-playlist-download", s.requestPlaylistDownloadHandler.RequestPlaylistDownload)
 }

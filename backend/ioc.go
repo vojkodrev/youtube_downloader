@@ -46,6 +46,7 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewThumbnailHandler),
 		fx.Provide(NewDeleteVideoHandler),
 		fx.Provide(NewRequestVideoDownloadHandler),
+		fx.Provide(NewRequestPlaylistDownloadHandler),
 		fx.Provide(NewGinServer),
 	)
 }
