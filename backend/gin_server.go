@@ -23,6 +23,7 @@ type GinServer struct {
 	downloadHandler        *DownloadHandler
 	durationHandler        *DurationHandler
 	thumbnailHandler       *ThumbnailHandler
+	deleteVideoHandler     *DeleteVideoHandler
 	router                 *gin.Engine
 }
 
@@ -39,6 +40,7 @@ func NewGinServer(
 	downloadHandler *DownloadHandler,
 	durationHandler *DurationHandler,
 	thumbnailHandler *ThumbnailHandler,
+	deleteVideoHandler *DeleteVideoHandler,
 ) *GinServer {
 	r := gin.Default()
 	return &GinServer{
@@ -54,6 +56,7 @@ func NewGinServer(
 		downloadHandler:        downloadHandler,
 		durationHandler:        durationHandler,
 		thumbnailHandler:       thumbnailHandler,
+		deleteVideoHandler:     deleteVideoHandler,
 		router:                 r,
 	}
 }
@@ -73,58 +76,7 @@ func (s *GinServer) registerRoutes() {
 
 	s.router.GET("/thumbnail/:id", s.thumbnailHandler.GetThumbnail)
 
-	s.router.POST("/delete-video", func(c *gin.Context) {
-		var body struct {
-			ID string `json:"id" binding:"required"`
-		}
-		if err := c.ShouldBindJSON(&body); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "id is required"})
-			return
-		}
-
-		s.store.Mutex.RLock()
-		v, ok := s.store.VideosMap[body.ID]
-		s.store.Mutex.RUnlock()
-		if !ok {
-			c.Status(404)
-			return
-		}
-
-		deletedDir := filepath.Join(s.cfg.StreamsDir, "deleted")
-		if err := os.MkdirAll(deletedDir, 0755); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create deleted folder"})
-			return
-		}
-
-		// Move version files first
-		for _, version := range v.Versions {
-			src := filepath.Join(s.cfg.StreamsDir, version.Filename)
-			if _, err := os.Stat(src); err == nil {
-				os.Rename(src, filepath.Join(deletedDir, filepath.Base(version.Filename)))
-			}
-		}
-
-		// Move main video file
-		src := filepath.Join(s.cfg.StreamsDir, v.Filename)
-		if _, err := os.Stat(src); err == nil {
-			os.Rename(src, filepath.Join(deletedDir, filepath.Base(v.Filename)))
-		}
-
-		s.store.Mutex.Lock()
-		delete(s.store.VideosMap, body.ID)
-		for _, version := range v.Versions {
-			delete(s.store.VideoVersionsMap, version.ID)
-		}
-		for i, sv := range s.store.Videos {
-			if sv.ID == body.ID {
-				s.store.Videos = append(s.store.Videos[:i], s.store.Videos[i+1:]...)
-				break
-			}
-		}
-		s.store.Mutex.Unlock()
-
-		c.Status(http.StatusNoContent)
-	})
+	s.router.POST("/delete-video", s.deleteVideoHandler.DeleteVideo)
 
 	s.router.POST("/request-video-download", func(c *gin.Context) {
 		var body struct {
