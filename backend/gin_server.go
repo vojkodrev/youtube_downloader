@@ -18,20 +18,38 @@ type GinServer struct {
 	fileServer             *GinSharableFileServer
 	downloadRequestService *DownloadRequestService
 	videosHandler          *VideosHandler
+	pingHandler            *PingHandler
 	router                 *gin.Engine
 }
 
-func NewGinServer(cfg *Config, store *VideoStore, filenames *Filenames, videoDuration *VideoDuration, fileServer *GinSharableFileServer, downloadRequestService *DownloadRequestService, videosHandler *VideosHandler) *GinServer {
+func NewGinServer(
+	cfg *Config,
+	store *VideoStore,
+	filenames *Filenames,
+	videoDuration *VideoDuration,
+	fileServer *GinSharableFileServer,
+	downloadRequestService *DownloadRequestService,
+	videosHandler *VideosHandler,
+	pingHandler *PingHandler,
+) *GinServer {
 	r := gin.Default()
-	return &GinServer{cfg: cfg, store: store, filenames: filenames, videoDuration: videoDuration, fileServer: fileServer, downloadRequestService: downloadRequestService, videosHandler: videosHandler, router: r}
+	return &GinServer{
+		cfg:                    cfg,
+		store:                  store,
+		filenames:              filenames,
+		videoDuration:          videoDuration,
+		fileServer:             fileServer,
+		downloadRequestService: downloadRequestService,
+		videosHandler:          videosHandler,
+		pingHandler:            pingHandler,
+		router:                 r,
+	}
 }
 
 func (s *GinServer) registerRoutes() {
 	s.router.Use(cors.Default())
 
-	s.router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
-	})
+	s.router.GET("/ping", s.pingHandler.Ping)
 
 	s.router.GET("/videos", s.videosHandler.GetVideos)
 
