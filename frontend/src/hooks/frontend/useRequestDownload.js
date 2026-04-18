@@ -1,12 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL
+import { api } from '../../api'
 
 export function useRequestDownload() {
     async function requestVideoDownload(formData) {
-        const res = await fetch(`${API_URL}/request-video-download`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: formData.get('url') }),
-        })
+        const res = await api.post('/request-video-download', { url: formData.get('url') })
         if (!res.ok) {
             const data = await res.json().catch(() => null)
             throw new Error(data?.error)
@@ -14,11 +10,7 @@ export function useRequestDownload() {
     }
 
     async function requestPlaylistDownload(formData) {
-        const res = await fetch(`${API_URL}/request-playlist-download`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: formData.get('url') }),
-        })
+        const res = await api.post('/request-playlist-download', { url: formData.get('url') })
         if (!res.ok) {
             const data = await res.json().catch(() => null)
             throw new Error(data?.error)

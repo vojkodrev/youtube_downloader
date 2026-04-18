@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-
-const API_URL = import.meta.env.VITE_API_URL
+import { api } from '../../api'
 
 export function useVideos() {
     const [videos, setVideos] = useState([])
@@ -30,7 +29,7 @@ export function useVideos() {
 
     useEffect(() => {
         (async () => {
-            const res = await fetch(`${API_URL}/videos`)
+            const res = await api.get('/videos')
             const data = await res.json()
 
             const partRe = /^(.+) part(\d{2})$/
@@ -62,7 +61,7 @@ export function useVideos() {
             setVideos(videos)
 
             Promise.allSettled(videos.map(async v => {
-                const res = await fetch(`${API_URL}/duration/${v.id}`)
+                const res = await api.get(`/duration/${v.id}`)
                 if (!res.ok) return
                 const { duration } = await res.json()
                 v.duration = duration
