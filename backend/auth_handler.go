@@ -32,7 +32,11 @@ func NewAuthHandler(cfg *Config) *AuthHandler {
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
-	url := h.oauthConfig.AuthCodeURL("state", oauth2.AccessTypeOnline)
+	redirect := c.Query("redirect")
+	if redirect == "" {
+		redirect = "/"
+	}
+	url := h.oauthConfig.AuthCodeURL(redirect, oauth2.AccessTypeOnline)
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
@@ -75,5 +79,6 @@ func (h *AuthHandler) Callback(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusTemporaryRedirect, h.cfg.FrontendURL+"?token="+signed)
+	redirect := c.Query("state")
+	c.Redirect(http.StatusTemporaryRedirect, h.cfg.FrontendURL+"?token="+signed+"&redirect="+redirect)
 }

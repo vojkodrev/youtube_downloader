@@ -6,7 +6,8 @@ const params = new URLSearchParams(window.location.search)
 const token = params.get('token')
 if (token) {
     localStorage.setItem('token', token)
-    window.history.replaceState(null, '', '/')
+    const redirect = params.get('redirect') ?? '/'
+    window.history.replaceState(null, '', redirect)
 }
 
 const Home = lazy(() => import('./pages/Home/Home'))
