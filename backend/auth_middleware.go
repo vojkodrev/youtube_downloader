@@ -17,12 +17,15 @@ func NewAuthMiddleware(cfg *Config) *AuthMiddleware {
 }
 
 func (m *AuthMiddleware) Handle(c *gin.Context) {
-	header := c.GetHeader("Authorization")
-	if !strings.HasPrefix(header, "Bearer ") {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
-		return
+	tokenStr := c.Query("token")
+	if tokenStr == "" {
+		header := c.GetHeader("Authorization")
+		if !strings.HasPrefix(header, "Bearer ") {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+			return
+		}
+		tokenStr = strings.TrimPrefix(header, "Bearer ")
 	}
-	tokenStr := strings.TrimPrefix(header, "Bearer ")
 	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (any, error) {
 		return []byte(m.cfg.JWTSecret), nil
 	}, jwt.WithValidMethods([]string{"HS256"}))

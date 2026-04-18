@@ -12,6 +12,11 @@ function handleUnauthorized(res) {
     return res
 }
 
+export function mediaUrl(path) {
+    const token = localStorage.getItem('token')
+    return `${API_URL}${path}?token=${token}`
+}
+
 export const api = {
     get(path) {
         return fetch(`${API_URL}${path}`, {

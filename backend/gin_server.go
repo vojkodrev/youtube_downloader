@@ -66,7 +66,11 @@ func NewGinServer(
 }
 
 func (s *GinServer) registerRoutes() {
-	s.router.Use(cors.Default())
+	s.router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{s.cfg.FrontendURL},
+		AllowMethods: []string{"GET", "POST"},
+		AllowHeaders: []string{"Authorization", "Content-Type"},
+	}))
 
 	s.router.GET("/ping", s.pingHandler.Ping)
 	s.router.GET("/auth/login", s.authHandler.Login)
