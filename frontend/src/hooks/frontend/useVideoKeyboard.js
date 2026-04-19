@@ -8,6 +8,7 @@ export function useVideoKeyboard(videoRef) {
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                 e.preventDefault()
                 videoRef.current.currentTime += e.key === 'ArrowRight' ? 10 : -10
+                if (videoRef.current.paused) videoRef.current.play()
             }
         }
         document.addEventListener('keydown', handleKeyDown, { capture: true })
