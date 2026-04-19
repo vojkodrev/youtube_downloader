@@ -130,6 +130,9 @@ export default function Home() {
                         prev.forEach(v => { v.savedTime = localStorage.getItem(`time_${v.id}`) })
                         return [...prev]
                     })
+                    if (selectedVideo && times[`time_${selectedVideo.id}`] && videoRef.current) {
+                        videoRef.current.currentTime = parseFloat(times[`time_${selectedVideo.id}`])
+                    }
                 }}
             />
         </SidebarProvider>
