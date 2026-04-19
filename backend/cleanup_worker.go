@@ -9,11 +9,12 @@ import (
 )
 
 type CleanupWorker struct {
-	cfg *Config
+	cfg       *Config
+	filenames *Filenames
 }
 
-func NewCleanupWorker(cfg *Config) *CleanupWorker {
-	return &CleanupWorker{cfg: cfg}
+func NewCleanupWorker(cfg *Config, filenames *Filenames) *CleanupWorker {
+	return &CleanupWorker{cfg: cfg, filenames: filenames}
 }
 
 func (cw *CleanupWorker) Start() {
@@ -34,7 +35,15 @@ func (cw *CleanupWorker) Start() {
 			} else if b, ok := strings.CutSuffix(name, ".ios_fix.txt"); ok {
 				base = b
 			} else {
-				continue
+				for _, quality := range cw.cfg.RecodeQualities {
+					if b, ok := strings.CutSuffix(name, "."+quality+".mp4"); ok {
+						base = b
+						break
+					}
+				}
+				if base == "" {
+					continue
+				}
 			}
 
 			exists := false
