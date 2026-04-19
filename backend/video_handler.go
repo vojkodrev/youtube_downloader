@@ -16,10 +16,16 @@ func (h *VideoHandler) GetVideo(c *gin.Context) {
 	id := c.Param("id")
 	h.store.Mutex.RLock()
 	v, ok := h.store.VideosMap[id]
-	h.store.Mutex.RUnlock()
 	if !ok {
-		c.Status(404)
+		vv, vok := h.store.VideoVersionsMap[id]
+		h.store.Mutex.RUnlock()
+		if !vok {
+			c.Status(404)
+			return
+		}
+		h.fileServer.Serve(c, h.cfg.StreamsDir+"/"+vv.Filename, vv.Filename)
 		return
 	}
+	h.store.Mutex.RUnlock()
 	h.fileServer.Serve(c, h.cfg.StreamsDir+"/"+v.Filename, v.Filename)
 }
