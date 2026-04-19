@@ -2,17 +2,12 @@ import { Link } from 'react-router-dom'
 import VideoListItemMenu from './VideoListItemMenu'
 import VideoListItemThumbnail from './VideoListItemThumbnail'
 import VideoListItemInfo from './VideoListItemInfo'
-
+import { videoLink, isFullyWatched } from '@/lib/video'
 
 function getTargetLink(video, playlistVideos) {
-    if (!playlistVideos) {
-        return video.savedTime ? `/watch/${video.id}?t=${video.savedTime}` : `/watch/${video.id}`
-    }
-    const target = playlistVideos.find(v => {
-        const saved = parseFloat(v.savedTime) || 0
-        return !v.duration || saved < v.duration - 5
-    }) ?? playlistVideos[playlistVideos.length - 1]
-    return target.savedTime ? `/watch/${target.id}?t=${target.savedTime}` : `/watch/${target.id}`
+    if (!playlistVideos) return videoLink(video)
+    const target = playlistVideos.find(v => !isFullyWatched(v)) ?? playlistVideos[playlistVideos.length - 1]
+    return videoLink(target)
 }
 
 export default function VideoListItem({ video, isSelected, videoCountVisible, onWatchedReset, onWatchedMark, onDelete, playlistVideos }) {
