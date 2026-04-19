@@ -1,4 +1,13 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+
+async function copyToClipboard(text, textareaEl) {
+    if (navigator.clipboard) {
+        await navigator.clipboard.writeText(text)
+    } else {
+        textareaEl.select()
+        document.execCommand('copy')
+    }
+}
 import FormDialog from '@/components/frontend/FormDialog/FormDialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -6,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea'
 const WatchedTimesDialogs = forwardRef(function WatchedTimesDialogs({ onImport }, ref) {
     const exportDialogRef = useRef(null)
     const importDialogRef = useRef(null)
+    const exportTextareaRef = useRef(null)
     const [exportData, setExportData] = useState('')
 
     useImperativeHandle(ref, () => ({
@@ -20,10 +30,11 @@ const WatchedTimesDialogs = forwardRef(function WatchedTimesDialogs({ onImport }
                 title="Export Watched Times"
                 description="Copy the watched times data below."
                 submitLabel="Copy"
-                onSubmit={async () => { await navigator.clipboard.writeText(exportData) }}
+                onSubmit={async () => { await copyToClipboard(exportData, exportTextareaRef.current) }}
             >
                 <Label htmlFor="export-data">Data</Label>
                 <Textarea
+                    ref={exportTextareaRef}
                     id="export-data"
                     name="data"
                     className="h-64 font-mono text-xs break-all overflow-y-auto resize-none"
