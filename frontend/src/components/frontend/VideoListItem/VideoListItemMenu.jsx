@@ -15,7 +15,7 @@ export default function VideoListItemMenu({ video, onWatchedMark, onWatchedReset
             <DropdownMenuTrigger className="rounded hover:bg-gray-200 flex-shrink-0 cursor-pointer">
                 <EllipsisVertical className="w-4 h-4 text-gray-500" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-45">
+            <DropdownMenuContent align="end" className="min-w-50">
                 <DropdownMenuItem disabled={video.status !== 'Ready'}>
                     <a
                         href={`${API_URL}/download/${video.id}`}
@@ -23,7 +23,7 @@ export default function VideoListItemMenu({ video, onWatchedMark, onWatchedReset
                         className="w-full flex items-center gap-2"
                     >
                         <Download className="w-4 h-4 shrink-0" />
-                        Download Max
+                        Download Original
                     </a>
                 </DropdownMenuItem>
                 {[...(video.versions ?? [])].sort((a, b) => (parseInt(b.quality) || 0) - (parseInt(a.quality) || 0)).map(v => (
