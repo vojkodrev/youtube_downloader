@@ -3,7 +3,7 @@ import VideoListItem from '@/components/frontend/VideoListItem/VideoListItem'
 export default function VideoList({
     videos,
     playlists, // all playlists
-    selectedVideo,
+    selectedVideoId,
     currentPlaylist, // selected playlist / currently playing playlist
     onWatchedMark,
     onWatchedReset,
@@ -16,7 +16,7 @@ export default function VideoList({
                 <VideoListItem
                     key={video.id}
                     video={video}
-                    isSelected={selectedVideo?.id === video.id || currentPlaylist.some(v => v.id === video.id)}
+                    isSelected={selectedVideoId === video.id || currentPlaylist.some(v => v.id === video.id)}
                     videoCountVisible
                     playlistVideos={playlists.find(p => p.some(pv => pv.id === video.id)) ?? null}
                     onWatchedMark={onWatchedMark}

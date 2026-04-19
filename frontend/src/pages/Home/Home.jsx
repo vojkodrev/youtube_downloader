@@ -96,7 +96,7 @@ export default function Home() {
                             <VideoList
                                 videos={videos}
                                 playlists={playlists}
-                                selectedVideo={selectedVideo}
+                                selectedVideoId={selectedVideo?.id}
                                 currentPlaylist={currentPlaylist}
                                 onWatchedMark={handleWatchedMarkPlaylist}
                                 onWatchedReset={handleWatchedResetPlaylist}
