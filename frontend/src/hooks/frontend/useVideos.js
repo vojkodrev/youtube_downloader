@@ -1,11 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 
 const API_URL = import.meta.env.VITE_API_URL
 
 export function useVideos() {
     const [videos, setVideos] = useState([])
     const [playlists, setPlaylists] = useState([])
-    const [versionToVideoId, setVersionToVideoId] = useState({})
+
+    const versionToVideoId = useMemo(() => {
+        const map = {}
+        for (const v of videos) {
+            map[v.id] = v.id
+            for (const version of v.versions ?? []) {
+                map[version.id] = v.id
+            }
+        }
+        return map
+    }, [videos])
 
     useEffect(() => {
         (async () => {
@@ -37,17 +47,8 @@ export function useVideos() {
                     })
                 )
 
-            const versionToVideoId = {}
-            for (const v of videos) {
-                versionToVideoId[v.id] = v.id
-                for (const version of v.versions ?? []) {
-                    versionToVideoId[version.id] = v.id
-                }
-            }
-
             setPlaylists(playlistsArr)
             setVideos(videos)
-            setVersionToVideoId(versionToVideoId)
 
             Promise.allSettled(videos.map(async v => {
                 const res = await fetch(`${API_URL}/duration/${v.id}`)

@@ -34,7 +34,7 @@ export default function Home() {
         handleWatchedReset,
         handleWatchedMarkPlaylist,
         handleWatchedResetPlaylist
-    } = useWatchedTime(id, videoRef, setVideos, playlists)
+    } = useWatchedTime(selectedVideo?.id, videoRef, setVideos, playlists)
 
     const {
         handleDeleteSingle,
@@ -44,7 +44,7 @@ export default function Home() {
     useVideoKeyboard(videoRef)
     useVideoMetadata(selectedVideo)
 
-    useVideoNavigation(id, videos, playlists, versionToVideoId)
+    useVideoNavigation(videos, playlists, versionToVideoId)
 
     return (
         <SidebarProvider defaultOpen={false}>
@@ -72,7 +72,6 @@ export default function Home() {
                                     <VideoPlayer
                                         ref={videoRef}
                                         video={selectedVideo}
-                                        versionToVideoId={versionToVideoId}
                                         onVideoUpdated={() => setVideos(prev => [...prev])}
                                     />
                                 )}

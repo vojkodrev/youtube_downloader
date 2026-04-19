@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
 
-export function useVideoNavigation(id, videos, playlists, versionToVideoId) {
+export function useVideoNavigation(videos, playlists, versionToVideoId) {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
+    const { id } = useParams()
 
     useEffect(() => {
         if (!id || (videos.length > 0 && !versionToVideoId[id])) {
