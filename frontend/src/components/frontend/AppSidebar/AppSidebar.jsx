@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDownIcon, DownloadIcon } from 'lucide-react'
+import { ChevronDownIcon, ClockIcon, DownloadIcon } from 'lucide-react'
 import Logo from '@/components/frontend/Logo/Logo'
 import SidebarTrigger from '@/components/frontend/SidebarTrigger/SidebarTrigger'
 import {
@@ -17,8 +17,9 @@ import {
     SidebarMenuSubButton,
 } from '@/components/ui/sidebar'
 
-export default function AppSidebar({ onRequestVideoDownload, onRequestPlaylistDownload }) {
-    const [open, setOpen] = useState(false)
+export default function AppSidebar({ onRequestVideoDownload, onRequestPlaylistDownload, onExportWatchedTimes, onImportWatchedTimes }) {
+    const [downloadOpen, setDownloadOpen] = useState(false)
+    const [watchedTimesOpen, setWatchedTimesOpen] = useState(false)
 
     return (
         <Sidebar collapsible="offcanvas">
@@ -32,12 +33,12 @@ export default function AppSidebar({ onRequestVideoDownload, onRequestPlaylistDo
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton onClick={() => setOpen(o => !o)}>
+                                <SidebarMenuButton onClick={() => setDownloadOpen(o => !o)}>
                                     <DownloadIcon />
                                     <span>Request Download</span>
-                                    <ChevronDownIcon className={`ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
+                                    <ChevronDownIcon className={`ml-auto transition-transform ${downloadOpen ? 'rotate-180' : ''}`} />
                                 </SidebarMenuButton>
-                                {open && (
+                                {downloadOpen && (
                                     <SidebarMenuSub>
                                         <SidebarMenuSubItem>
                                             <SidebarMenuSubButton onClick={() => onRequestVideoDownload()}>
@@ -47,6 +48,27 @@ export default function AppSidebar({ onRequestVideoDownload, onRequestPlaylistDo
                                         <SidebarMenuSubItem>
                                             <SidebarMenuSubButton onClick={() => onRequestPlaylistDownload()}>
                                                 <span>Playlist</span>
+                                            </SidebarMenuSubButton>
+                                        </SidebarMenuSubItem>
+                                    </SidebarMenuSub>
+                                )}
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton onClick={() => setWatchedTimesOpen(o => !o)}>
+                                    <ClockIcon />
+                                    <span>Watched Times</span>
+                                    <ChevronDownIcon className={`ml-auto transition-transform ${watchedTimesOpen ? 'rotate-180' : ''}`} />
+                                </SidebarMenuButton>
+                                {watchedTimesOpen && (
+                                    <SidebarMenuSub>
+                                        <SidebarMenuSubItem>
+                                            <SidebarMenuSubButton onClick={() => onExportWatchedTimes()}>
+                                                <span>Export</span>
+                                            </SidebarMenuSubButton>
+                                        </SidebarMenuSubItem>
+                                        <SidebarMenuSubItem>
+                                            <SidebarMenuSubButton onClick={() => onImportWatchedTimes()}>
+                                                <span>Import</span>
                                             </SidebarMenuSubButton>
                                         </SidebarMenuSubItem>
                                     </SidebarMenuSub>
