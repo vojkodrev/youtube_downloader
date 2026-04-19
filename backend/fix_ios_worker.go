@@ -53,6 +53,7 @@ func (fw *FixIOSWorker) processNext() bool {
 			continue
 		}
 		if !validation.NeedsIOSFix {
+			log.Println("ios fix not needed for", v.Filename)
 			if err := os.WriteFile(fixPath, []byte("ok"), 0644); err != nil {
 				log.Println("error writing ios fix marker for", v.Filename, ":", err)
 			}
