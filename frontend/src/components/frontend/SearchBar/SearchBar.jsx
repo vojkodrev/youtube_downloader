@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Search, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Fuse from 'fuse.js'
+import { videoLink } from '@/lib/video'
 
 export default function SearchBar({ videos = [] }) {
     const [query, setQuery] = useState(() => localStorage.getItem('searchQuery') ?? '')
@@ -47,7 +48,7 @@ export default function SearchBar({ videos = [] }) {
                             ? results.map(video => (
                                 <li
                                     key={video.id}
-                                    onMouseDown={() => { updateQuery(''); navigate(`/watch/${video.id}`) }}
+                                    onMouseDown={() => { updateQuery(''); navigate(videoLink(video)) }}
                                     className="px-4 py-2 text-sm text-gray-900 hover:bg-gray-100 cursor-pointer flex items-center gap-2 min-w-0"
                                     title={video.name}
                                 >
