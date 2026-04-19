@@ -12,7 +12,7 @@ const VideoDialogs = forwardRef(function VideoDialogs(_, ref) {
         openVideoDownload: () => requestDownloadDialogsRef.current.openVideoDownload(),
         openPlaylistDownload: () => requestDownloadDialogsRef.current.openPlaylistDownload(),
         openDeleteVideo: (videos, confirmDelete) => deleteVideoDialogRef.current.open(videos, confirmDelete),
-        openExportWatchedTimes: () => watchedTimesDialogsRef.current.openExport(),
+        openExportWatchedTimes: (data) => watchedTimesDialogsRef.current.openExport(data),
         openImportWatchedTimes: () => watchedTimesDialogsRef.current.openImport(),
     }))
 

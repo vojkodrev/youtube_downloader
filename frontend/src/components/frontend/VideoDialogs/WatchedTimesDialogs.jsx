@@ -1,14 +1,15 @@
-import { forwardRef, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import FormDialog from '@/components/frontend/FormDialog/FormDialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
-const WatchedTimesDialogs = forwardRef(function WatchedTimesDialogs({ onExport, onImport }, ref) {
+const WatchedTimesDialogs = forwardRef(function WatchedTimesDialogs({ onImport }, ref) {
     const exportDialogRef = useRef(null)
     const importDialogRef = useRef(null)
+    const [exportData, setExportData] = useState('')
 
     useImperativeHandle(ref, () => ({
-        openExport: () => exportDialogRef.current.open(),
+        openExport: (data) => { setExportData(data); exportDialogRef.current.open() },
         openImport: () => importDialogRef.current.open(),
     }))
 
@@ -18,15 +19,17 @@ const WatchedTimesDialogs = forwardRef(function WatchedTimesDialogs({ onExport, 
                 ref={exportDialogRef}
                 title="Export Watched Times"
                 description="Copy the watched times data below."
-                submitLabel="Close"
-                onSubmit={onExport}
+                submitLabel="Copy"
+                onSubmit={async () => { await navigator.clipboard.writeText(exportData) }}
             >
                 <Label htmlFor="export-data">Data</Label>
                 <Textarea
                     id="export-data"
                     name="data"
-                    className="min-h-64 font-mono text-xs"
+                    className="h-64 font-mono text-xs break-all overflow-y-auto resize-none"
                     readOnly
+                    value={exportData}
+                    onChange={() => {}}
                 />
             </FormDialog>
 

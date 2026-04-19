@@ -52,6 +52,14 @@ export default function Home() {
             <AppSidebar
                 onRequestVideoDownload={() => videoDialogsRef.current.openVideoDownload()}
                 onRequestPlaylistDownload={() => videoDialogsRef.current.openPlaylistDownload()}
+                onExportWatchedTimes={() => {
+                    const data = {}
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i)
+                        if (key.startsWith('time_')) data[key] = localStorage.getItem(key)
+                    }
+                    videoDialogsRef.current.openExportWatchedTimes(btoa(JSON.stringify(data)))
+                }}
             />
             <SidebarInset>
                 <div className="flex flex-col">
