@@ -4,6 +4,17 @@ import VideoListItemThumbnail from './VideoListItemThumbnail'
 import VideoListItemInfo from './VideoListItemInfo'
 
 
+function getTargetLink(video, playlistVideos) {
+    if (!playlistVideos) {
+        return video.savedTime ? `/watch/${video.id}?t=${video.savedTime}` : `/watch/${video.id}`
+    }
+    const target = playlistVideos.find(v => {
+        const saved = parseFloat(v.savedTime) || 0
+        return !v.duration || saved < v.duration - 5
+    }) ?? playlistVideos[playlistVideos.length - 1]
+    return target.savedTime ? `/watch/${target.id}?t=${target.savedTime}` : `/watch/${target.id}`
+}
+
 export default function VideoListItem({ video, isSelected, videoCountVisible, onWatchedReset, onWatchedMark, onDelete, playlistVideos }) {
 
     const progressSavedTime = playlistVideos
@@ -16,7 +27,7 @@ export default function VideoListItem({ video, isSelected, videoCountVisible, on
     return (
         <div className={`flex items-center p-2 hover:bg-gray-100 ${isSelected ? 'bg-gray-200' : ''}`}>
             <Link
-                to={video.savedTime ? `/watch/${video.id}?t=${video.savedTime}` : `/watch/${video.id}`}
+                to={getTargetLink(video, playlistVideos)}
                 title={video.name}
                 className="flex gap-2 min-w-0 flex-1"
             >

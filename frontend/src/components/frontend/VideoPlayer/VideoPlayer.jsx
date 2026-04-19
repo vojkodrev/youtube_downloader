@@ -30,6 +30,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ video, onVideoUpdated }, r
                 if (t === parseInt(searchParams.get('t'))) return
                 saveWatchedTime(t)
             }}
+            onEnded={e => saveWatchedTime(Math.round(e.target.currentTime))}
             onLoadedMetadata={e => {
                 const t = searchParams.get('t')
                 if (t) e.target.currentTime = parseFloat(t)
