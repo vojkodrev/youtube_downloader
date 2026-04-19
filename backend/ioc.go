@@ -38,6 +38,15 @@ func CoreProviders() fx.Option {
 		}),
 		fx.Provide(NewLowerQualityRecoderWorker),
 		fx.Provide(NewDownloadRequestService),
+		fx.Provide(NewVideosHandler),
+		fx.Provide(NewPingHandler),
+		fx.Provide(NewVideoHandler),
+		fx.Provide(NewDownloadHandler),
+		fx.Provide(NewDurationHandler),
+		fx.Provide(NewThumbnailHandler),
+		fx.Provide(NewDeleteVideoHandler),
+		fx.Provide(NewRequestVideoDownloadHandler),
+		fx.Provide(NewRequestPlaylistDownloadHandler),
 		fx.Provide(NewGinServer),
 	)
 }
