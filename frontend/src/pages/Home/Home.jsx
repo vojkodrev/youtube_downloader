@@ -4,6 +4,7 @@ import { useVideoKeyboard } from '@/hooks/frontend/useVideoKeyboard'
 import { useVideoMetadata } from '@/hooks/frontend/useVideoMetadata'
 import { useVideoNavigation } from '@/hooks/frontend/useVideoNavigation'
 import { useWatchedTime } from '@/hooks/frontend/useWatchedTime'
+import { useWatchedTimesSync } from '@/hooks/frontend/useWatchedTimesSync'
 import { useDeleteVideo } from '@/hooks/frontend/useDeleteVideo'
 import { useParams } from 'react-router-dom'
 import VideoDialogs from '@/components/frontend/VideoDialogs/VideoDialogs'
@@ -47,20 +48,18 @@ export default function Home() {
 
     useVideoNavigation(videos, playlists, versionToVideoId)
 
+    const {
+        exportWatchedTimes,
+        importWatchedTimes
+    } = useWatchedTimesSync(videoRef, selectedVideo, setVideos)
+
     return (
         <SidebarProvider defaultOpen={false}>
             <AppSidebar
                 onRequestVideoDownload={() => videoDialogsRef.current.openVideoDownload()}
                 onRequestPlaylistDownload={() => videoDialogsRef.current.openPlaylistDownload()}
                 onImportWatchedTimes={() => videoDialogsRef.current.openImportWatchedTimes()}
-                onExportWatchedTimes={() => {
-                    const data = {}
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const key = localStorage.key(i)
-                        if (key.startsWith('time_')) data[key] = localStorage.getItem(key)
-                    }
-                    videoDialogsRef.current.openExportWatchedTimes(btoa(JSON.stringify(data)))
-                }}
+                onExportWatchedTimes={() => videoDialogsRef.current.openExportWatchedTimes(exportWatchedTimes())}
             />
             <SidebarInset>
                 <div className="flex flex-col">
@@ -121,19 +120,7 @@ export default function Home() {
 
             <VideoDialogs
                 ref={videoDialogsRef}
-                onImportWatchedTimes={(formData) => {
-                    const times = JSON.parse(atob(formData.get('data')))
-                    for (const [key, value] of Object.entries(times)) {
-                        localStorage.setItem(key, value)
-                    }
-                    setVideos(prev => {
-                        prev.forEach(v => { v.savedTime = localStorage.getItem(`time_${v.id}`) })
-                        return [...prev]
-                    })
-                    if (selectedVideo && times[`time_${selectedVideo.id}`] && videoRef.current) {
-                        videoRef.current.currentTime = parseFloat(times[`time_${selectedVideo.id}`])
-                    }
-                }}
+                onImportWatchedTimes={importWatchedTimes}
             />
         </SidebarProvider>
     )
