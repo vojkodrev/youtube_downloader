@@ -22,11 +22,12 @@ import {
 
 export default function Home() {
     const { id } = useParams()
-    const { videos, setVideos, playlists, versionToVideoId } = useVideos()
+    const { videos, setVideos, playlists, versionToVideoId, videoIdToQuality } = useVideos()
     const videoRef = useRef(null)
     const videoDialogsRef = useRef(null)
 
     const selectedVideo = useMemo(() => videos.find(v => v.id === (versionToVideoId[id] ?? id)), [videos, id, versionToVideoId])
+    const currentQuality = videoIdToQuality[id]
     const currentPlaylist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
     const {
@@ -87,6 +88,7 @@ export default function Home() {
                                 <PlaylistPanel
                                     currentPlaylist={currentPlaylist}
                                     selectedVideoId={selectedVideo?.id}
+                                    currentQuality={currentQuality}
                                     onWatchedReset={handleWatchedReset}
                                     onWatchedMark={handleWatchedMark}
                                     onDelete={handleDeleteSingle}
@@ -97,6 +99,7 @@ export default function Home() {
                                 playlists={playlists}
                                 selectedVideoId={selectedVideo?.id}
                                 currentPlaylist={currentPlaylist}
+                                currentQuality={currentQuality}
                                 onWatchedMark={handleWatchedMarkPlaylist}
                                 onWatchedReset={handleWatchedResetPlaylist}
                                 onDelete={handleDeletePlaylist}

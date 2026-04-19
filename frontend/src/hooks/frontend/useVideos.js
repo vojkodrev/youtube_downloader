@@ -17,6 +17,17 @@ export function useVideos() {
         return map
     }, [videos])
 
+    const videoIdToQuality = useMemo(() => {
+        const map = {}
+        for (const v of videos) {
+            map[v.id] = 'original'
+            for (const version of v.versions ?? []) {
+                map[version.id] = version.quality
+            }
+        }
+        return map
+    }, [videos])
+
     useEffect(() => {
         (async () => {
             const res = await fetch(`${API_URL}/videos`)
@@ -59,5 +70,5 @@ export function useVideos() {
         })()
     }, [])
 
-    return { videos, setVideos, playlists, versionToVideoId }
+    return { videos, setVideos, playlists, versionToVideoId, videoIdToQuality }
 }
