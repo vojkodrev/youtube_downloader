@@ -1,6 +1,7 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react'
 import FormDialog from '@/components/frontend/FormDialog/FormDialog'
 import DeleteVideoDialog from '@/components/frontend/DeleteVideoDialog/DeleteVideoDialog'
+import WatchedTimesDialogs from '@/components/frontend/WatchedTimesDialogs/WatchedTimesDialogs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useRequestDownload } from '@/hooks/frontend/useRequestDownload'
@@ -9,6 +10,7 @@ const VideoDialogs = forwardRef(function VideoDialogs(_, ref) {
     const requestVideoDownloadDialogRef = useRef(null)
     const requestPlaylistDownloadDialogRef = useRef(null)
     const deleteVideoDialogRef = useRef(null)
+    const watchedTimesDialogsRef = useRef(null)
 
     const { requestVideoDownload, requestPlaylistDownload } = useRequestDownload()
 
@@ -16,6 +18,8 @@ const VideoDialogs = forwardRef(function VideoDialogs(_, ref) {
         openVideoDownload: () => requestVideoDownloadDialogRef.current.open(),
         openPlaylistDownload: () => requestPlaylistDownloadDialogRef.current.open(),
         openDeleteVideo: (videos, confirmDelete) => deleteVideoDialogRef.current.open(videos, confirmDelete),
+        openExportWatchedTimes: () => watchedTimesDialogsRef.current.openExport(),
+        openImportWatchedTimes: () => watchedTimesDialogsRef.current.openImport(),
     }))
 
     return (
@@ -51,6 +55,7 @@ const VideoDialogs = forwardRef(function VideoDialogs(_, ref) {
             </FormDialog>
 
             <DeleteVideoDialog ref={deleteVideoDialogRef} />
+            <WatchedTimesDialogs ref={watchedTimesDialogsRef} />
         </>
     )
 })
