@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom'
 
-export function useVideoNavigation(id, videos, playlists) {
+export function useVideoNavigation(videos, playlists, versionToVideoId) {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
+    const { id } = useParams()
 
     useEffect(() => {
-        if (!id || (videos.length > 0 && !videos.find(v => v.id === id))) {
+        if (!id || (videos.length > 0 && !versionToVideoId[id])) {
             const firstVideo = videos[0]
             if (firstVideo) {
                 const playlist = playlists.find(p => p.some(v => v.id === firstVideo.id))
@@ -16,11 +17,12 @@ export function useVideoNavigation(id, videos, playlists) {
             return
         }
         if (!searchParams.get('t')) {
-            const savedTime = Math.floor(parseFloat(localStorage.getItem(`time_${id}`)))
+            const originalId = versionToVideoId[id] ?? id
+            const savedTime = Math.floor(parseFloat(localStorage.getItem(`time_${originalId}`)))
             if (savedTime && savedTime > 10) {
                 navigate(`/watch/${id}?t=${savedTime}`, { replace: true })
                 return
             }
         }
-    }, [id, videos, playlists])
+    }, [id, videos, playlists, versionToVideoId])
 }

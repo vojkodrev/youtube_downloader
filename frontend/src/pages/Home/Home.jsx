@@ -22,11 +22,12 @@ import {
 
 export default function Home() {
     const { id } = useParams()
-    const { videos, setVideos, playlists } = useVideos()
+    const { videos, setVideos, playlists, versionToVideoId, videoIdToQuality } = useVideos()
     const videoRef = useRef(null)
     const videoDialogsRef = useRef(null)
 
-    const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
+    const selectedVideo = useMemo(() => videos.find(v => v.id === (versionToVideoId[id] ?? id)), [videos, id, versionToVideoId])
+    const currentQuality = videoIdToQuality[id]
     const currentPlaylist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
     const {
@@ -34,7 +35,7 @@ export default function Home() {
         handleWatchedReset,
         handleWatchedMarkPlaylist,
         handleWatchedResetPlaylist
-    } = useWatchedTime(id, videoRef, setVideos, playlists)
+    } = useWatchedTime(selectedVideo?.id, videoRef, setVideos, playlists)
 
     const {
         handleDeleteSingle,
@@ -44,7 +45,7 @@ export default function Home() {
     useVideoKeyboard(videoRef)
     useVideoMetadata(selectedVideo)
 
-    useVideoNavigation(id, videos, playlists)
+    useVideoNavigation(videos, playlists, versionToVideoId)
 
     return (
         <SidebarProvider defaultOpen={false}>
@@ -87,6 +88,7 @@ export default function Home() {
                                 <PlaylistPanel
                                     currentPlaylist={currentPlaylist}
                                     selectedVideoId={selectedVideo?.id}
+                                    currentQuality={currentQuality}
                                     onWatchedReset={handleWatchedReset}
                                     onWatchedMark={handleWatchedMark}
                                     onDelete={handleDeleteSingle}
@@ -95,8 +97,9 @@ export default function Home() {
                             <VideoList
                                 videos={videos}
                                 playlists={playlists}
-                                selectedVideo={selectedVideo}
+                                selectedVideoId={selectedVideo?.id}
                                 currentPlaylist={currentPlaylist}
+                                currentQuality={currentQuality}
                                 onWatchedMark={handleWatchedMarkPlaylist}
                                 onWatchedReset={handleWatchedResetPlaylist}
                                 onDelete={handleDeletePlaylist}
