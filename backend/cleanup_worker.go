@@ -39,6 +39,9 @@ func (cw *CleanupWorker) Start() {
 					if b, ok := strings.CutSuffix(name, "."+quality+".mp4"); ok {
 						base = b
 						break
+					} else if b, ok := strings.CutSuffix(name, "."+quality+".temp.mp4"); ok {
+						base = b
+						break
 					}
 				}
 				if base == "" {
