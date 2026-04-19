@@ -1,5 +1,5 @@
 import { formatDistanceToNow, format } from 'date-fns'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 
 export default function VideoInfo({ video }) {
@@ -19,7 +19,7 @@ export default function VideoInfo({ video }) {
             {video.versions?.length > 0 && (
                 <div className="flex gap-2 mt-2">
                     <Badge
-                        render={<button />}
+                        render={<Link to={video.savedTime ? `/watch/${video.id}?t=${video.savedTime}` : `/watch/${video.id}`} />}
                         variant={id === video.id ? 'default' : 'outline'}
                     >
                         original
@@ -27,7 +27,7 @@ export default function VideoInfo({ video }) {
                     {video.versions.map(v => (
                         <Badge
                             key={v.id}
-                            render={<button />}
+                            render={<Link to={video.savedTime ? `/watch/${v.id}?t=${video.savedTime}` : `/watch/${v.id}`} />}
                             variant={id === v.id ? 'default' : 'outline'}
                         >
                             {v.quality}
