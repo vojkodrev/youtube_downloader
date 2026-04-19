@@ -22,11 +22,11 @@ import {
 
 export default function Home() {
     const { id } = useParams()
-    const { videos, setVideos, playlists } = useVideos()
+    const { videos, setVideos, playlists, versionToVideoId } = useVideos()
     const videoRef = useRef(null)
     const videoDialogsRef = useRef(null)
 
-    const selectedVideo = useMemo(() => videos.find(v => v.id === id), [videos, id])
+    const selectedVideo = useMemo(() => videos.find(v => v.id === (versionToVideoId[id] ?? id)), [videos, id, versionToVideoId])
     const currentPlaylist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
 
     const {
@@ -44,7 +44,7 @@ export default function Home() {
     useVideoKeyboard(videoRef)
     useVideoMetadata(selectedVideo)
 
-    useVideoNavigation(id, videos, playlists)
+    useVideoNavigation(id, videos, playlists, versionToVideoId)
 
     return (
         <SidebarProvider defaultOpen={false}>
@@ -72,6 +72,7 @@ export default function Home() {
                                     <VideoPlayer
                                         ref={videoRef}
                                         video={selectedVideo}
+                                        versionToVideoId={versionToVideoId}
                                         onVideoUpdated={() => setVideos(prev => [...prev])}
                                     />
                                 )}

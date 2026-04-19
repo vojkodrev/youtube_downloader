@@ -1,9 +1,10 @@
 import { forwardRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useParams } from 'react-router-dom'
 import { VIDEO_SAVE_INTERVAL } from '@/lib/video'
 
 const VideoPlayer = forwardRef(function VideoPlayer({ video, onVideoUpdated }, ref) {
     const [searchParams, setSearchParams] = useSearchParams()
+    const { id } = useParams()
 
     function saveWatchedTime(t) {
         localStorage.setItem(`time_${video.id}`, t)
@@ -15,8 +16,8 @@ const VideoPlayer = forwardRef(function VideoPlayer({ video, onVideoUpdated }, r
     return (
         <video
             ref={ref}
-            key={video.id}
-            src={`${import.meta.env.VITE_API_URL}/video/${video.id}`}
+            key={id}
+            src={`${import.meta.env.VITE_API_URL}/video/${id}`}
             controls
             autoPlay
             playsInline

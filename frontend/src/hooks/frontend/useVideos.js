@@ -5,6 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL
 export function useVideos() {
     const [videos, setVideos] = useState([])
     const [playlists, setPlaylists] = useState([])
+    const [versionToVideoId, setVersionToVideoId] = useState({})
 
     useEffect(() => {
         (async () => {
@@ -36,8 +37,17 @@ export function useVideos() {
                     })
                 )
 
+            const versionToVideoId = {}
+            for (const v of videos) {
+                versionToVideoId[v.id] = v.id
+                for (const version of v.versions ?? []) {
+                    versionToVideoId[version.id] = v.id
+                }
+            }
+
             setPlaylists(playlistsArr)
             setVideos(videos)
+            setVersionToVideoId(versionToVideoId)
 
             Promise.allSettled(videos.map(async v => {
                 const res = await fetch(`${API_URL}/duration/${v.id}`)
@@ -48,5 +58,5 @@ export function useVideos() {
         })()
     }, [])
 
-    return { videos, setVideos, playlists }
+    return { videos, setVideos, playlists, versionToVideoId }
 }
