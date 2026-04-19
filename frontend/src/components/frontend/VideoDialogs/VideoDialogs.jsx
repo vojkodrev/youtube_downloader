@@ -1,7 +1,7 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react'
 import RequestDownloadDialogs from '@/components/frontend/VideoDialogs/RequestDownloadDialogs'
-import DeleteVideoDialog from '@/components/frontend/DeleteVideoDialog/DeleteVideoDialog'
-import WatchedTimesDialogs from '@/components/frontend/WatchedTimesDialogs/WatchedTimesDialogs'
+import DeleteVideoDialog from '@/components/frontend/VideoDialogs/DeleteVideoDialog'
+import WatchedTimesDialogs from '@/components/frontend/VideoDialogs/WatchedTimesDialogs'
 
 const VideoDialogs = forwardRef(function VideoDialogs(_, ref) {
     const requestDownloadDialogsRef = useRef(null)
