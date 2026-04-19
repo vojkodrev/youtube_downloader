@@ -44,7 +44,7 @@ const WatchedTimesDialogs = forwardRef(function WatchedTimesDialogs({ onImport }
                 <Textarea
                     id="import-data"
                     name="data"
-                    className="min-h-64 font-mono text-xs"
+                    className="h-64 font-mono text-xs break-all overflow-y-auto resize-none"
                     placeholder="Paste data here..."
                 />
             </FormDialog>

@@ -3,7 +3,7 @@ import RequestDownloadDialogs from '@/components/frontend/VideoDialogs/RequestDo
 import DeleteVideoDialog from '@/components/frontend/VideoDialogs/DeleteVideoDialog'
 import WatchedTimesDialogs from '@/components/frontend/VideoDialogs/WatchedTimesDialogs'
 
-const VideoDialogs = forwardRef(function VideoDialogs(_, ref) {
+const VideoDialogs = forwardRef(function VideoDialogs({ onImportWatchedTimes }, ref) {
     const requestDownloadDialogsRef = useRef(null)
     const deleteVideoDialogRef = useRef(null)
     const watchedTimesDialogsRef = useRef(null)
@@ -20,7 +20,7 @@ const VideoDialogs = forwardRef(function VideoDialogs(_, ref) {
         <>
             <RequestDownloadDialogs ref={requestDownloadDialogsRef} />
             <DeleteVideoDialog ref={deleteVideoDialogRef} />
-            <WatchedTimesDialogs ref={watchedTimesDialogsRef} />
+            <WatchedTimesDialogs ref={watchedTimesDialogsRef} onImport={onImportWatchedTimes} />
         </>
     )
 })

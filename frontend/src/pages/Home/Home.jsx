@@ -52,6 +52,7 @@ export default function Home() {
             <AppSidebar
                 onRequestVideoDownload={() => videoDialogsRef.current.openVideoDownload()}
                 onRequestPlaylistDownload={() => videoDialogsRef.current.openPlaylistDownload()}
+                onImportWatchedTimes={() => videoDialogsRef.current.openImportWatchedTimes()}
                 onExportWatchedTimes={() => {
                     const data = {}
                     for (let i = 0; i < localStorage.length; i++) {
@@ -118,7 +119,19 @@ export default function Home() {
                 </div>
             </SidebarInset>
 
-            <VideoDialogs ref={videoDialogsRef} />
+            <VideoDialogs
+                ref={videoDialogsRef}
+                onImportWatchedTimes={(formData) => {
+                    const times = JSON.parse(atob(formData.get('data')))
+                    for (const [key, value] of Object.entries(times)) {
+                        localStorage.setItem(key, value)
+                    }
+                    setVideos(prev => {
+                        prev.forEach(v => { v.savedTime = localStorage.getItem(`time_${v.id}`) })
+                        return [...prev]
+                    })
+                }}
+            />
         </SidebarProvider>
     )
 }
