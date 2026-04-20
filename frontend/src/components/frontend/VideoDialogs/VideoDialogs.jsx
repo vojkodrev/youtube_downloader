@@ -1,56 +1,26 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react'
-import FormDialog from '@/components/frontend/FormDialog/FormDialog'
-import DeleteVideoDialog from '@/components/frontend/DeleteVideoDialog/DeleteVideoDialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useRequestDownload } from '@/hooks/frontend/useRequestDownload'
+import RequestDownloadDialogs from '@/components/frontend/VideoDialogs/RequestDownloadDialogs'
+import DeleteVideoDialog from '@/components/frontend/VideoDialogs/DeleteVideoDialog'
+import WatchedTimesDialogs from '@/components/frontend/VideoDialogs/WatchedTimesDialogs'
 
-const VideoDialogs = forwardRef(function VideoDialogs(_, ref) {
-    const requestVideoDownloadDialogRef = useRef(null)
-    const requestPlaylistDownloadDialogRef = useRef(null)
+const VideoDialogs = forwardRef(function VideoDialogs({ onImportWatchedTimes }, ref) {
+    const requestDownloadDialogsRef = useRef(null)
     const deleteVideoDialogRef = useRef(null)
-
-    const { requestVideoDownload, requestPlaylistDownload } = useRequestDownload()
+    const watchedTimesDialogsRef = useRef(null)
 
     useImperativeHandle(ref, () => ({
-        openVideoDownload: () => requestVideoDownloadDialogRef.current.open(),
-        openPlaylistDownload: () => requestPlaylistDownloadDialogRef.current.open(),
+        openVideoDownload: () => requestDownloadDialogsRef.current.openVideoDownload(),
+        openPlaylistDownload: () => requestDownloadDialogsRef.current.openPlaylistDownload(),
         openDeleteVideo: (videos, confirmDelete) => deleteVideoDialogRef.current.open(videos, confirmDelete),
+        openExportWatchedTimes: (data) => watchedTimesDialogsRef.current.openExport(data),
+        openImportWatchedTimes: () => watchedTimesDialogsRef.current.openImport(),
     }))
 
     return (
         <>
-            <FormDialog
-                ref={requestVideoDownloadDialogRef}
-                title="Request a Video Download"
-                description="Paste a YouTube (or other supported) URL below and we'll download it to your local library."
-                submitLabel="Download"
-                onSubmit={requestVideoDownload}
-            >
-                <Label htmlFor="video-url">Video URL</Label>
-                <Input
-                    id="video-url"
-                    name="url"
-                    placeholder="https://www.youtube.com/watch?v=..."
-                />
-            </FormDialog>
-
-            <FormDialog
-                ref={requestPlaylistDownloadDialogRef}
-                title="Request a Playlist Download"
-                description="Paste a YouTube playlist URL below and we'll download it to your local library."
-                submitLabel="Download"
-                onSubmit={requestPlaylistDownload}
-            >
-                <Label htmlFor="playlist-url">Playlist URL</Label>
-                <Input
-                    id="playlist-url"
-                    name="url"
-                    placeholder="https://www.youtube.com/playlist?list=..."
-                />
-            </FormDialog>
-
+            <RequestDownloadDialogs ref={requestDownloadDialogsRef} />
             <DeleteVideoDialog ref={deleteVideoDialogRef} />
+            <WatchedTimesDialogs ref={watchedTimesDialogsRef} onImport={onImportWatchedTimes} />
         </>
     )
 })

@@ -4,6 +4,7 @@ import { useVideoKeyboard } from '@/hooks/frontend/useVideoKeyboard'
 import { useVideoMetadata } from '@/hooks/frontend/useVideoMetadata'
 import { useVideoNavigation } from '@/hooks/frontend/useVideoNavigation'
 import { useWatchedTime } from '@/hooks/frontend/useWatchedTime'
+import { useWatchedTimesSync } from '@/hooks/frontend/useWatchedTimesSync'
 import { useDeleteVideo } from '@/hooks/frontend/useDeleteVideo'
 import { useParams } from 'react-router-dom'
 import VideoDialogs from '@/components/frontend/VideoDialogs/VideoDialogs'
@@ -47,11 +48,18 @@ export default function Home() {
 
     useVideoNavigation(videos, playlists, versionToVideoId)
 
+    const {
+        exportWatchedTimes,
+        importWatchedTimes
+    } = useWatchedTimesSync(videoRef, selectedVideo, setVideos)
+
     return (
         <SidebarProvider defaultOpen={false}>
             <AppSidebar
                 onRequestVideoDownload={() => videoDialogsRef.current.openVideoDownload()}
                 onRequestPlaylistDownload={() => videoDialogsRef.current.openPlaylistDownload()}
+                onImportWatchedTimes={() => videoDialogsRef.current.openImportWatchedTimes()}
+                onExportWatchedTimes={() => videoDialogsRef.current.openExportWatchedTimes(exportWatchedTimes())}
             />
             <SidebarInset>
                 <div className="flex flex-col">
@@ -110,7 +118,10 @@ export default function Home() {
                 </div>
             </SidebarInset>
 
-            <VideoDialogs ref={videoDialogsRef} />
+            <VideoDialogs
+                ref={videoDialogsRef}
+                onImportWatchedTimes={importWatchedTimes}
+            />
         </SidebarProvider>
     )
 }
