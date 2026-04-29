@@ -2,7 +2,7 @@ import { forwardRef } from 'react'
 import { useSearchParams, useParams } from 'react-router-dom'
 import { VIDEO_SAVE_INTERVAL } from '@/lib/video'
 
-const VideoPlayer = forwardRef(function VideoPlayer({ video, onVideoUpdated }, ref) {
+const VideoPlayer = forwardRef(function VideoPlayer({ video, onVideoUpdated, onEnded }, ref) {
     const [searchParams, setSearchParams] = useSearchParams()
     const { id } = useParams()
 
@@ -32,7 +32,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ video, onVideoUpdated }, r
                 if (t === parseInt(searchParams.get('t'))) return
                 saveWatchedTime(t)
             }}
-            onEnded={e => saveWatchedTime(Math.round(e.target.currentTime))}
+            onEnded={e => { saveWatchedTime(Math.round(e.target.currentTime)); onEnded?.() }}
             onLoadedMetadata={e => {
                 const t = searchParams.get('t')
                 if (t) e.target.currentTime = parseFloat(t)
