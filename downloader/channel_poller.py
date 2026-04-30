@@ -8,6 +8,7 @@ from channel_title_not_found_error import ChannelTitleNotFoundError
 from downloader_map import DownloaderMap
 from fibonacci_sleep_factory import FibonacciSleepFactory
 from metadata_provider_map import MetadataProviderMap
+from video_validator_map import VideoValidatorMap
 
 
 class ChannelPoller:
@@ -16,15 +17,18 @@ class ChannelPoller:
         self,
         meta_providers: MetadataProviderMap,
         downloaders: DownloaderMap,
+        validators: VideoValidatorMap,
         sleep_factory: FibonacciSleepFactory,
     ):
         self._meta_providers = meta_providers
         self._downloaders = downloaders
+        self._validators = validators
         self._sleep_factory = sleep_factory
 
     async def poll(self, channel_id: str, mode: str) -> None:
         meta = self._meta_providers[mode]
         downloader = self._downloaders[mode]
+        validator = self._validators[mode]
 
         log = logger.bind(streamer=channel_id)
         channel_title = None
@@ -43,6 +47,12 @@ class ChannelPoller:
 
                 if video_id:
                     sleep_offline.reset()
+                    errors = await validator.validate(video_id)
+                    if errors:
+                        for error in errors:
+                            log.info(error)
+                        await sleep_offline.sleep()
+                        continue
                     url = meta.get_video_url(video_id)
                     log.info(f"Downloading from: {url}")
                     await downloader.download(url, channel_title)

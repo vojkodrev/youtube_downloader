@@ -18,10 +18,10 @@ class DownloadedVideoValidator(VideoValidator):
         self._metadata_provider = metadata_provider
         self._config = config
 
-    async def validate(self, video_id: str) -> bool:
+    async def validate(self, video_id: str) -> list[str]:
         metadata = await self._metadata_provider.get_video_metadata(video_id)
         if not metadata or not metadata.title or not metadata.live_start_time:
-            return True
+            return []
 
         start_time = datetime.fromisoformat(metadata.live_start_time.replace("Z", "+00:00"))
         stream_duration = (datetime.now(timezone.utc) - start_time).total_seconds()
@@ -29,9 +29,14 @@ class DownloadedVideoValidator(VideoValidator):
         output_folder = self._config["output_folder"]
         recorded_duration = self._get_recorded_duration(metadata.title, output_folder)
         if recorded_duration is None:
-            return True
+            return []
 
-        return abs(stream_duration - recorded_duration) > 300
+        gap = stream_duration - recorded_duration
+        if gap <= 300:
+            return [
+                f"Recorded duration ({recorded_duration:.0f}s) is within 5 minutes of stream duration ({stream_duration:.0f}s). Download not needed."
+            ]
+        return []
 
     def _get_recorded_duration(self, title: str, output_folder: str) -> float | None:
         try:

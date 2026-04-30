@@ -7,6 +7,9 @@ from typing import Callable
 from injector import Module, provider, singleton, SingletonScope
 
 from channel_poller import ChannelPoller
+from downloaded_video_validator import DownloadedVideoValidator
+from dummy_video_validator import DummyVideoValidator
+from video_validator_map import VideoValidatorMap
 from download_video_request_poller import DownloadVideoRequestPoller
 from download_playlist_request_poller import DownloadPlaylistRequestPoller
 from config import Config
@@ -58,6 +61,20 @@ class DownloaderModule(Module):
             "youtube_live": youtube,
             "youtube_video": youtube,
             "twitch": twitch,
+        })
+
+    @provider
+    @singleton
+    def validators(
+        self,
+        downloaded: DownloadedVideoValidator,
+        dummy: DummyVideoValidator,
+    ) -> VideoValidatorMap:
+        return VideoValidatorMap({
+            "youtube_live": downloaded,
+            "youtube_video": dummy,
+            "twitch": dummy,
+            "rumble": dummy,
         })
 
     @provider
