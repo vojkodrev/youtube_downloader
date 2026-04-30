@@ -1,12 +1,13 @@
-import { useMemo, useRef } from 'react'
+import { useRef } from 'react'
 import { useVideos } from '@/hooks/frontend/useVideos'
 import { useVideoKeyboard } from '@/hooks/frontend/useVideoKeyboard'
 import { useVideoMetadata } from '@/hooks/frontend/useVideoMetadata'
 import { useVideoNavigation } from '@/hooks/frontend/useVideoNavigation'
+import { useVideoSelection } from '@/hooks/frontend/useVideoSelection'
 import { useWatchedTime } from '@/hooks/frontend/useWatchedTime'
 import { useWatchedTimesSync } from '@/hooks/frontend/useWatchedTimesSync'
 import { useDeleteVideo } from '@/hooks/frontend/useDeleteVideo'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import VideoDialogs from '@/components/frontend/VideoDialogs/VideoDialogs'
 import AppSidebar from '@/components/frontend/AppSidebar/AppSidebar'
 import Logo from '@/components/frontend/Logo/Logo'
@@ -23,23 +24,16 @@ import {
 
 export default function Home() {
     const { id } = useParams()
-    const navigate = useNavigate()
     const { videos, setVideos, playlists, versionToVideoId, videoIdToQuality } = useVideos()
     const videoRef = useRef(null)
     const videoDialogsRef = useRef(null)
-
-    const selectedVideo = useMemo(() => videos.find(v => v.id === (versionToVideoId[id] ?? id)), [videos, id, versionToVideoId])
     const currentQuality = videoIdToQuality[id]
-    const currentPlaylist = useMemo(() => playlists.find(p => p.some(v => v.id === selectedVideo?.id)) ?? [], [playlists, selectedVideo])
-    const nextVideoInPlaylist = useMemo(() => {
-        if (!selectedVideo || currentPlaylist.length === 0) return null
-        const idx = currentPlaylist.findIndex(v => v.id === selectedVideo.id)
-        return idx >= 0 && idx < currentPlaylist.length - 1 ? currentPlaylist[idx + 1] : null
-    }, [currentPlaylist, selectedVideo])
 
-    function handlePlaylistEnded() {
-        if (nextVideoInPlaylist) navigate(`/watch/${nextVideoInPlaylist.id}`)
-    }
+    const {
+        selectedVideo,
+        currentPlaylist,
+        handlePlaylistEnded
+    } = useVideoSelection(videos, playlists, versionToVideoId, id)
 
     const {
         handleWatchedMark,
