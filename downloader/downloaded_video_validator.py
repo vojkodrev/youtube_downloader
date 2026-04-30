@@ -8,18 +8,18 @@ import ffmpeg
 from injector import inject
 
 from config import Config
-from metadata_provider import MetadataProvider
+from metadata_provider_map import MetadataProviderMap
 from video_validator import VideoValidator
 
 
 class DownloadedVideoValidator(VideoValidator):
     @inject
-    def __init__(self, metadata_provider: MetadataProvider, config: Config):
-        self._metadata_provider = metadata_provider
+    def __init__(self, meta_providers: MetadataProviderMap, config: Config):
+        self._meta_providers = meta_providers
         self._config = config
 
-    async def validate(self, video_id: str) -> list[str]:
-        metadata = await self._metadata_provider.get_video_metadata(video_id)
+    async def validate(self, video_id: str, mode: str) -> list[str]:
+        metadata = await self._meta_providers[mode].get_video_metadata(video_id)
         if not metadata or not metadata.title or not metadata.live_start_time:
             return []
 

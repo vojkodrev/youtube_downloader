@@ -47,7 +47,7 @@ class ChannelPoller:
 
                 if video_id:
                     sleep_offline.reset()
-                    errors = await validator.validate(video_id)
+                    errors = await validator.validate(video_id, mode)
                     if errors:
                         for error in errors:
                             log.info(error)
