@@ -6,6 +6,7 @@ from googleapiclient.discovery import build
 from injector import inject
 
 from channel_title_not_found_error import ChannelTitleNotFoundError
+from video_metadata import VideoMetadata
 from metadata_provider import MetadataProvider
 from youtube_api_key_pool import YoutubeApiKeyPool
 
@@ -83,6 +84,27 @@ class YoutubeMetadataProvider(MetadataProvider):
 
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, get_playlist_videos_sync)
+
+    async def get_video_metadata(self, video_id: str) -> VideoMetadata | None:
+        if not video_id:
+            raise ValueError("video_id is required")
+
+        def get_video_metadata_sync():
+            youtube = build("youtube", "v3", developerKey=self._api_keys.next())
+            response = youtube.videos().list(
+                part="liveStreamingDetails,snippet",
+                id=video_id,
+            ).execute()
+            if not response.get("items"):
+                return None
+            item = response["items"][0]
+            return VideoMetadata(
+                title=item.get("snippet", {}).get("title"),
+                live_start_time=item.get("liveStreamingDetails", {}).get("actualStartTime"),
+            )
+
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, get_video_metadata_sync)
 
     def get_video_url(self, video_id: str) -> str:
         if not video_id:

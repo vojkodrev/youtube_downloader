@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from video_metadata import VideoMetadata
+
 
 class MetadataProvider(ABC):
     @abstractmethod
@@ -13,3 +15,6 @@ class MetadataProvider(ABC):
 
     @abstractmethod
     async def get_playlist_videos(self, playlist_id: str) -> list[dict]: ...
+
+    @abstractmethod
+    async def get_video_metadata(self, video_id: str) -> VideoMetadata | None: ...

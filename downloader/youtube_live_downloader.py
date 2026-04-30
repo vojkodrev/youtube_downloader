@@ -35,7 +35,7 @@ class YoutubeLiveDownloader(Downloader):
                 # CRITICAL: This flag tells yt-dlp to start from the beginning of the DVR
                 "live_from_start": True,
                 "merge_output_format": "mp4",
-                "overwrites": False,
+                "overwrites": True,
                 "outtmpl": os.path.join(
                     self._config["output_folder"], "[%(uploader)s] %(title)s.%(ext)s"
                 ),
