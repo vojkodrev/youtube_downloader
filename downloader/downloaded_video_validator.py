@@ -38,24 +38,30 @@ class DownloadedVideoValidator(VideoValidator):
             ]
         return []
 
+    def _title_to_pattern(self, title: str) -> str:
+        return r".*".join(re.escape(w) for w in title.split(" "))
+
     def _get_recorded_duration(self, title: str, output_folder: str) -> float | None:
         try:
             files = os.listdir(output_folder)
         except OSError:
             return None
 
-        part_pattern = re.compile(re.escape(title) + r" part\d+\.", re.IGNORECASE)
-        parts = [f for f in files if part_pattern.search(f)]
+        title_pat = self._title_to_pattern(title)
 
-        if parts:
-            return self._sum_durations(parts, output_folder)
+        # Source mp4 takes priority (partXX files exist only while splitting is in progress)
+        base_pattern = re.compile(title_pat + r"\.\w+$", re.IGNORECASE)
+        base_files = [f for f in files if base_pattern.search(f) and ".temp." not in f]
+        if base_files:
+            return self._get_duration(os.path.join(output_folder, base_files[0]))
 
-        base_pattern = re.compile(re.escape(title) + r"\.", re.IGNORECASE)
-        base_files = [f for f in files if base_pattern.search(f)]
-        if not base_files:
+        # No source file — splitting is done, sum the part files
+        part_pattern = re.compile(title_pat + r" part\d{2}\.\w+$", re.IGNORECASE)
+        parts = [f for f in files if part_pattern.search(f) and ".temp." not in f]
+        if not parts:
             return None
 
-        return self._get_duration(os.path.join(output_folder, base_files[0]))
+        return self._sum_durations(parts, output_folder)
 
     def _sum_durations(self, filenames: list[str], folder: str) -> float | None:
         total = 0.0
