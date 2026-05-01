@@ -20,11 +20,16 @@ class DownloadedVideoValidator(VideoValidator):
 
     async def validate(self, video_id: str, mode: str) -> list[str]:
         metadata = await self._meta_providers[mode].get_video_metadata(video_id)
-        if not metadata or not metadata.title or not metadata.live_start_time:
+        if not metadata or not metadata.title:
             return []
 
-        start_time = datetime.fromisoformat(metadata.live_start_time.replace("Z", "+00:00"))
-        stream_duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+        if metadata.duration_seconds:
+            stream_duration = metadata.duration_seconds
+        elif metadata.live_start_time:
+            start_time = datetime.fromisoformat(metadata.live_start_time.replace("Z", "+00:00"))
+            stream_duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+        else:
+            return []
 
         output_folder = self._config["output_folder"]
         recorded_duration = self._get_recorded_duration(metadata.title, output_folder)

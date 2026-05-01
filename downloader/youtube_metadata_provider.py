@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 
+import isodate
+
 from googleapiclient.discovery import build
 from injector import inject
 
@@ -92,15 +94,18 @@ class YoutubeMetadataProvider(MetadataProvider):
         def get_video_metadata_sync():
             youtube = build("youtube", "v3", developerKey=self._api_keys.next())
             response = youtube.videos().list(
-                part="liveStreamingDetails,snippet",
+                part="liveStreamingDetails,snippet,contentDetails",
                 id=video_id,
             ).execute()
             if not response.get("items"):
                 return None
             item = response["items"][0]
+            iso_duration = item.get("contentDetails", {}).get("duration")
+            duration_seconds = isodate.parse_duration(iso_duration).total_seconds() if iso_duration else None
             return VideoMetadata(
                 title=item.get("snippet", {}).get("title"),
                 live_start_time=item.get("liveStreamingDetails", {}).get("actualStartTime"),
+                duration_seconds=duration_seconds,
             )
 
         loop = asyncio.get_running_loop()
