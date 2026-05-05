@@ -18,5 +18,10 @@ func loadConfig() Config {
 		log.Fatal("could not parse config.yaml:", err)
 	}
 
+	cfg.StreamsDir = os.Getenv("STREAMS_DIR")
+	if cfg.StreamsDir == "" {
+		log.Fatal("STREAMS_DIR environment variable is required")
+	}
+
 	return cfg
 }
