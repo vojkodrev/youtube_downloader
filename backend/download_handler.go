@@ -3,13 +3,12 @@ package main
 import "github.com/gin-gonic/gin"
 
 type DownloadHandler struct {
-	cfg        *Config
-	store      *VideoStore
-	fileServer *GinSharableFileServer
+	cfg   *Config
+	store *VideoStore
 }
 
-func NewDownloadHandler(cfg *Config, store *VideoStore, fileServer *GinSharableFileServer) *DownloadHandler {
-	return &DownloadHandler{cfg: cfg, store: store, fileServer: fileServer}
+func NewDownloadHandler(cfg *Config, store *VideoStore) *DownloadHandler {
+	return &DownloadHandler{cfg: cfg, store: store}
 }
 
 func (h *DownloadHandler) Download(c *gin.Context) {
@@ -28,6 +27,5 @@ func (h *DownloadHandler) Download(c *gin.Context) {
 	} else {
 		filename = v.Filename
 	}
-	c.Header("Content-Disposition", `attachment; filename="`+filename+`"`)
-	h.fileServer.Serve(c, h.cfg.StreamsDir+"/"+filename, filename)
+	c.FileAttachment(h.cfg.StreamsDir+"/"+filename, filename)
 }

@@ -10,7 +10,6 @@ type GinServer struct {
 	store                  *VideoStore
 	filenames              *Filenames
 	videoDuration          *VideoDuration
-	fileServer             *GinSharableFileServer
 	downloadRequestService *DownloadRequestService
 	videosHandler          *VideosHandler
 	pingHandler            *PingHandler
@@ -29,7 +28,6 @@ func NewGinServer(
 	store *VideoStore,
 	filenames *Filenames,
 	videoDuration *VideoDuration,
-	fileServer *GinSharableFileServer,
 	downloadRequestService *DownloadRequestService,
 	videosHandler *VideosHandler,
 	pingHandler *PingHandler,
@@ -47,7 +45,6 @@ func NewGinServer(
 		store:                          store,
 		filenames:                      filenames,
 		videoDuration:                  videoDuration,
-		fileServer:                     fileServer,
 		downloadRequestService:         downloadRequestService,
 		videosHandler:                  videosHandler,
 		pingHandler:                    pingHandler,
