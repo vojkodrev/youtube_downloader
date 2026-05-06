@@ -1,4 +1,3 @@
-output_folder = "d:/streams"
 log_format = "<green>{time}</green> | <level>{level:<5}</level> | <cyan>{name}:{function}:{line:<4}</cyan> | <magenta>{extra[streamer]}</magenta> | <level>{message}</level>"
 
 # [[channels]]

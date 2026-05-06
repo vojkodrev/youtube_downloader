@@ -28,7 +28,9 @@ class DownloaderModule(Module):
     def configure(self, binder):
         load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
         with open(os.path.join(os.path.dirname(__file__), "config.toml"), "rb") as f:
-            binder.bind(Config, to=Config(tomllib.load(f)))
+            config = tomllib.load(f)
+        config["output_folder"] = os.environ["OUTPUT_FOLDER"]
+        binder.bind(Config, to=Config(config))
         binder.bind(YoutubeMetadataProvider, to=YoutubeMetadataProvider, scope=SingletonScope)
         binder.bind(TwitchMetadataProvider, to=TwitchMetadataProvider, scope=SingletonScope)
         binder.bind(YoutubeLiveDownloader, to=YoutubeLiveDownloader, scope=SingletonScope)
