@@ -2,4 +2,4 @@
 set -e
 
 cd "$(dirname "$0")"
-python main.py
+.venv/bin/python main.py
