@@ -21,6 +21,9 @@ if pgrep -x nginx > /dev/null; then
     sleep 2
 fi
 
+# Ensure nginx temp dirs exist
+mkdir -p nginx/temp/client_body nginx/temp/proxy nginx/temp/fastcgi nginx/temp/uwsgi nginx/temp/scgi
+
 # Start nginx
 echo "Starting nginx on http://localhost ..."
 sudo nginx -p "$(pwd)" -c "$NGINX_CONF" -e nginx/nginx.log
