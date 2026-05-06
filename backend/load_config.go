@@ -4,10 +4,13 @@ import (
 	"log"
 	"os"
 
+	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
 )
 
 func loadConfig() Config {
+	godotenv.Load()
+
 	data, err := os.ReadFile("config.yaml")
 	if err != nil {
 		log.Fatal("could not read config.yaml:", err)
