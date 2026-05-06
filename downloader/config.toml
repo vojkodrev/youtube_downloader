@@ -1,9 +1,9 @@
 output_folder = "d:/streams"
 log_format = "<green>{time}</green> | <level>{level:<5}</level> | <cyan>{name}:{function}:{line:<4}</cyan> | <magenta>{extra[streamer]}</magenta> | <level>{message}</level>"
 
-[[channels]]
-id = "UCUyeluBRhGPCW4rPe_UvBZQ"
-mode = "youtube_live"
+# [[channels]]
+# id = "UCUyeluBRhGPCW4rPe_UvBZQ" # The PrimeTime
+# mode = "youtube_live"
 
 [[channels]]
 id = "UC1E-JS8L0j1Ei70D9VEFrPQ"
@@ -12,6 +12,10 @@ mode = "youtube_live"
 [[channels]]
 id = "UCaTznQhurW5AaiYPbhEA-KA"
 mode = "youtube_live"
+
+[[channels]]
+id = "theprimeagen"
+mode = "twitch"
 
 # [[channels]]
 # id = "joshstrifehayes"
