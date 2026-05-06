@@ -23,5 +23,9 @@ func loadConfig() Config {
 		log.Fatal("STREAMS_DIR environment variable is required")
 	}
 
+	if _, err := os.Stat(cfg.StreamsDir); os.IsNotExist(err) {
+		log.Fatal("streams directory does not exist: ", cfg.StreamsDir)
+	}
+
 	return cfg
 }
