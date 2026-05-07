@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SESSION="youtube-downloader"
 
 # Kill existing session if running
