@@ -38,3 +38,4 @@ mkdir -p nginx/temp/client_body nginx/temp/proxy nginx/temp/fastcgi nginx/temp/u
 echo "Starting nginx on http://localhost ..."
 sudo nginx -p "$(pwd)" -c "$NGINX_CONF" -e nginx/nginx.log
 echo "Finished"
+tail -f nginx/nginx.log
