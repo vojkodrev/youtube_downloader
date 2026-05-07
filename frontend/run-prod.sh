@@ -34,8 +34,10 @@ stop_nginx
 # Ensure nginx temp dirs exist
 mkdir -p nginx/temp/client_body nginx/temp/proxy nginx/temp/fastcgi nginx/temp/uwsgi nginx/temp/scgi
 
+# Make dist readable by www-data
+chmod -R o+rX dist
+
 # Start nginx
 echo "Starting nginx on http://localhost ..."
 sudo nginx -p "$(pwd)" -c "$NGINX_CONF" -e nginx/nginx.log
 echo "Finished"
-tail -f nginx/nginx.log
