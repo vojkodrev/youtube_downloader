@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net"
 	"net/http"
 	"strings"
 
@@ -16,7 +17,33 @@ func NewAuthMiddleware(cfg *Config) *AuthMiddleware {
 	return &AuthMiddleware{cfg: cfg}
 }
 
+func (m *AuthMiddleware) isPublicHost(c *gin.Context) bool {
+	clientIP := net.ParseIP(c.ClientIP())
+	for _, host := range m.cfg.PublicHosts {
+		host = strings.TrimSpace(host)
+		if strings.Contains(host, "/") {
+			_, network, err := net.ParseCIDR(host)
+			if err == nil && clientIP != nil && network.Contains(clientIP) {
+				return true
+			}
+		} else {
+			if clientIP != nil && clientIP.String() == host {
+				return true
+			}
+			if c.Request.Host == host || strings.Split(c.Request.Host, ":")[0] == host {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (m *AuthMiddleware) Handle(c *gin.Context) {
+	if m.isPublicHost(c) {
+		c.Next()
+		return
+	}
+
 	tokenStr := c.Query("token")
 	if tokenStr == "" {
 		header := c.GetHeader("Authorization")

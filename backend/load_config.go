@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
@@ -35,6 +36,10 @@ func loadConfig() Config {
 	cfg.JWTSecret = os.Getenv("JWT_SECRET")
 	cfg.BackendURL = os.Getenv("BACKEND_URL")
 	cfg.FrontendURL = os.Getenv("FRONTEND_URL")
+
+	if publicHosts := os.Getenv("PUBLIC_HOSTS"); publicHosts != "" {
+		cfg.PublicHosts = strings.Split(publicHosts, ",")
+	}
 
 	return cfg
 }

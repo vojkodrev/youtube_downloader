@@ -11,4 +11,5 @@ type Config struct {
 	JWTSecret          string
 	BackendURL         string
 	FrontendURL        string
+	PublicHosts        []string
 }
