@@ -13,12 +13,14 @@ if (token) {
 const Home = lazy(() => import('./pages/Home/Home'))
 const About = lazy(() => import('./pages/About/About'))
 const Login = lazy(() => import('./pages/Login/Login'))
+const Logout = lazy(() => import('./pages/Logout/Logout'))
 
 function App() {
     return (
         <Suspense fallback={null}>
             <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/logout" element={<Logout />} />
                 <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                 <Route path="/watch/:id" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                 <Route path="/about" element={<About />} />
