@@ -11,6 +11,8 @@ type GinServer struct {
 	filenames              *Filenames
 	videoDuration          *VideoDuration
 	downloadRequestService *DownloadRequestService
+	authHandler            *AuthHandler
+	authMiddleware         *AuthMiddleware
 	videosHandler          *VideosHandler
 	pingHandler            *PingHandler
 	videoHandler           *VideoHandler
@@ -29,6 +31,8 @@ func NewGinServer(
 	filenames *Filenames,
 	videoDuration *VideoDuration,
 	downloadRequestService *DownloadRequestService,
+	authHandler *AuthHandler,
+	authMiddleware *AuthMiddleware,
 	videosHandler *VideosHandler,
 	pingHandler *PingHandler,
 	videoHandler *VideoHandler,
@@ -46,6 +50,8 @@ func NewGinServer(
 		filenames:                      filenames,
 		videoDuration:                  videoDuration,
 		downloadRequestService:         downloadRequestService,
+		authHandler:                    authHandler,
+		authMiddleware:                 authMiddleware,
 		videosHandler:                  videosHandler,
 		pingHandler:                    pingHandler,
 		videoHandler:                   videoHandler,
@@ -60,23 +66,31 @@ func NewGinServer(
 }
 
 func (s *GinServer) registerRoutes() {
-	s.router.Use(cors.Default())
+	s.router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{s.cfg.FrontendURL},
+		AllowMethods: []string{"GET", "POST"},
+		AllowHeaders: []string{"Authorization", "Content-Type"},
+	}))
 
 	s.router.GET("/ping", s.pingHandler.Ping)
+	s.router.GET("/auth/login", s.authHandler.Login)
+	s.router.GET("/auth/callback", s.authHandler.Callback)
 
-	s.router.GET("/videos", s.videosHandler.GetVideos)
+	protected := s.router.Group("/", s.authMiddleware.Handle)
 
-	s.router.GET("/video/:id", s.videoHandler.GetVideo)
+	protected.GET("/videos", s.videosHandler.GetVideos)
 
-	s.router.GET("/download/:id", s.downloadHandler.Download)
+	protected.GET("/video/:id", s.videoHandler.GetVideo)
 
-	s.router.GET("/duration/:id", s.durationHandler.GetDuration)
+	protected.GET("/download/:id", s.downloadHandler.Download)
 
-	s.router.GET("/thumbnail/:id", s.thumbnailHandler.GetThumbnail)
+	protected.GET("/duration/:id", s.durationHandler.GetDuration)
 
-	s.router.POST("/delete-video", s.deleteVideoHandler.DeleteVideo)
+	protected.GET("/thumbnail/:id", s.thumbnailHandler.GetThumbnail)
 
-	s.router.POST("/request-video-download", s.requestVideoDownloadHandler.RequestVideoDownload)
+	protected.POST("/delete-video", s.deleteVideoHandler.DeleteVideo)
 
-	s.router.POST("/request-playlist-download", s.requestPlaylistDownloadHandler.RequestPlaylistDownload)
+	protected.POST("/request-video-download", s.requestVideoDownloadHandler.RequestVideoDownload)
+
+	protected.POST("/request-playlist-download", s.requestPlaylistDownloadHandler.RequestPlaylistDownload)
 }

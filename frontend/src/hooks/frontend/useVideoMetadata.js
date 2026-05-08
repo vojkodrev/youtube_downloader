@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
-
-const API_URL = import.meta.env.VITE_API_URL
+import { mediaUrl } from '../../api'
 
 export function useVideoMetadata(selectedVideo) {
     useEffect(() => {
@@ -9,7 +8,7 @@ export function useVideoMetadata(selectedVideo) {
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: selectedVideo.name,
-                artwork: [{ src: `${API_URL}/thumbnail/${selectedVideo.id}`, sizes: '512x512', type: 'image/jpeg' }]
+                artwork: [{ src: mediaUrl(`/thumbnail/${selectedVideo.id}`), sizes: '512x512', type: 'image/jpeg' }]
             })
         }
     }, [selectedVideo])

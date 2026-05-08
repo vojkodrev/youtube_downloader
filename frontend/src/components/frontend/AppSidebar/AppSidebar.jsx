@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ChevronDownIcon, ClockIcon, DownloadIcon } from 'lucide-react'
+import { ChevronDownIcon, ClockIcon, DownloadIcon, LogOutIcon } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import Logo from '@/components/frontend/Logo/Logo'
 import SidebarTrigger from '@/components/frontend/SidebarTrigger/SidebarTrigger'
 import {
@@ -20,6 +21,7 @@ import {
 export default function AppSidebar({ onRequestVideoDownload, onRequestPlaylistDownload, onExportWatchedTimes, onImportWatchedTimes }) {
     const [downloadOpen, setDownloadOpen] = useState(false)
     const [watchedTimesOpen, setWatchedTimesOpen] = useState(false)
+    const navigate = useNavigate()
 
     return (
         <Sidebar collapsible="offcanvas">
@@ -73,6 +75,18 @@ export default function AppSidebar({ onRequestVideoDownload, onRequestPlaylistDo
                                         </SidebarMenuSubItem>
                                     </SidebarMenuSub>
                                 )}
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+                <SidebarGroup>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton onClick={() => navigate('/logout')}>
+                                    <LogOutIcon />
+                                    <span>Logout</span>
+                                </SidebarMenuButton>
                             </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroupContent>

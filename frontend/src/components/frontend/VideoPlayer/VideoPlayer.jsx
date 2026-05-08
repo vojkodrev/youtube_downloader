@@ -1,6 +1,7 @@
 import { forwardRef } from 'react'
 import { useSearchParams, useParams } from 'react-router-dom'
 import { VIDEO_SAVE_INTERVAL } from '@/lib/video'
+import { mediaUrl } from '../../../api'
 
 const VideoPlayer = forwardRef(function VideoPlayer({ video, onVideoUpdated, onEnded }, ref) {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -17,7 +18,7 @@ const VideoPlayer = forwardRef(function VideoPlayer({ video, onVideoUpdated, onE
         <video
             ref={ref}
             key={id}
-            src={`${import.meta.env.VITE_API_URL}/video/${id}`}
+            src={mediaUrl(`/video/${id}`)}
             controls
             autoPlay
             playsInline

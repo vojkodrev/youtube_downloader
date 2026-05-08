@@ -1,12 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL
+import { api } from '../../api'
 
 export function useDeleteVideo(videoDialogsRef, playlists, setVideos) {
     async function confirmDelete(videos) {
-        await Promise.allSettled(videos.map(v => fetch(`${API_URL}/delete-video`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: v.id }),
-        })))
+        await Promise.allSettled(videos.map(v => api.post('/delete-video', { id: v.id })))
         setVideos(prev => prev.filter(v => !videos.some(pv => pv.id === v.id)))
     }
 

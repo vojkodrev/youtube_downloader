@@ -1,10 +1,10 @@
-const API_URL = import.meta.env.VITE_API_URL
+import { mediaUrl } from '../../../api'
 
 export default function VideoListItemThumbnail({ videoId, progressSavedTime, progressDuration }) {
     return (
         <div className="relative flex-shrink-0">
             <img
-                src={`${API_URL}/thumbnail/${videoId}`}
+                src={mediaUrl(`/thumbnail/${videoId}`)}
                 className="w-36 h-20 object-cover rounded bg-gray-300"
             />
             {!!progressSavedTime && !!progressDuration && (
