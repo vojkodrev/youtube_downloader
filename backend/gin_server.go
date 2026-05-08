@@ -67,7 +67,12 @@ func NewGinServer(
 
 func (s *GinServer) registerRoutes() {
 	s.router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{s.cfg.FrontendURL},
+		AllowOriginFunc: func(origin string) bool {
+			if origin == s.cfg.FrontendURL {
+				return true
+			}
+			return s.authMiddleware.isPublicOrigin(origin)
+		},
 		AllowMethods: []string{"GET", "POST"},
 		AllowHeaders: []string{"Authorization", "Content-Type"},
 	}))

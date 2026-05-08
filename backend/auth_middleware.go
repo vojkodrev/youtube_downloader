@@ -3,6 +3,7 @@ package main
 import (
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -17,25 +18,39 @@ func NewAuthMiddleware(cfg *Config) *AuthMiddleware {
 	return &AuthMiddleware{cfg: cfg}
 }
 
-func (m *AuthMiddleware) isPublicHost(c *gin.Context) bool {
-	clientIP := net.ParseIP(c.ClientIP())
+func (m *AuthMiddleware) matchesPublicHosts(ip net.IP, hostname string) bool {
 	for _, host := range m.cfg.PublicHosts {
 		host = strings.TrimSpace(host)
 		if strings.Contains(host, "/") {
 			_, network, err := net.ParseCIDR(host)
-			if err == nil && clientIP != nil && network.Contains(clientIP) {
+			if err == nil && ip != nil && network.Contains(ip) {
 				return true
 			}
 		} else {
-			if clientIP != nil && clientIP.String() == host {
+			if ip != nil && ip.String() == host {
 				return true
 			}
-			if c.Request.Host == host || strings.Split(c.Request.Host, ":")[0] == host {
+			if hostname == host {
 				return true
 			}
 		}
 	}
 	return false
+}
+
+func (m *AuthMiddleware) isPublicHost(c *gin.Context) bool {
+	ip := net.ParseIP(c.ClientIP())
+	hostname := strings.Split(c.Request.Host, ":")[0]
+	return m.matchesPublicHosts(ip, hostname)
+}
+
+func (m *AuthMiddleware) isPublicOrigin(origin string) bool {
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	ip := net.ParseIP(u.Hostname())
+	return m.matchesPublicHosts(ip, u.Hostname())
 }
 
 func (m *AuthMiddleware) Handle(c *gin.Context) {
