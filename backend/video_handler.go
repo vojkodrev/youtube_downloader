@@ -3,13 +3,12 @@ package main
 import "github.com/gin-gonic/gin"
 
 type VideoHandler struct {
-	cfg        *Config
-	store      *VideoStore
-	fileServer *GinSharableFileServer
+	cfg   *Config
+	store *VideoStore
 }
 
-func NewVideoHandler(cfg *Config, store *VideoStore, fileServer *GinSharableFileServer) *VideoHandler {
-	return &VideoHandler{cfg: cfg, store: store, fileServer: fileServer}
+func NewVideoHandler(cfg *Config, store *VideoStore) *VideoHandler {
+	return &VideoHandler{cfg: cfg, store: store}
 }
 
 func (h *VideoHandler) GetVideo(c *gin.Context) {
@@ -23,9 +22,9 @@ func (h *VideoHandler) GetVideo(c *gin.Context) {
 			c.Status(404)
 			return
 		}
-		h.fileServer.Serve(c, h.cfg.StreamsDir+"/"+vv.Filename, vv.Filename)
+		c.File(h.cfg.StreamsDir + "/" + vv.Filename)
 		return
 	}
 	h.store.Mutex.RUnlock()
-	h.fileServer.Serve(c, h.cfg.StreamsDir+"/"+v.Filename, v.Filename)
+	c.File(h.cfg.StreamsDir + "/" + v.Filename)
 }

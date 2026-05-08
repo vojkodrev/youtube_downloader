@@ -18,7 +18,6 @@ func CoreProviders() fx.Option {
 		fx.Provide(NewThumbnailSaver),
 		fx.Provide(NewThumbnailsWorker),
 		fx.Provide(NewDurationsWorker),
-		fx.Provide(NewGinSharableFileServer),
 		fx.Provide(NewVideoStore),
 		fx.Provide(NewCleanupWorker),
 		fx.Provide(NewVideoReader),
