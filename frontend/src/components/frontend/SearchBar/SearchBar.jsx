@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Search, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Fuse from 'fuse.js'
-import { videoLink } from '@/lib/video'
+import { videoLink } from '@/lib/url'
 
 export default function SearchBar({ videos = [] }) {
     const [query, setQuery] = useState(() => localStorage.getItem('searchQuery') ?? '')

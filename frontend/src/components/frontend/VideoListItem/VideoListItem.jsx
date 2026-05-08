@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 import VideoListItemMenu from './VideoListItemMenu'
 import VideoListItemThumbnail from './VideoListItemThumbnail'
 import VideoListItemInfo from './VideoListItemInfo'
-import { videoLink, isFullyWatched } from '@/lib/video'
+import { isFullyWatched } from '@/lib/video'
+import { videoLink } from '@/lib/url'
 
 function getTargetLink(video, playlistVideos, currentQuality) {
     const target = playlistVideos

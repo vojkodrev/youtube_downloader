@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { isPublicHost } from '../../../api'
+import { isPublicHost } from '@/lib/host'
 
 export default function ProtectedRoute({ children }) {
     const location = useLocation()

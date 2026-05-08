@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { api } from '../../api'
+import { api } from '@/lib/api'
 
 export function useVideos() {
     const [videos, setVideos] = useState([])

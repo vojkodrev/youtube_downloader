@@ -1,5 +1,5 @@
 import { Tv } from 'lucide-react'
-import { API_URL } from '../../api'
+import { API_URL } from '@/lib/host'
 
 export default function Login() {
     const redirect = new URLSearchParams(window.location.search).get('redirect') ?? '/'

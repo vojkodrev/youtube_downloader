@@ -1,4 +1,4 @@
-import { mediaUrl } from '../../../api'
+import { mediaUrl } from '@/lib/url'
 
 export default function VideoListItemThumbnail({ videoId, progressSavedTime, progressDuration }) {
     return (

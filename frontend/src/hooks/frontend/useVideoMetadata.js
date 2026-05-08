@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { mediaUrl } from '../../api'
+import { mediaUrl } from '@/lib/url'
 
 export function useVideoMetadata(selectedVideo) {
     useEffect(() => {

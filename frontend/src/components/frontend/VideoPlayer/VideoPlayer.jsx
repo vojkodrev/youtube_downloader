@@ -1,7 +1,7 @@
 import { forwardRef } from 'react'
 import { useSearchParams, useParams } from 'react-router-dom'
 import { VIDEO_SAVE_INTERVAL } from '@/lib/video'
-import { mediaUrl } from '../../../api'
+import { mediaUrl } from '@/lib/url'
 
 const VideoPlayer = forwardRef(function VideoPlayer({ video, onVideoUpdated, onEnded }, ref) {
     const [searchParams, setSearchParams] = useSearchParams()

@@ -6,7 +6,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { mediaUrl } from '../../../api'
+import { mediaUrl } from '@/lib/url'
 
 export default function VideoListItemMenu({ video, onWatchedMark, onWatchedReset, onDelete }) {
     return (
