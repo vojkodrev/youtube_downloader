@@ -1,7 +1,20 @@
+import { useEffect } from 'react'
 import { Tv } from 'lucide-react'
-import { API_URL } from '@/lib/host'
+import { API_URL, isPublicHost } from '@/lib/host'
 
 export default function Login() {
+    const isLocalLoginBypass = isPublicHost()
+
+    useEffect(() => {
+        if (isLocalLoginBypass) {
+            window.location.replace('/')
+        }
+    }, [isLocalLoginBypass])
+
+    if (isLocalLoginBypass) {
+        return null
+    }
+
     const redirect = new URLSearchParams(window.location.search).get('redirect') ?? '/'
     const loginUrl = `${API_URL}/auth/login?redirect=${encodeURIComponent(redirect)}`
 
