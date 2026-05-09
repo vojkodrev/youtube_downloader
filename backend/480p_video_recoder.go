@@ -28,6 +28,7 @@ func (r *Video480pRecoder) Recode(inputPath, outputPath string) error {
 			"c:a":       "copy",
 			"movflags":  "+faststart",
 		}).
+		OverWriteOutput().
 		GlobalArgs("-loglevel", "warning", "-stats", "-stats_period", "60").
 		Compile()
 

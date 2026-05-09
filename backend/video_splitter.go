@@ -27,6 +27,7 @@ func (vs *VideoSplitter) Split(videoPath string, splitDuration float64) error {
 			"reset_timestamps":     1,
 			"segment_start_number": 1,
 		}).
+		OverWriteOutput().
 		GlobalArgs("-loglevel", "warning", "-stats", "-stats_period", "60").
 		Compile()
 
