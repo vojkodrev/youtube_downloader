@@ -34,22 +34,16 @@ func (h *DeleteVideoHandler) DeleteVideo(c *gin.Context) {
 		return
 	}
 
-	deletedDir := filepath.Join(h.cfg.StreamsDir, "deleted")
-	if err := os.MkdirAll(deletedDir, 0755); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create deleted folder"})
-		return
-	}
-
 	for _, version := range v.Versions {
 		src := filepath.Join(h.cfg.StreamsDir, version.Filename)
 		if _, err := os.Stat(src); err == nil {
-			os.Rename(src, filepath.Join(deletedDir, filepath.Base(version.Filename)))
+			_ = os.Remove(src)
 		}
 	}
 
 	src := filepath.Join(h.cfg.StreamsDir, v.Filename)
 	if _, err := os.Stat(src); err == nil {
-		os.Rename(src, filepath.Join(deletedDir, filepath.Base(v.Filename)))
+		_ = os.Remove(src)
 	}
 
 	h.store.Mutex.Lock()
